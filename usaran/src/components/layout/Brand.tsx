@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import { cx } from '../../lib/format';
 
+/** Arch mark: a stone arch in brand navy with the periwinkle keystone line. */
 export function BrandMark({ light }: { light?: boolean }) {
   return (
-    <svg className="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill={light ? '#ffffff' : '#0F1E3D'} fillOpacity={light ? 0.1 : 1} />
-      <path d="M8 10.5c2.8-1.2 5.5-1 8 .8 2.5-1.8 5.2-2 8-.8V22c-2.8-1.2-5.5-1-8 .8-2.5-1.8-5.2-2-8-.8z" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M16 11.3v11.5" stroke="#8C99EC" strokeWidth="1.8" />
+    <svg className="brand__mark" viewBox="0 0 40 40" aria-hidden="true">
+      <path d="M4 36V18C4 10.3 11.2 4 20 4s16 6.3 16 14v18z" fill={light ? '#ffffff' : '#0F1E3D'} />
+      <path d="M12 36V20c0-4.4 3.6-8 8-8s8 3.6 8 8v16" fill="none" stroke={light ? '#0F1E3D' : '#ffffff'} strokeWidth="3.2" />
+      <path d="M20 12v24" stroke="#8C99EC" strokeWidth="3.2" />
     </svg>
   );
 }

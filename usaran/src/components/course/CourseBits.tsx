@@ -6,7 +6,8 @@ import { categoryName, difficultyLabel } from '../../data/courses';
 import { fullName, getUser } from '../../data/users';
 import { cx, daysUntil, formatDate, formatNumber, relativeDue } from '../../lib/format';
 import { Badge, StatusBadge } from '../ui/Badge';
-import { Thumb } from '../ui/Misc';
+import { Avatar, Thumb } from '../ui/Misc';
+import { CATEGORY_TINT, LESSON_TINT } from '../../lib/visual';
 import { ProgressBar } from '../ui/Progress';
 
 export const LESSON_ICONS: Record<LessonType, typeof PlayCircle> = {
@@ -27,11 +28,11 @@ export const LESSON_TYPE_LABEL: Record<LessonType, string> = {
 
 /* ---------- Course card ---------- */
 
-export function CourseCard({ course, to, progress }: { course: Course; to?: string; progress?: number }) {
+export function CourseCard({ course, to, progress, hideDescription }: { course: Course; to?: string; progress?: number; hideDescription?: boolean }) {
   const teacher = getUser(course.teacherId);
   return (
-    <Link to={to ?? `/courses/${course.id}`} className="course-card">
-      <div style={{ position: 'relative' }}>
+    <Link to={to ?? `/courses/${course.id}`} className={cx('course-card', CATEGORY_TINT[course.category])}>
+      <div className="course-card__media">
         <Thumb src={course.image} alt="" />
         <Badge className="course-card__level">
           <BarChart3 size={12} aria-hidden="true" />
@@ -41,24 +42,30 @@ export function CourseCard({ course, to, progress }: { course: Course; to?: stri
       <div className="course-card__body">
         <span className="course-card__cat">{categoryName(course.category)}</span>
         <h3 className="course-card__title">{course.title}</h3>
-        <p className="course-card__desc">{course.shortDescription}</p>
-        <span className="small secondary">{fullName(teacher)}</span>
-        {progress !== undefined && <ProgressBar value={progress} />}
-        <div className="course-card__meta">
-          <span className="tag">
-            <Clock aria-hidden="true" />
-            {course.durationHours} ժամ
-          </span>
-          <span className="tag">
-            <Users aria-hidden="true" />
-            {formatNumber(course.enrolled)}
-          </span>
-          {course.rating > 0 && (
+        {!hideDescription && <p className="course-card__desc">{course.shortDescription}</p>}
+        {progress !== undefined ? (
+          <ProgressBar value={progress} />
+        ) : (
+          <div className="course-card__meta">
+            {course.rating > 0 && (
+              <span className="tag rate">
+                <Star aria-hidden="true" />
+                {course.rating.toFixed(1)}
+              </span>
+            )}
             <span className="tag">
-              <Star aria-hidden="true" style={{ color: '#d39b1a', fill: '#d39b1a' }} />
-              {course.rating.toFixed(1)}
+              <Clock aria-hidden="true" />
+              {course.durationHours} ժամ
             </span>
-          )}
+            <span className="tag">
+              <Users aria-hidden="true" />
+              {formatNumber(course.enrolled)}
+            </span>
+          </div>
+        )}
+        <div className="course-card__foot">
+          <Avatar name={fullName(teacher)} size={32} />
+          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName(teacher)}</span>
         </div>
       </div>
     </Link>
@@ -81,7 +88,7 @@ export function LessonItem({ lesson, done, active, locked, onClick, showType, tr
   const Icon = done ? CheckCircle2 : locked ? Lock : LESSON_ICONS[lesson.type];
   const inner = (
     <>
-      <span className={cx('lesson-item__icon', done && 'lesson-item__icon--done')} aria-hidden="true">
+      <span className={cx('lesson-item__icon', done ? 'lesson-item__icon--done' : !locked && LESSON_TINT[lesson.type])} aria-hidden="true">
         <Icon />
       </span>
       <span className="lesson-item__title">

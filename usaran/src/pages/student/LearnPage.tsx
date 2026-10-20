@@ -85,7 +85,7 @@ export function LearnPage() {
         <Link to="/student/courses" className="icon-btn" aria-label="Վերադառնալ իմ դասընթացներին">
           <ArrowLeft />
         </Link>
-        <BrandMark light />
+        <BrandMark />
         <button
           type="button"
           className="icon-btn"
@@ -95,11 +95,11 @@ export function LearnPage() {
           {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
         </button>
         <div className="learn__heading">
-          <div className="xs" style={{ color: 'rgba(255,255,255,.6)' }}>{fullName(getUser(course.teacherId))}</div>
+          <div className="xs muted">{fullName(getUser(course.teacherId))}</div>
           <div className="learn__title">{course.title}</div>
         </div>
         <div className="learn__progress">
-          <span style={{ color: 'rgba(255,255,255,.7)' }} className="nowrap">{doneCount}/{lessons.length} դաս</span>
+          <span className="nowrap muted">{doneCount}/{lessons.length} դաս</span>
           <div className="grow"><ProgressBar value={progress} label="Դասընթացի առաջընթաց" /></div>
         </div>
       </header>
@@ -146,7 +146,7 @@ export function LearnPage() {
             );
           })}
         </aside>
-        {mobileOpen && <div className="scrim" style={{ display: 'block', position: 'fixed', inset: '60px 0 0', background: 'rgba(11,22,48,.4)', zIndex: 45 }} onClick={() => setMobileOpen(false)} />}
+        {mobileOpen && <div className="scrim" style={{ display: 'block', position: 'fixed', inset: '68px 0 0', background: 'rgba(15,30,61,.32)', zIndex: 45 }} onClick={() => setMobileOpen(false)} />}
 
         <main className="learn__main">
           <div className="row row--wrap xs muted" style={{ ['--gap' as string]: '8px', marginBottom: 8 }}>
@@ -162,15 +162,15 @@ export function LearnPage() {
           </div>
 
           {current.type === 'video' && (
-            <div className="video-placeholder" style={{ position: 'relative', marginBottom: 20 }}>
-              <button type="button" onClick={() => setPlaying((p) => !p)} className="icon-btn" style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,.14)', color: '#fff' }} aria-label={playing ? 'Դադար' : 'Միացնել տեսանյութը'}>
+            <div className="video-placeholder" style={{ position: 'relative', marginBottom: 20, backgroundImage: `linear-gradient(rgba(15,30,61,.62), rgba(15,30,61,.62)), url(${course.image})` }}>
+              <button type="button" onClick={() => setPlaying((p) => !p)} className="video-placeholder__play" aria-label={playing ? 'Դադար' : 'Միացնել տեսանյութը'}>
                 <Play size={30} />
               </button>
               <span>{playing ? 'Տեսանյութի նմանակում. իրական տեսանյութ չի հոսթավորվում' : `Տեսադաս, ${current.durationMin} րոպե`}</span>
-              <div className="row" style={{ position: 'absolute', left: 16, right: 16, bottom: 12, ['--gap' as string]: '12px' }} aria-hidden="true">
+              <div className="row video-placeholder__bar" style={{ ['--gap' as string]: '12px' }} aria-hidden="true">
                 <Play size={14} />
-                <div className="progress__track grow" style={{ background: 'rgba(255,255,255,.2)', height: 4 }}>
-                  <div className="progress__fill" style={{ width: playing ? '34%' : '0%', background: '#8c99ec' }} />
+                <div className="progress__track grow" style={{ background: 'rgba(255,255,255,.25)', height: 6 }}>
+                  <div className="progress__fill" style={{ width: playing ? '34%' : '0%', background: '#fff' }} />
                 </div>
                 <span className="xs">{playing ? '04:12' : '00:00'} / {current.durationMin}:00</span>
                 <Volume2 size={14} />

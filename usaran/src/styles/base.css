@@ -1,5 +1,11 @@
+/*
+  Ուսարան design tokens.
+  Light, airy surfaces; navy is the brand color (buttons, logo, active states),
+  indigo marks small highlights, and pastel tints color categories and icons.
+  Photos are framed as arches, after Armenian stone architecture.
+*/
 :root {
-  /* Palette */
+  /* Brand */
   --navy-950: #0b1630;
   --navy-900: #0f1e3d;
   --navy-800: #1b2c52;
@@ -9,28 +15,47 @@
   --accent-500: #6574e0;
   --accent-100: #e8ebfb;
   --accent-50: #f3f4fd;
+  --periwinkle: #8c99ec;
 
+  /* Neutrals */
   --bg: #f4f5f8;
   --surface: #ffffff;
-  --surface-muted: #f8f9fb;
+  --surface-muted: #f4f5f8;
+  --surface-sunken: #eceef3;
   --border: #e2e5ec;
   --border-strong: #cdd2dc;
 
-  --text: #121a2e;
-  --text-secondary: #4a5368;
+  --text: #0f1e3d;
+  --text-secondary: #3a4560;
   --text-muted: #6f788c;
 
-  --success-700: #17704a;
-  --success-600: #1f8a5b;
-  --success-100: #e2f3ea;
-  --warning-700: #8e5a08;
+  /* Category tints (background / ink) */
+  --sky: #e2f3fa;
+  --sky-ink: #0f7aae;
+  --mint: #e3f6ec;
+  --mint-ink: #0e8754;
+  --lilac: #f0ecff;
+  --lilac-ink: #6a4ee0;
+  --sun: #fff4d4;
+  --sun-ink: #966900;
+  --rose: #ffe9ef;
+  --rose-ink: #d0355a;
+  --peach: #fff1e9;
+  --peach-ink: #c2470f;
+  --star: #ffb21e;
+
+  /* Semantic */
+  --success-700: #0e7a4c;
+  --success-600: #0e8754;
+  --success-100: #e3f6ec;
+  --warning-700: #8a5a00;
   --warning-600: #b4730f;
-  --warning-100: #fbf0db;
-  --danger-700: #a1302a;
-  --danger-600: #c23b30;
-  --danger-100: #fbe6e4;
-  --info-100: #e5effb;
-  --info-700: #23559c;
+  --warning-100: #fff4d4;
+  --danger-700: #b42d4d;
+  --danger-600: #d0355a;
+  --danger-100: #ffe9ef;
+  --info-100: #e2f3fa;
+  --info-700: #0f6a98;
 
   /* Type */
   --font-sans: 'Noto Sans Armenian', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -38,31 +63,35 @@
   --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
   --fs-xs: 0.75rem;
-  --fs-sm: 0.8125rem;
+  --fs-sm: 0.875rem;
   --fs-base: 0.9375rem;
   --fs-md: 1.0625rem;
   --fs-lg: 1.25rem;
-  --fs-xl: 1.5rem;
-  --fs-2xl: 1.875rem;
-  --fs-3xl: 2.375rem;
+  --fs-xl: 1.625rem;
+  --fs-2xl: 2rem;
+  --fs-3xl: 2.75rem;
 
-  /* Shape — radius steps by hierarchy, not one value everywhere */
-  --r-sm: 6px;
-  --r-md: 8px;
-  --r-lg: 12px;
-  --r-xl: 16px;
+  /* Shape */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-2xl: 36px;
   --r-full: 999px;
+  --arch: 999px 999px 28px 28px;
 
-  --shadow-sm: 0 1px 2px rgba(15, 30, 61, 0.06);
-  --shadow-md: 0 4px 14px -4px rgba(15, 30, 61, 0.12), 0 1px 3px rgba(15, 30, 61, 0.06);
-  --shadow-lg: 0 18px 40px -12px rgba(15, 30, 61, 0.28);
+  --shadow-sm: 0 1px 2px rgba(15, 30, 61, 0.05), 0 2px 8px -2px rgba(15, 30, 61, 0.06);
+  --shadow-md: 0 1px 2px rgba(15, 30, 61, 0.05), 0 14px 34px -14px rgba(15, 30, 61, 0.22);
+  --shadow-lg: 0 2px 6px rgba(15, 30, 61, 0.05), 0 40px 80px -30px rgba(15, 30, 61, 0.32);
 
-  --sidebar-w: 256px;
-  --sidebar-w-collapsed: 72px;
-  --topbar-h: 64px;
-  --container: 1200px;
+  --sidebar-w: 264px;
+  --sidebar-w-collapsed: 80px;
+  --topbar-h: 74px;
+  --container: 1240px;
+  --gutter: clamp(16px, 4vw, 40px);
 
-  --focus: 0 0 0 3px rgba(74, 91, 208, 0.35);
+  --focus: 0 0 0 4px rgba(74, 91, 208, 0.22);
+  color-scheme: light;
 }
 
 *,
@@ -81,7 +110,7 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   font-size: var(--fs-base);
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -91,19 +120,22 @@ h3,
 h4 {
   margin: 0;
   color: var(--navy-900);
-  line-height: 1.25;
-  font-weight: 650;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 h1 {
-  font-family: var(--font-serif);
   font-size: var(--fs-2xl);
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  letter-spacing: -0.025em;
 }
 
 h2 {
   font-size: var(--fs-lg);
+  font-weight: 800;
+  letter-spacing: -0.015em;
 }
 
 h3 {
@@ -152,10 +184,10 @@ button {
 code {
   font-family: var(--font-mono);
   font-size: 0.88em;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.05em 0.35em;
+  background: var(--accent-50);
+  color: var(--accent-700);
+  border-radius: 6px;
+  padding: 0.1em 0.4em;
 }
 
 pre {
@@ -166,6 +198,15 @@ hr {
   border: 0;
   border-top: 1px solid var(--border);
   margin: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Icons keep their size next to long text in flex rows */
+.lucide {
+  flex-shrink: 0;
 }
 
 .sr-only {
@@ -196,7 +237,7 @@ hr {
 }
 
 .strong {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .nowrap {
@@ -207,8 +248,25 @@ hr {
   font-variant-numeric: tabular-nums;
 }
 
+/* Accent word inside a headline: serif, indigo */
 .serif {
   font-family: var(--font-serif);
+}
+.hl {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--accent-600);
+  letter-spacing: -0.01em;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--accent-700);
+  letter-spacing: 0.02em;
 }
 
 .stack {
@@ -243,6 +301,10 @@ hr {
 .grid {
   display: grid;
   gap: var(--gap, 20px);
+  grid-template-columns: minmax(0, 1fr);
+}
+.grid > * {
+  min-width: 0;
 }
 
 .grid-2 {
@@ -258,7 +320,7 @@ hr {
 }
 
 .grid-main-aside {
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   align-items: start;
 }
 
@@ -301,7 +363,9 @@ hr {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -315,4 +379,28 @@ hr {
 
 .ml-6 {
   margin-left: 6px;
+}
+
+/* Tint helpers shared by icons, chips and tiles */
+.t-sky { --tint: var(--sky); --tint-ink: var(--sky-ink); }
+.t-mint { --tint: var(--mint); --tint-ink: var(--mint-ink); }
+.t-lilac { --tint: var(--lilac); --tint-ink: var(--lilac-ink); }
+.t-sun { --tint: var(--sun); --tint-ink: var(--sun-ink); }
+.t-rose { --tint: var(--rose); --tint-ink: var(--rose-ink); }
+.t-peach { --tint: var(--peach); --tint-ink: var(--peach-ink); }
+.t-accent { --tint: var(--accent-100); --tint-ink: var(--accent-700); }
+
+.tint-box {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--box, 44px);
+  height: var(--box, 44px);
+  border-radius: 14px;
+  background: var(--tint, var(--accent-100));
+  color: var(--tint-ink, var(--accent-700));
+}
+.tint-box svg {
+  width: 45%;
+  height: 45%;
 }

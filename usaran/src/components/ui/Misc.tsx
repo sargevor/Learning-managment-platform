@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, FlaskConical, Info, XCircle, BookOpen } from 'lucide-react';
 import { cx } from '../../lib/format';
+import { avatarTint, photoFor } from '../../lib/visual';
 
 /* ---------- Card ---------- */
 
@@ -150,16 +151,13 @@ export function DemoFlag({ text = 'Ցուցադրական տվյալներ' }: {
 
 /* ---------- Avatar ---------- */
 
-const AVATAR_COLORS = ['#2a3c66', '#3a47b0', '#17704a', '#8e5a08', '#7a3e8c', '#23559c', '#a1302a', '#36606b'];
-
 export function Avatar({ name, size = 36 }: { name: string; size?: number }) {
   const parts = name.trim().split(/\s+/);
   const initials = ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
-  let hash = 0;
-  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  const photo = photoFor(name);
   return (
-    <span className="avatar" style={{ ['--size' as string]: `${size}px`, background: AVATAR_COLORS[hash % AVATAR_COLORS.length] }} aria-hidden="true">
-      {initials}
+    <span className={cx('avatar', !photo && avatarTint(name))} style={{ ['--size' as string]: `${size}px` }} aria-hidden="true">
+      {photo ? <img src={photo} alt="" loading="lazy" /> : initials}
     </span>
   );
 }

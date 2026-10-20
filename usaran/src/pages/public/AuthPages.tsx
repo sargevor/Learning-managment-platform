@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, GraduationCap, Presentation, CheckCircle2 } from 'lucide-react';
+import { BookOpenCheck, Eye, EyeOff, GraduationCap, Presentation, CheckCircle2 } from 'lucide-react';
 import type { Role } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Checkbox, Input } from '../../components/ui/Field';
 import { Notice } from '../../components/ui/Misc';
 import { useToast } from '../../context/ToastContext';
 import { cx } from '../../lib/format';
+import { SCENES } from '../../lib/visual';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -19,9 +20,9 @@ function RolePicker({ value, onChange }: { value: Role; onChange: (r: Role) => v
           ['student', 'Ուսանող', 'Դասընթացներ, առաջադրանքներ, արդյունքներ', GraduationCap],
           ['teacher', 'Դասավանդող', 'Կառավարում, գնահատում, վերլուծություն', Presentation],
         ] as const).map(([r, label, desc, Icon]) => (
-          <label key={r} className={cx('role-option', value === r && 'is-selected')}>
+          <label key={r} className={cx('role-option', value === r && 'is-selected', r === 'student' ? 't-sky' : 't-lilac')}>
             <input type="radio" name="role" value={r} checked={value === r} onChange={() => onChange(r)} className="sr-only" />
-            <Icon aria-hidden="true" />
+            <span className="tint-box"><Icon aria-hidden="true" /></span>
             <span className="strong small">{label}</span>
             <span className="xs muted">{desc}</span>
           </label>
@@ -33,14 +34,25 @@ function RolePicker({ value, onChange }: { value: Role; onChange: (r: Role) => v
 
 function AuthAside() {
   return (
-    <aside className="auth__aside">
-      <div className="stack" style={{ ['--gap' as string]: '18px', maxWidth: 380 }}>
-        <h2 style={{ color: '#fff', fontFamily: 'var(--font-serif)', fontSize: 'var(--fs-xl)' }}>Ուսումնական միջավայր, որտեղ ամեն ինչ իր տեղում է</h2>
-        <ul className="check-list check-list--light">
-          <li><CheckCircle2 aria-hidden="true" />Մոտակա վերջնաժամկետները մեկ հայացքով</li>
-          <li><CheckCircle2 aria-hidden="true" />Դասավանդողի մեկնաբանություններ յուրաքանչյուր աշխատանքին</li>
-          <li><CheckCircle2 aria-hidden="true" />Առաջընթացի և գնահատականների պարզ պատկեր</li>
-        </ul>
+    <aside className="auth__aside" aria-hidden="true">
+      <div className="auth__copy">
+        <span className="kicker">Ուսարան</span>
+        <b>Սովորեք ձեր տեմպով՝ տեսադասերով, թեստերով և անհատական հետադարձ կապով։</b>
+      </div>
+      <div className="auth__arch"><img src={SCENES.hero} alt="" /></div>
+      <div className="auth__float auth__float--course">
+        <span className="tint-box t-sky"><BookOpenCheck /></span>
+        <div>
+          <small>Շարունակել ուսումը</small>
+          <b>React · Մոդուլ 2</b>
+        </div>
+      </div>
+      <div className="auth__float auth__float--grade">
+        <span className="tint-box t-mint"><CheckCircle2 /></span>
+        <div>
+          <small>Նոր գնահատական</small>
+          <b className="tabular">92 / 100</b>
+        </div>
       </div>
     </aside>
   );
@@ -79,7 +91,7 @@ export function LoginPage() {
       <div className="auth__main">
         <form className="auth__form" onSubmit={submit} noValidate>
           <div>
-            <h1>Մուտք</h1>
+            <h1>Բարի <span className="hl">վերադարձ</span></h1>
             <p className="secondary small" style={{ marginTop: 6 }}>Ընտրեք դեմո դերը և մուտք գործեք ցանկացած վավեր ձևաչափով տվյալներով։</p>
           </div>
           <Notice tone="neutral">Սա ցուցադրական մուտք է։ Իրական նույնականացում չկա, տվյալները չեն ուղարկվում սերվեր։</Notice>
@@ -91,15 +103,15 @@ export function LoginPage() {
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => toast.info('Գաղտնաբառի վերականգնում', 'Դեմո տարբերակում նամակ չի ուղարկվում։')}>Մոռացե՞լ եք գաղտնաբառը</button>
             </div>
             <div className="input-group">
-              <input id="login-password" className="input" style={{ paddingLeft: 12, paddingRight: 44 }} type={show ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={errors.password ? true : undefined} aria-describedby="login-password-err" />
-              <button type="button" className="icon-btn input-group__action" style={{ width: 32, height: 32 }} onClick={() => setShow((s) => !s)} aria-label={show ? 'Թաքցնել գաղտնաբառը' : 'Ցույց տալ գաղտնաբառը'}>
+              <input id="login-password" className="input" style={{ paddingLeft: 16, paddingRight: 52 }} type={show ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={errors.password ? true : undefined} aria-describedby="login-password-err" />
+              <button type="button" className="icon-btn input-group__action" style={{ width: 36, height: 36, border: 0 }} onClick={() => setShow((s) => !s)} aria-label={show ? 'Թաքցնել գաղտնաբառը' : 'Ցույց տալ գաղտնաբառը'}>
                 {show ? <EyeOff /> : <Eye />}
               </button>
             </div>
             {errors.password && <span id="login-password-err" className="field__error" role="alert">{errors.password}</span>}
           </div>
           <Checkbox label="Հիշել ինձ այս սարքում" />
-          <Button type="submit" variant="primary" size="lg" block>Մուտք գործել</Button>
+          <Button type="submit" variant="accent" size="lg" block>Մուտք գործել</Button>
           <Button variant="secondary" block onClick={fillDemo}>Լրացնել դեմո տվյալներով</Button>
           <p className="small secondary" style={{ textAlign: 'center' }}>
             Չունե՞ք հաշիվ։ <Link to="/register" className="strong">Գրանցվել</Link>
@@ -145,7 +157,7 @@ export function RegisterPage() {
       <div className="auth__main">
         <form className="auth__form" onSubmit={submit} noValidate>
           <div>
-            <h1>Գրանցում</h1>
+            <h1>Միացեք <span className="hl">Ուսարանին</span></h1>
             <p className="secondary small" style={{ marginTop: 6 }}>Ստեղծեք դեմո հաշիվ՝ հարթակի հնարավորություններին ծանոթանալու համար։</p>
           </div>
           <RolePicker value={role} onChange={setRole} />
@@ -169,7 +181,7 @@ export function RegisterPage() {
             <Checkbox label={<>Համաձայն եմ <Link to="/about#faq">օգտագործման պայմաններին</Link></>} checked={form.agree} onChange={(e) => set('agree', e.target.checked)} />
             {errors.agree && <span className="field__error" role="alert">{errors.agree}</span>}
           </div>
-          <Button type="submit" variant="primary" size="lg" block>Ստեղծել հաշիվ</Button>
+          <Button type="submit" variant="accent" size="lg" block>Ստեղծել հաշիվ</Button>
           <p className="small secondary" style={{ textAlign: 'center' }}>
             Արդեն ունե՞ք հաշիվ։ <Link to="/login" className="strong">Մուտք գործել</Link>
           </p>

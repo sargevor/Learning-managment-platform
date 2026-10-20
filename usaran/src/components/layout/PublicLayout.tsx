@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import { Brand } from './Brand';
 import { ButtonLink } from '../ui/Button';
 import { categories } from '../../data/courses';
+import { cx } from '../../lib/format';
 
 const NAV = [
   { to: '/', label: 'Գլխավոր', end: true },
@@ -13,16 +14,24 @@ const NAV = [
 
 export function PublicLayout() {
   const [open, setOpen] = useState(false);
-  const { pathname } = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+  const { pathname, hash } = useLocation();
 
   useEffect(() => {
     setOpen(false);
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    if (!hash) window.scrollTo(0, 0);
+  }, [pathname, hash]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <div className="public">
-      <header className="site-header">
+      <header className={cx('site-header', (scrolled || open) && 'is-scrolled')}>
         <div className="container site-header__inner">
           <Brand />
           <nav className="site-nav" aria-label="Հիմնական նավարկում">
@@ -47,12 +56,18 @@ export function PublicLayout() {
         {open && (
           <nav className="mobile-nav" aria-label="Բջջային նավարկում">
             {NAV.map((n) => (
-              <Link key={n.to} to={n.to}>
+              <Link key={n.to} to={n.to} className="row row--between">
                 {n.label}
+                <ArrowRight size={18} aria-hidden="true" />
               </Link>
             ))}
-            <Link to="/login">Մուտք</Link>
-            <Link to="/register">Գրանցում</Link>
+            <Link to="/login" className="row row--between">
+              Մուտք
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+            <ButtonLink to="/register" variant="primary" size="lg" block>
+              Գրանցվել
+            </ButtonLink>
           </nav>
         )}
       </header>
@@ -69,8 +84,8 @@ function SiteFooter() {
     <footer className="site-footer">
       <div className="container">
         <div className="site-footer__grid">
-          <div className="stack" style={{ ['--gap' as string]: '14px' }}>
-            <Brand light />
+          <div className="site-footer__brand stack" style={{ ['--gap' as string]: '14px' }}>
+            <Brand />
             <p style={{ maxWidth: 320 }}>Առցանց ուսուցման միասնական միջավայր դասավանդողների և ուսանողների համար՝ դասընթացներից մինչև գնահատականներ։</p>
           </div>
           <div>
@@ -104,7 +119,7 @@ function SiteFooter() {
         </div>
         <div className="site-footer__bottom">
           <span>© 2026 Ուսարան։ Ցուցադրական նախագիծ՝ օրինակային տվյալներով։</span>
-          <span>Հայերեն</span>
+          <span>Պատրաստված է Երևանում</span>
         </div>
       </div>
     </footer>

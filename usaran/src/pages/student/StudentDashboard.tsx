@@ -14,6 +14,7 @@ import { ProgressBar } from '../../components/ui/Progress';
 import { StatusBadge } from '../../components/ui/Badge';
 import { LESSON_ICONS } from '../../components/course/CourseBits';
 import { average, cx, daysUntil, formatMinutes, formatShortDate, relativeDue, relativeTime } from '../../lib/format';
+import { SCENES } from '../../lib/visual';
 import type { EnrollmentState } from '../../types';
 
 export function StudentDashboard() {
@@ -49,37 +50,47 @@ export function StudentDashboard() {
   };
   const shown = enrolled.filter((e) => e.state === tab);
   const submittedCount = assignments.filter((a) => a.status === 'submitted' || a.status === 'graded').length;
+  const continueCourse = [...enrolled].filter((e) => e.state === 'in-progress').sort((a, b) => b.enrollment.lastAccessed.localeCompare(a.enrollment.lastAccessed))[0];
 
   return (
     <>
       <section className="welcome">
-        <div>
-          <h1>Բարի վերադարձ, {student.firstName}</h1>
-          <p className="small">
+        <div className="welcome__text">
+          <h1>Բարի վերադարձ, <span className="hl">{student.firstName}</span></h1>
+          <p>
             Այս շաբաթ ուսմանը տրամադրել եք {formatMinutes(weekMinutes)}։ {deadlines[0] ? `Մոտակա վերջնաժամկետը՝ «${deadlines[0].title}», ${relativeDue(deadlines[0].due)}։` : 'Մոտակա վերջնաժամկետներ չկան։'}
           </p>
+          <div className="welcome__actions">
+            {continueCourse && (
+              <ButtonLink to={`/student/courses/${continueCourse.course.id}/learn`} variant="primary" icon={<PlayCircle />}>Շարունակել ուսումը</ButtonLink>
+            )}
+            <ButtonLink to="/student/assignments" variant="secondary">Առաջադրանքներ</ButtonLink>
+          </div>
         </div>
         <div className="welcome__stats">
           <div><strong>{counts['in-progress']}</strong><span>ընթացքում</span></div>
           <div><strong>{counts.completed}</strong><span>ավարտված</span></div>
           <div><strong>{open.length}</strong><span>բաց առաջադրանք</span></div>
         </div>
+        <div className="welcome__art" aria-hidden="true">
+          <div className="welcome__arch"><img src={SCENES.study} alt="" /></div>
+        </div>
       </section>
 
       <div className="quick-links" style={{ marginBottom: 24 }}>
-        <Link to="/student/assignments" className="quick-link">
+        <Link to="/student/assignments" className="quick-link t-peach">
           <span className="list-row__icon"><ClipboardList /></span>
           <span>Առաջադրանքներ<span className="quick-link__sub">{open.length} սպասում է կատարման</span></span>
         </Link>
-        <Link to="/student/quizzes" className="quick-link">
+        <Link to="/student/quizzes" className="quick-link t-sun">
           <span className="list-row__icon"><FileQuestion /></span>
           <span>Թեստեր<span className="quick-link__sub">{quizzes.filter((q) => q.state === 'available').length} հասանելի</span></span>
         </Link>
-        <Link to="/student/grades" className="quick-link">
+        <Link to="/student/grades" className="quick-link t-mint">
           <span className="list-row__icon"><GraduationCap /></span>
           <span>Գնահատականներ<span className="quick-link__sub">Միջինը՝ {average(grades.map((g) => g.percent))}%</span></span>
         </Link>
-        <Link to="/student/progress" className="quick-link">
+        <Link to="/student/progress" className="quick-link t-lilac">
           <span className="list-row__icon"><TrendingUp /></span>
           <span>Առաջընթաց<span className="quick-link__sub">{completedLessons} ավարտված դաս</span></span>
         </Link>

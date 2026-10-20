@@ -8,7 +8,7 @@ export function NotFoundPage({ inApp }: { inApp?: boolean }) {
   const home = pathname.startsWith('/teacher') ? '/teacher/dashboard' : pathname.startsWith('/student') ? '/student/dashboard' : '/';
   return (
     <div className={inApp ? '' : 'container page-pad'}>
-      <div className="card">
+      <div className="empty-panel">
         <EmptyState
           icon={<Compass size={24} />}
           title="Էջը չի գտնվել"

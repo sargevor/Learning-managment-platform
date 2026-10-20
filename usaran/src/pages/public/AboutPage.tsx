@@ -23,25 +23,27 @@ export function AboutPage() {
 
   return (
     <>
-      <section className="container page-pad about-intro">
+      <section className="page-band">
+        <div className="container">
         <Breadcrumbs items={[{ label: 'Գլխավոր', to: '/' }, { label: 'Հարթակի մասին' }]} />
-        <h1 style={{ fontSize: 'var(--fs-3xl)', maxWidth: 820, marginTop: 10 }}>Ուսարանը ստեղծված է, որպեսզի ուսումը լինի կանոնավոր, իսկ դասավանդումը՝ թափանցիկ</h1>
-        <p className="secondary" style={{ maxWidth: 680, fontSize: 'var(--fs-md)', marginTop: 14 }}>
+        <h1 style={{ maxWidth: 860 }}>Ուսարանը ստեղծված է, որպեսզի ուսումը լինի <span className="hl">կանոնավոր</span>, իսկ դասավանդումը՝ թափանցիկ</h1>
+        <p className="page-band__lead" style={{ maxWidth: 680 }}>
           Մենք միավորել ենք դասընթացների նյութերը, առաջադրանքները, թեստերը և գնահատականները մեկ հստակ միջավայրում, որպեսզի ուսանողները կենտրոնանան սովորելու, իսկ դասավանդողները՝ ուսանողներին օգնելու վրա։
         </p>
+        </div>
       </section>
 
-      <section className="section section--muted">
+      <section className="section">
         <div className="container grid grid-3">
           {[
-            [Compass, 'Առաքելություն', 'Հասանելի դարձնել որակյալ ուսուցումը՝ անկախ գտնվելու վայրից և ժամանակացույցից։'],
-            [ShieldCheck, 'Թափանցիկություն', 'Ուսանողը միշտ գիտի՝ ինչ է սպասվում իրենից, երբ և ինչպես է գնահատվելու։'],
-            [HeartHandshake, 'Աջակցություն', 'Դասավանդողը ժամանակին տեսնում է, թե ով է դժվարանում, և կարող է օգնել։'],
-          ].map(([Icon, t, d]) => {
+            [Compass, 'Առաքելություն', 'Հասանելի դարձնել որակյալ ուսուցումը՝ անկախ գտնվելու վայրից և ժամանակացույցից։', 't-sky'],
+            [ShieldCheck, 'Թափանցիկություն', 'Ուսանողը միշտ գիտի՝ ինչ է սպասվում իրենից, երբ և ինչպես է գնահատվելու։', 't-mint'],
+            [HeartHandshake, 'Աջակցություն', 'Դասավանդողը ժամանակին տեսնում է, թե ով է դժվարանում, և կարող է օգնել։', 't-rose'],
+          ].map(([Icon, t, d, tint]) => {
             const I = Icon as typeof Compass;
             return (
-              <div key={t as string} className="card card--pad value-card">
-                <span className="benefit__icon"><I aria-hidden="true" /></span>
+              <div key={t as string} className={`value-card ${tint as string}`}>
+                <span className="tint-box" style={{ ['--box' as string]: '52px' }}><I aria-hidden="true" /></span>
                 <h2 style={{ fontSize: 'var(--fs-md)', margin: '14px 0 6px' }}>{t as string}</h2>
                 <p className="small secondary">{d as string}</p>
               </div>
@@ -50,11 +52,11 @@ export function AboutPage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="container grid grid-2" style={{ ['--gap' as string]: '28px' }}>
+      <section className="section" style={{ paddingTop: 0 }}>
+        <div className="container grid grid-2" style={{ ['--gap' as string]: '22px' }}>
           <div className="card card--pad">
             <div className="row" style={{ marginBottom: 14 }}>
-              <span className="stat__icon"><GraduationCap size={18} /></span>
+              <span className="tint-box t-sky"><GraduationCap /></span>
               <h2>Ուսանողների համար</h2>
             </div>
             <ul className="check-list">
@@ -66,7 +68,7 @@ export function AboutPage() {
           </div>
           <div className="card card--pad" id="teachers">
             <div className="row" style={{ marginBottom: 14 }}>
-              <span className="stat__icon stat__icon--navy"><Users size={18} /></span>
+              <span className="tint-box t-lilac"><Users /></span>
               <h2>Դասավանդողների համար</h2>
             </div>
             <ul className="check-list">
@@ -81,7 +83,8 @@ export function AboutPage() {
 
       <section className="section section--muted" id="faq">
         <div className="container" style={{ maxWidth: 820 }}>
-          <h2 className="section-head__title" style={{ marginBottom: 20 }}>Հաճախ տրվող հարցեր</h2>
+          <span className="kicker">Հարցեր</span>
+          <h2 className="section-head__title" style={{ margin: '10px 0 24px' }}>Հաճախ տրվող <span className="hl">հարցեր</span></h2>
           <div className="card faq">
             {FAQ.map(([q, a], i) => (
               <div key={q} className="faq__item">

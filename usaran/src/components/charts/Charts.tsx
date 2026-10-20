@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Card, DemoFlag } from '../ui/Misc';
 
-/* Chart palette — one accent hue with tints, plus semantic colors. */
-export const CHART_COLORS = ['#4a5bd0', '#0f1e3d', '#8c99ec', '#1f8a5b', '#b4730f', '#7a3e8c'];
+/* Chart palette — brand navy first, then hues far enough apart to tell series apart. */
+export const CHART_COLORS = ['#0f1e3d', '#e2742c', '#0e8754', '#6a4ee0', '#0f7aae', '#966900'];
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -75,7 +75,7 @@ export function BarChart({ labels, series, height = 220, max, suffix = '', highl
                   const x = gx + si * (barW + barGap);
                   const y = pad.t + innerH - h;
                   const base = s.color ?? CHART_COLORS[si % CHART_COLORS.length];
-                  const fill = highlightLast && series.length === 1 && i !== labels.length - 1 ? '#c5cbf3' : base;
+                  const fill = highlightLast && series.length === 1 && i !== labels.length - 1 ? '#dce0f2' : base;
                   return (
                     <rect
                       key={s.name}
@@ -83,7 +83,7 @@ export function BarChart({ labels, series, height = 220, max, suffix = '', highl
                       y={y}
                       width={barW}
                       height={Math.max(h, v > 0 ? 2 : 0)}
-                      rx={Math.min(4, barW / 2)}
+                      rx={Math.min(8, barW / 2.5)}
                       fill={fill}
                       onMouseEnter={() => setTip({ x: x + barW / 2, y, text: `${series.length > 1 ? s.name + '՝ ' : label + '՝ '}${v}${suffix}` })}
                       onMouseLeave={() => setTip(null)}

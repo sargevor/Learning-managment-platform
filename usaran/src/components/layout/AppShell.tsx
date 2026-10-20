@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3, Bell, BookOpen, BookMarked, CheckSquare, ChevronsLeft, ChevronsRight, ClipboardList, FileQuestion, GraduationCap,
-  LayoutDashboard, LibraryBig, LogOut, Menu, Settings, TrendingUp, User, Users, FlaskConical, Repeat,
+  LayoutDashboard, LibraryBig, LogOut, Menu, Settings, TrendingUp, User, Users, FlaskConical, Repeat, ArrowRight, Presentation,
 } from 'lucide-react';
 import type { Role } from '../../types';
 import { Brand } from './Brand';
@@ -114,11 +114,7 @@ export function AppShell({ role }: { role: Role }) {
     <div className={cx('shell', collapsed && 'is-collapsed', mobileOpen && 'is-mobile-open')}>
       <aside className="sidebar" aria-label="Կողային նավարկում">
         <div className="sidebar__top">
-          <Brand light to={`/${role}/dashboard`} />
-        </div>
-        <div className="sidebar__role">
-          <span>Դեմո դեր</span>
-          <strong>{role === 'student' ? 'Ուսանող' : 'Դասավանդող'}</strong>
+          <Brand to={`/${role}/dashboard`} />
         </div>
         <nav className="sidebar__nav">
           {nav.map((g) => (
@@ -135,6 +131,13 @@ export function AppShell({ role }: { role: Role }) {
           ))}
         </nav>
         <div className="sidebar__bottom">
+          <div className={cx('sidebar__switch', role === 'student' ? 't-lilac' : 't-sky')}>
+            <strong>{role === 'student' ? 'Դասավանդողի միջավայր' : 'Ուսանողի միջավայր'}</strong>
+            <span>{role === 'student' ? 'Տեսեք, թե ինչպես է դասավանդողը գնահատում աշխատանքները։' : 'Տեսեք հարթակը ուսանողի աչքերով։'}</span>
+            <Link to={role === 'student' ? '/teacher/dashboard' : '/student/dashboard'} className="btn btn--primary btn--sm">
+              Անցնել <ArrowRight aria-hidden="true" />
+            </Link>
+          </div>
           <button type="button" className="sidebar__link sidebar__collapse" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? 'Ընդլայնել կողային վահանակը' : 'Փոքրացնել կողային վահանակը'}>
             {collapsed ? <ChevronsRight aria-hidden="true" /> : <ChevronsLeft aria-hidden="true" />}
             <span className="label">Փոքրացնել</span>
@@ -151,8 +154,14 @@ export function AppShell({ role }: { role: Role }) {
           <SearchBar className="topbar__search" value={query} onChange={setQuery} onSubmit={runSearch} placeholder={role === 'student' ? 'Որոնել իմ դասընթացներում…' : 'Որոնել դասընթացներ…'} />
           <div className="topbar__actions">
             <div className="role-switch" role="group" aria-label="Դեմո դերի ընտրություն">
-              <Link to="/student/dashboard" className={cx(role === 'student' && 'active')}>Ուսանող</Link>
-              <Link to="/teacher/dashboard" className={cx(role === 'teacher' && 'active')}>Դասավանդող</Link>
+              <Link to="/student/dashboard" className={cx(role === 'student' && 'active')} aria-label="Ուսանող">
+                <GraduationCap aria-hidden="true" />
+                <span>Ուսանող</span>
+              </Link>
+              <Link to="/teacher/dashboard" className={cx(role === 'teacher' && 'active')} aria-label="Դասավանդող">
+                <Presentation aria-hidden="true" />
+                <span>Դասավանդող</span>
+              </Link>
             </div>
             <Dropdown
               width={340}

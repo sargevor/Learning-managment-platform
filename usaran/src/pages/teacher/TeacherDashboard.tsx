@@ -9,10 +9,11 @@ import { fullName, getUser } from '../../data/users';
 import { useDemoSession } from '../../context/DemoSession';
 import { BarChart, CHART_COLORS, ChartCard, LineChart } from '../../components/charts/Charts';
 import { ButtonLink } from '../../components/ui/Button';
-import { Avatar, Card, EmptyState, PageHeader, Segmented } from '../../components/ui/Misc';
+import { Avatar, Card, EmptyState, Segmented } from '../../components/ui/Misc';
 import { StatCard } from '../../components/ui/StatCard';
 import { Badge } from '../../components/ui/Badge';
 import { average, cx, daysUntil, formatNumber, formatShortDate, relativeDue, relativeTime } from '../../lib/format';
+import { SCENES } from '../../lib/visual';
 
 const ACTIVITY_ICON = { submission: Send, quiz: FileQuestion, lesson: GraduationCap, enroll: LogIn };
 
@@ -35,17 +36,19 @@ export function TeacherDashboard() {
 
   return (
     <>
-      <PageHeader
-        title={`Բարի օր, ${teacher.firstName}`}
-        description={`Այսօր գնահատման է սպասում ${pending.length} աշխատանք, իսկ ${studentRecords.filter((s) => s.status === 'at-risk').length} ուսանող կարիք ունի ուշադրության։`}
-        actions={
-          <>
-            <ButtonLink to="/teacher/quizzes/new/edit" variant="secondary" icon={<FilePlus2 />}>Նոր թեստ</ButtonLink>
-            <ButtonLink to="/teacher/assignments?new=1" variant="secondary" icon={<ClipboardPlus />}>Նոր առաջադրանք</ButtonLink>
-            <ButtonLink to="/teacher/courses/create" variant="primary" icon={<PlusCircle />}>Ստեղծել դասընթաց</ButtonLink>
-          </>
-        }
-      />
+      <section className="welcome welcome--teacher">
+        <div className="welcome__text">
+          <h1>Բարի օր, <span className="hl">{teacher.firstName}</span></h1>
+          <p>Այսօր գնահատման է սպասում {pending.length} աշխատանք, իսկ {studentRecords.filter((s) => s.status === 'at-risk').length} ուսանող կարիք ունի ուշադրության։</p>
+          <div className="welcome__actions">
+            <ButtonLink to="/teacher/grading" variant="primary" icon={<CheckSquare />}>Բացել գնահատման կենտրոնը</ButtonLink>
+            <ButtonLink to="/teacher/courses/create" variant="secondary" icon={<PlusCircle />}>Ստեղծել դասընթաց</ButtonLink>
+          </div>
+        </div>
+        <div className="welcome__art" aria-hidden="true">
+          <div className="welcome__arch"><img src={SCENES.teacher} alt="" /></div>
+        </div>
+      </section>
 
       <div className="grid grid-4 mb-20">
         <StatCard label="Դասընթացներ" value={teacherCourses.length} icon={<BookMarked />} meta={`${published.length} հրապարակված, ${teacherCourses.length - published.length} սևագիր`} />

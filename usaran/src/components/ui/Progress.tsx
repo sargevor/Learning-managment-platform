@@ -18,14 +18,14 @@ export function ProgressBar({ value, showValue = true, size = 'md', tone, autoTo
   );
 }
 
-export function ProgressRing({ value, size = 96, stroke = 9, label, color = 'var(--accent-600)' }: { value: number; size?: number; stroke?: number; label?: string; color?: string }) {
+export function ProgressRing({ value, size = 96, stroke = 9, label, color = 'var(--navy-900)' }: { value: number; size?: number; stroke?: number; label?: string; color?: string }) {
   const v = Math.max(0, Math.min(100, value));
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   return (
     <div className="ring" style={{ width: size, height: size }} role="img" aria-label={`${label ?? 'Առաջընթաց'}՝ ${Math.round(v)}%`}>
       <svg width={size} height={size}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e7e9ef" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-sunken)" strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v / 100)} style={{ transition: 'stroke-dashoffset .5s ease' }} />
       </svg>
       <div className="ring__label">
