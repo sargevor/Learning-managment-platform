@@ -27,7 +27,7 @@ export function MyCoursesPage() {
     return all
       .filter((e) => tab === 'all' || e.state === tab)
       .filter((e) => !term || e.course.title.toLowerCase().includes(term) || categoryName(e.course.category).toLowerCase().includes(term))
-      .sort((a, b) => (sort === 'progress' ? b.progress - a.progress : sort === 'title' ? a.course.title.localeCompare(b.course.title, 'hy') : b.enrollment.lastAccessed.localeCompare(a.enrollment.lastAccessed)));
+      .sort((a, b) => (sort === 'progress' ? b.progress - a.progress : sort === 'title' ? a.course.title.localeCompare(b.course.title, 'en') : b.enrollment.lastAccessed.localeCompare(a.enrollment.lastAccessed)));
   }, [all, tab, q, sort]);
 
   const count = (s: EnrollmentState) => all.filter((e) => e.state === s).length;
@@ -35,32 +35,32 @@ export function MyCoursesPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Վահանակ', to: '/student/dashboard' }, { label: 'Իմ դասընթացները' }]}
-        title="Իմ դասընթացները"
-        description="Բոլոր դասընթացները, որոնց գրանցված եք, իրենց առաջընթացով և վերջին դիտված դասով։"
-        actions={<ButtonLink to="/courses" variant="secondary" icon={<BookOpen />}>Գտնել նոր դասընթաց</ButtonLink>}
+        breadcrumbs={[{ label: "Dashboard", to: '/student/dashboard' }, { label: "My courses" }]}
+        title="My courses"
+        description="Find your courses, track your progress, and pick up where you left off."
+        actions={<ButtonLink to="/courses" variant="secondary" icon={<BookOpen />}>Find a New Course</ButtonLink>}
       />
       <div className="stack" style={{ ['--gap' as string]: '18px' }}>
         <Tabs
           value={tab}
           onChange={setTab}
           items={[
-            { key: 'all', label: 'Բոլորը', count: all.length },
-            { key: 'in-progress', label: 'Ընթացքում', count: count('in-progress') },
-            { key: 'completed', label: 'Ավարտված', count: count('completed') },
-            { key: 'not-started', label: 'Չսկսված', count: count('not-started') },
+            { key: 'all', label: "All", count: all.length },
+            { key: 'in-progress', label: "In progress", count: count('in-progress') },
+            { key: 'completed', label: "Completed", count: count('completed') },
+            { key: 'not-started', label: "Not started", count: count('not-started') },
           ]}
         />
         <div className="filters-bar">
-          <SearchBar value={q} onChange={setQ} placeholder="Որոնել իմ դասընթացներում" />
+          <SearchBar value={q} onChange={setQ} placeholder="Search my courses" />
           <Select
-            aria-label="Դասավորել"
+            aria-label="Sort By"
             value={sort}
             onChange={(e) => setSort(e.target.value)}
             options={[
-              { value: 'recent', label: 'Վերջին այցելածները' },
-              { value: 'progress', label: 'Ըստ առաջընթացի' },
-              { value: 'title', label: 'Ըստ անվանման' },
+              { value: 'recent', label: "Recently Visited" },
+              { value: 'progress', label: "By Progress" },
+              { value: 'title', label: "By Title" },
             ]}
           />
         </div>
@@ -68,9 +68,9 @@ export function MyCoursesPage() {
         {list.length === 0 ? (
           <div className="card">
             <EmptyState
-              title={q ? 'Ոչինչ չգտնվեց' : 'Այս բաժնում դասընթացներ չկան'}
-              text={q ? `«${q}» հարցմանը համապատասխանող դասընթաց չկա։` : 'Գրանցվեք նոր դասընթացի կատալոգից։'}
-              action={q ? <button type="button" className="btn btn--secondary" onClick={() => setQ('')}>Մաքրել որոնումը</button> : <ButtonLink to="/courses">Բացել կատալոգը</ButtonLink>}
+              title={q ? "No results found" : "No courses in this section"}
+              text={q ? `No courses match “${q}”.` : "Browse the catalog and enroll in a new course."}
+              action={q ? <button type="button" className="btn btn--secondary" onClick={() => setQ('')}>Clear search</button> : <ButtonLink to="/courses">Browse Courses</ButtonLink>}
             />
           </div>
         ) : (
@@ -93,22 +93,20 @@ export function MyCoursesPage() {
                     <span className="small secondary">{fullName(getUser(course.teacherId))}</span>
                     <ProgressBar value={progress} />
                     <div className="xs muted">
-                      {enrollment.completedLessonIds.length} / {lessonCount(course)} դաս ավարտված
-                    </div>
+                      {enrollment.completedLessonIds.length} / {lessonCount(course)} lessons completed </div>
                     <div className="course-card__meta" style={{ flexDirection: 'column', gap: 10 }}>
                       <span className="tag">
                         <PlayCircle aria-hidden="true" />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {state === 'not-started' ? 'Առաջին դասը՝ ' : 'Վերջին դասը՝ '}
+                          {state === 'not-started' ? "First lesson: " : "Last lesson: "}
                           {last?.lesson.title}
                         </span>
                       </span>
                       <span className="tag">
-                        <Clock aria-hidden="true" />
-                        Վերջին այցը՝ {state === 'not-started' ? 'դեռ չի եղել' : relativeTime(enrollment.lastAccessed)}
+                        <Clock aria-hidden="true" />Last visited: {state === 'not-started' ? "not yet visited" : relativeTime(enrollment.lastAccessed)}
                       </span>
                       <ButtonLink to={`/student/courses/${course.id}/learn`} variant={state === 'completed' ? 'secondary' : 'primary'} block>
-                        {state === 'not-started' ? 'Սկսել ուսումը' : state === 'completed' ? 'Վերանայել նյութերը' : 'Շարունակել ուսումը'}
+                        {state === 'not-started' ? "Start Learning" : state === 'completed' ? "Review Materials" : "Continue Learning"}
                       </ButtonLink>
                     </div>
                   </div>

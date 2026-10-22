@@ -10,7 +10,7 @@ export function ProgressBar({ value, showValue = true, size = 'md', tone, autoTo
   const v = Math.max(0, Math.min(100, Math.round(value)));
   return (
     <div className={cx('progress', size === 'lg' && 'progress--lg')}>
-      <div className="progress__track" role="progressbar" aria-valuenow={v} aria-valuemin={0} aria-valuemax={100} aria-label={label ?? 'Առաջընթաց'}>
+      <div className="progress__track" role="progressbar" aria-valuenow={v} aria-valuemin={0} aria-valuemax={100} aria-label={label ?? "Progress"}>
         <div className={cx('progress__fill', tone ? `progress__fill--${tone}` : toneFor(v, autoTone))} style={{ width: `${v}%` }} />
       </div>
       {showValue && <span className="progress__value">{v}%</span>}
@@ -23,7 +23,7 @@ export function ProgressRing({ value, size = 96, stroke = 9, label, color = 'var
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   return (
-    <div className="ring" style={{ width: size, height: size }} role="img" aria-label={`${label ?? 'Առաջընթաց'}՝ ${Math.round(v)}%`}>
+    <div className="ring" style={{ width: size, height: size }} role="img" aria-label={`${label ?? "Progress"}: ${Math.round(v)}%`}>
       <svg width={size} height={size}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-sunken)" strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v / 100)} style={{ transition: 'stroke-dashoffset .5s ease' }} />

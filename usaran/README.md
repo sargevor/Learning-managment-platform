@@ -1,4 +1,4 @@
-# Ուսարան — Online Learning Management Platform (frontend)
+# Ուսուցարան — Online Learning Management Platform (frontend)
 
 A complete, frontend-only interface for an online learning platform with separate **student** and **teacher** environments. The interface language is Armenian; code and identifiers are in English.
 
@@ -78,7 +78,7 @@ Unknown URLs show a not-found page inside the matching environment.
 
 ## Demo roles
 
-- On `/login`, pick **Ուսանող** (student) or **Դասավանդող** (teacher); any well-formed email and a 6+ character password work, or use "Լրացնել դեմո տվյալներով".
+- On `/login`, pick **Ուսանող** (student) or **Դասավանդող** (teacher); any well-formed email and a 6+ character password work, or use "Լրացնել օրինակային տվյալներով".
 - Inside the app, the switch in the top bar moves between the two environments at any time.
 - Demo student: Անի Հակոբյան. Demo teacher: Արմեն Սարգսյան (teaches React, JavaScript, Python, SQL, Algorithms).
 

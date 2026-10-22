@@ -14,7 +14,7 @@ import { ProgressBar } from '../../components/ui/Progress';
 import { cx, formatDateTime, percent, TODAY } from '../../lib/format';
 
 type Phase = 'intro' | 'taking' | 'review';
-const LETTERS = ['Ա', 'Բ', 'Գ', 'Դ', 'Ե', 'Զ'];
+const LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 export function QuizPage() {
   const { id } = useParams();
@@ -38,7 +38,7 @@ export function QuizPage() {
 
   useEffect(() => {
     if (phase !== 'intro' && secondsLeft === 0 && quiz) {
-      toast.warning('Ժամանակը սպառվեց', 'Թեստն ավտոմատ հանձնվեց։');
+      toast.warning("Time is up", "Your quiz was submitted automatically.");
       finish();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,7 +47,7 @@ export function QuizPage() {
   if (!quiz || quiz.status !== 'published' || !isEnrolled(quiz.courseId)) {
     return (
       <div className="card">
-        <EmptyState title="Թեստը հասանելի չէ" text="Թեստը գոյություն չունի կամ դեռ հրապարակված չէ։" action={<ButtonLink to="/student/quizzes">Բոլոր թեստերը</ButtonLink>} />
+        <EmptyState title="Quiz unavailable" text="This quiz does not exist or is not published yet." action={<ButtonLink to="/student/quizzes">All Quizzes</ButtonLink>} />
       </div>
     );
   }
@@ -87,15 +87,15 @@ export function QuizPage() {
   if (phase === 'intro') {
     return (
       <>
-        <PageHeader breadcrumbs={[{ label: 'Թեստեր', to: '/student/quizzes' }, { label: quiz.title }]} title={quiz.title} description={`${course.title}. ${quiz.description}`} />
+        <PageHeader breadcrumbs={[{ label: "Quizzes", to: '/student/quizzes' }, { label: quiz.title }]} title={quiz.title} description={`${course.title}. ${quiz.description}`} />
         <div className="grid grid-main-aside">
-          <Card title="Հրահանգներ">
+          <Card title="Instructions">
             <ul className="check-list">
               {quiz.instructions.map((i) => (
                 <li key={i}><ListChecks aria-hidden="true" />{i}</li>
               ))}
             </ul>
-            <Notice tone="neutral" className="mt-20">Թեստը ստուգվում է ամբողջությամբ բրաուզերում։ Պատասխանները չեն ուղարկվում սերվեր և կկորչեն էջը թարմացնելիս։</Notice>
+            <Notice tone="neutral" className="mt-20">This quiz is graded entirely in your browser. Answers are not sent to a server and will be lost when you refresh the page.</Notice>
             <div className="row row--wrap" style={{ marginTop: 22, ['--gap' as string]: '10px' }}>
               <Button
                 variant="primary"
@@ -106,24 +106,24 @@ export function QuizPage() {
                   setStartedAt(Date.now());
                 }}
               >
-                {prev.length ? 'Սկսել նոր փորձ' : 'Սկսել թեստը'}
+                {prev.length ? "Start a New Attempt" : "Start Quiz"}
               </Button>
-              {prev.length > 0 && <ButtonLink to={`/student/quizzes/${quiz.id}/results`} variant="secondary" size="lg">Նախորդ արդյունքը</ButtonLink>}
+              {prev.length > 0 && <ButtonLink to={`/student/quizzes/${quiz.id}/results`} variant="secondary" size="lg">Previous Result</ButtonLink>}
             </div>
           </Card>
-          <Card title="Թեստի մասին">
+          <Card title="About This Quiz">
             <dl className="kv">
-              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><HelpCircle size={14} />Հարցեր</span></dt>
+              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><HelpCircle size={14} />Questions</span></dt>
               <dd>{quiz.questions.length}</dd>
-              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><Timer size={14} />Ժամանակ</span></dt>
-              <dd>{quiz.timeLimitMin} րոպե</dd>
-              <dt>Առավելագույն միավոր</dt>
+              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><Timer size={14} />Time</span></dt>
+              <dd>{quiz.timeLimitMin} min</dd>
+              <dt>Maximum Score</dt>
               <dd>{quizMaxScore(quiz)}</dd>
-              <dt>Անցողիկ շեմ</dt>
+              <dt>Passing Score</dt>
               <dd>{quiz.passPercent}%</dd>
-              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><Repeat size={14} />Փորձեր</span></dt>
+              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><Repeat size={14} />Attempts</span></dt>
               <dd>{prev.length} / {quiz.attemptsAllowed}</dd>
-              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><Clock size={14} />Հասանելի է մինչև</span></dt>
+              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><Clock size={14} />Available Until</span></dt>
               <dd>{formatDateTime(quiz.dueDate)}</dd>
             </dl>
           </Card>
@@ -135,7 +135,7 @@ export function QuizPage() {
   const nav = (
     <aside className="card card--pad stack" style={{ ['--gap' as string]: '16px', position: 'sticky', top: 88 }}>
       <div className="row row--between">
-        <span className="small strong">Մնացած ժամանակ</span>
+        <span className="small strong">Time Remaining</span>
         <span className={cx('timer', secondsLeft < 60 && 'timer--low')} role="timer" aria-live="off">
           <Timer size={16} aria-hidden="true" />
           {mm}:{ss}
@@ -143,12 +143,12 @@ export function QuizPage() {
       </div>
       <div>
         <div className="row row--between xs muted" style={{ marginBottom: 6 }}>
-          <span>Պատասխանված</span>
+          <span>Answered</span>
           <span>{answeredCount} / {quiz.questions.length}</span>
         </div>
-        <ProgressBar value={percent(answeredCount, quiz.questions.length)} showValue={false} label="Պատասխանված հարցեր" />
+        <ProgressBar value={percent(answeredCount, quiz.questions.length)} showValue={false} label="Answered Questions" />
       </div>
-      <div className="quiz-nav" role="navigation" aria-label="Հարցերի նավարկում">
+      <div className="quiz-nav" role="navigation" aria-label="Question navigation">
         {quiz.questions.map((x, i) => (
           <button
             key={x.id}
@@ -158,7 +158,7 @@ export function QuizPage() {
               setPhase('taking');
               setCurrent(i);
             }}
-            aria-label={`Հարց ${i + 1}${(answers[x.id] ?? []).length ? ', պատասխանված' : ''}${flagged.has(x.id) ? ', նշված' : ''}`}
+            aria-label={`Question ${i + 1}${(answers[x.id] ?? []).length ? ", answered" : ''}${flagged.has(x.id) ? ", flagged" : ''}`}
             aria-current={i === current ? 'step' : undefined}
           >
             {i + 1}
@@ -166,24 +166,24 @@ export function QuizPage() {
         ))}
       </div>
       <div className="xs muted row row--wrap" style={{ ['--gap' as string]: '6px 14px' }}>
-        <span className="row" style={{ ['--gap' as string]: '6px' }}><i style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--accent-100)' }} />Պատասխանված</span>
-        <span className="row" style={{ ['--gap' as string]: '6px' }}><i style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--warning-600)' }} />Նշված</span>
+        <span className="row" style={{ ['--gap' as string]: '6px' }}><i style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--accent-100)' }} />Answered</span>
+        <span className="row" style={{ ['--gap' as string]: '6px' }}><i style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--warning-600)' }} />Flagged</span>
       </div>
-      {phase === 'taking' && <Button variant="secondary" block onClick={() => setPhase('review')}>Ամփոփում և հանձնում</Button>}
+      {phase === 'taking' && <Button variant="secondary" block onClick={() => setPhase('review')}>Review and Submit</Button>}
     </aside>
   );
 
   return (
     <>
-      <PageHeader breadcrumbs={[{ label: 'Թեստեր', to: '/student/quizzes' }, { label: quiz.title }]} title={quiz.title} />
+      <PageHeader breadcrumbs={[{ label: "Quizzes", to: '/student/quizzes' }, { label: quiz.title }]} title={quiz.title} />
       <div className="quiz-layout">
         {phase === 'taking' ? (
           <section className="card" aria-labelledby="q-title">
             <div className="card__header">
               <div className="row" style={{ ['--gap' as string]: '10px' }}>
-                <strong className="small">Հարց {current + 1} / {quiz.questions.length}</strong>
-                <Badge tone={q.kind === 'single' ? 'info' : 'accent'}>{q.kind === 'single' ? 'Մեկ պատասխան' : 'Մի քանի պատասխան'}</Badge>
-                <span className="xs muted">{q.points} միավոր</span>
+                <strong className="small">Question {current + 1} / {quiz.questions.length}</strong>
+                <Badge tone={q.kind === 'single' ? 'info' : 'accent'}>{q.kind === 'single' ? "Single Answer" : "Multiple Answers"}</Badge>
+                <span className="xs muted">{q.points} points</span>
               </div>
               <Button
                 variant={flagged.has(q.id) ? 'secondary' : 'ghost'}
@@ -199,12 +199,12 @@ export function QuizPage() {
                   })
                 }
               >
-                {flagged.has(q.id) ? 'Նշված է' : 'Նշել վերանայման համար'}
+                {flagged.has(q.id) ? "Flagged" : "Flag for Review"}
               </Button>
             </div>
             <div className="card__body stack" style={{ ['--gap' as string]: '18px' }}>
               <h2 id="q-title" style={{ fontSize: 'var(--fs-lg)', lineHeight: 1.45 }}>{q.text}</h2>
-              {q.kind === 'multiple' && <p className="small muted" style={{ marginTop: -8 }}>Ընտրեք բոլոր ճիշտ տարբերակները։</p>}
+              {q.kind === 'multiple' && <p className="small muted" style={{ marginTop: -8 }}>Select all correct answers.</p>}
               <div className="stack" style={{ ['--gap' as string]: '10px' }} role={q.kind === 'single' ? 'radiogroup' : 'group'} aria-labelledby="q-title">
                 {q.options.map((o, i) => {
                   const selected = (answers[q.id] ?? []).includes(o.id);
@@ -219,11 +219,11 @@ export function QuizPage() {
               </div>
             </div>
             <div className="card__footer" style={{ justifyContent: 'space-between' }}>
-              <Button variant="secondary" icon={<ChevronLeft />} disabled={current === 0} onClick={() => setCurrent((c) => c - 1)}>Նախորդ</Button>
+              <Button variant="secondary" icon={<ChevronLeft />} disabled={current === 0} onClick={() => setCurrent((c) => c - 1)}>Previous</Button>
               {current < quiz.questions.length - 1 ? (
-                <Button variant="primary" iconRight={<ChevronRight />} onClick={() => setCurrent((c) => c + 1)}>Հաջորդ</Button>
+                <Button variant="primary" iconRight={<ChevronRight />} onClick={() => setCurrent((c) => c + 1)}>Next</Button>
               ) : (
-                <Button variant="primary" onClick={() => setPhase('review')}>Անցնել ամփոփմանը</Button>
+                <Button variant="primary" onClick={() => setPhase('review')}>Review Answers</Button>
               )}
             </div>
           </section>
@@ -231,15 +231,14 @@ export function QuizPage() {
           <section className="card">
             <div className="card__header">
               <div>
-                <h2>Ամփոփում հանձնելուց առաջ</h2>
-                <div className="sub">Ստուգեք պատասխանները։ Հարցի վրա սեղմելով կարող եք վերադառնալ և փոխել այն։</div>
+                <h2>Review Before Submitting</h2>
+                <div className="sub">Check your answers. Select a question to return to it and change your response.</div>
               </div>
             </div>
             <div className="card__body stack" style={{ ['--gap' as string]: '14px' }}>
               {answeredCount < quiz.questions.length && (
                 <Notice tone="warning">
-                  {quiz.questions.length - answeredCount} հարց մնացել է անպատասխան։ Չպատասխանված հարցերը կգնահատվեն 0 միավոր։
-                </Notice>
+                  {quiz.questions.length - answeredCount} questions remain unanswered. Unanswered questions receive 0 points. </Notice>
               )}
               <div className="list card" style={{ borderRadius: 'var(--r-md)' }}>
                 {quiz.questions.map((x, i) => {
@@ -259,19 +258,19 @@ export function QuizPage() {
                       <span className="grow small" style={{ minWidth: 0 }}>
                         <span style={{ display: 'block', color: 'var(--navy-900)' }}>{x.text}</span>
                         <span className="xs muted">
-                          {given.length ? `Ընտրված՝ ${given.map((g) => LETTERS[x.options.findIndex((o) => o.id === g)]).join(', ')}` : 'Պատասխան չկա'}
+                          {given.length ? `Selected: ${given.map((g) => LETTERS[x.options.findIndex((o) => o.id === g)]).join(', ')}` : "No answer"}
                         </span>
                       </span>
-                      {flagged.has(x.id) && <Flag size={14} color="var(--warning-600)" aria-label="Նշված" />}
-                      {given.length ? <Badge tone="success">Պատասխանված</Badge> : <Badge tone="danger">Բաց</Badge>}
+                      {flagged.has(x.id) && <Flag size={14} color="var(--warning-600)" aria-label="Flagged" />}
+                      {given.length ? <Badge tone="success">Answered</Badge> : <Badge tone="danger">Unanswered</Badge>}
                     </button>
                   );
                 })}
               </div>
             </div>
             <div className="card__footer" style={{ justifyContent: 'space-between' }}>
-              <Button variant="secondary" icon={<ChevronLeft />} onClick={() => setPhase('taking')}>Վերադառնալ հարցերին</Button>
-              <Button variant="primary" onClick={() => setConfirm(true)}>Հանձնել թեստը</Button>
+              <Button variant="secondary" icon={<ChevronLeft />} onClick={() => setPhase('taking')}>Back to Questions</Button>
+              <Button variant="primary" onClick={() => setConfirm(true)}>Submit Quiz</Button>
             </div>
           </section>
         )}
@@ -282,14 +281,12 @@ export function QuizPage() {
         onClose={() => setConfirm(false)}
         onConfirm={finish}
         tone="warning"
-        title="Հանձնե՞լ թեստը"
+        title="Submit your quiz?"
         text={
           <span className="row row--top" style={{ ['--gap' as string]: '8px' }}>
-            <AlertTriangle size={16} style={{ flex: 'none', marginTop: 2 }} />
-            Պատասխանված է {answeredCount}-ը {quiz.questions.length}-ից։ Հանձնելուց հետո պատասխանները փոխել հնարավոր չի լինի։
-          </span>
+            <AlertTriangle size={16} style={{ flex: 'none', marginTop: 2 }} />You have answered {answeredCount} out of {quiz.questions.length} questions. You will not be able to change your answers after submitting.</span>
         }
-        confirmLabel="Հանձնել"
+        confirmLabel="Submit"
       />
     </>
   );

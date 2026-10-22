@@ -49,9 +49,9 @@ export function LearnPage() {
       <div className="container page-pad">
         <div className="card">
           <EmptyState
-            title="Դասընթացը հասանելի չէ"
-            text="Դուք գրանցված չեք այս դասընթացին կամ այն գոյություն չունի։"
-            action={<ButtonLink to="/student/courses">Վերադառնալ իմ դասընթացներին</ButtonLink>}
+            title="Course unavailable"
+            text="You are not enrolled in this course, or it does not exist."
+            action={<ButtonLink to="/student/courses">Back to My Courses</ButtonLink>}
           />
         </div>
       </div>
@@ -74,7 +74,7 @@ export function LearnPage() {
     if (enrollment.completedLessonIds.includes(current.id)) return;
     session.toggleLesson(current.id, !done);
     if (!done) {
-      toast.success('Դասը նշվեց որպես ավարտված', 'Առաջընթացը թարմացվել է միայն այս էջում։');
+      toast.success("Lesson marked as complete", "Your progress has been updated only on this page.");
       if (next) go(next.id);
     }
   };
@@ -82,7 +82,7 @@ export function LearnPage() {
   return (
     <div className={cx('learn', collapsed && 'is-collapsed', mobileOpen && 'is-mobile-open')}>
       <header className="learn__top">
-        <Link to="/student/courses" className="icon-btn" aria-label="Վերադառնալ իմ դասընթացներին">
+        <Link to="/student/courses" className="icon-btn" aria-label="Back to My Courses">
           <ArrowLeft />
         </Link>
         <BrandMark />
@@ -90,7 +90,7 @@ export function LearnPage() {
           type="button"
           className="icon-btn"
           onClick={() => (window.innerWidth <= 960 ? setMobileOpen((o) => !o) : setCollapsed((c) => !c))}
-          aria-label={collapsed ? 'Ցույց տալ դասընթացի ծրագիրը' : 'Թաքցնել դասընթացի ծրագիրը'}
+          aria-label={collapsed ? "Show course curriculum" : "Hide course curriculum"}
         >
           {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
         </button>
@@ -99,16 +99,16 @@ export function LearnPage() {
           <div className="learn__title">{course.title}</div>
         </div>
         <div className="learn__progress">
-          <span className="nowrap muted">{doneCount}/{lessons.length} դաս</span>
-          <div className="grow"><ProgressBar value={progress} label="Դասընթացի առաջընթաց" /></div>
+          <span className="nowrap muted">{doneCount}/{lessons.length} lessons</span>
+          <div className="grow"><ProgressBar value={progress} label="Course Progress" /></div>
         </div>
       </header>
 
       <div className="learn__body">
-        <aside className="learn__sidebar" aria-label="Դասընթացի ծրագիր">
+        <aside className="learn__sidebar" aria-label="Course Curriculum">
           <div className="learn__sidebar-head">
-            <div className="strong small" style={{ color: 'var(--navy-900)' }}>Դասընթացի ծրագիր</div>
-            <div className="xs muted" style={{ margin: '2px 0 10px' }}>{course.modules.length} մոդուլ, {lessons.length} դաս</div>
+            <div className="strong small" style={{ color: 'var(--navy-900)' }}>Course Curriculum</div>
+            <div className="xs muted" style={{ margin: '2px 0 10px' }}>{course.modules.length} modules, {lessons.length} lessons</div>
             <ProgressBar value={progress} />
           </div>
           {course.modules.map((m, mi) => {
@@ -130,10 +130,10 @@ export function LearnPage() {
                   }
                 >
                   <span className="grow">
-                    <span className="xs muted" style={{ display: 'block' }}>Մոդուլ {mi + 1}, {mDone}/{m.lessons.length}</span>
+                    <span className="xs muted" style={{ display: 'block' }}>Module {mi + 1}, {mDone}/{m.lessons.length}</span>
                     <span className="strong small">{m.title}</span>
                   </span>
-                  {mDone === m.lessons.length ? <CheckCircle2 size={18} color="var(--success-600)" aria-label="Մոդուլն ավարտված է" /> : <ChevronDown className={cx('chev', open && 'is-open')} aria-hidden="true" />}
+                  {mDone === m.lessons.length ? <CheckCircle2 size={18} color="var(--success-600)" aria-label="Module complete" /> : <ChevronDown className={cx('chev', open && 'is-open')} aria-hidden="true" />}
                 </button>
                 {open && (
                   <div className="curriculum__lessons">
@@ -150,23 +150,23 @@ export function LearnPage() {
 
         <main className="learn__main">
           <div className="row row--wrap xs muted" style={{ ['--gap' as string]: '8px', marginBottom: 8 }}>
-            <span>Մոդուլ {course.modules.indexOf(module) + 1}. {module.title}</span>
+            <span>Module {course.modules.indexOf(module) + 1}. {module.title}</span>
             <Badge tone="accent">{LESSON_TYPE_LABEL[current.type]}</Badge>
-            <span>{current.durationMin} րոպե</span>
+            <span>{current.durationMin} min</span>
           </div>
           <div className="row row--between row--top row--wrap" style={{ marginBottom: 20 }}>
             <h1 style={{ maxWidth: 680 }}>{current.title}</h1>
             <Button variant={isDone(current.id) ? 'secondary' : 'success'} icon={<CheckCircle2 />} onClick={markComplete} aria-pressed={isDone(current.id)}>
-              {isDone(current.id) ? 'Ավարտված է' : 'Նշել որպես ավարտված'}
+              {isDone(current.id) ? "Completed" : "Mark as Complete"}
             </Button>
           </div>
 
           {current.type === 'video' && (
             <div className="video-placeholder" style={{ position: 'relative', marginBottom: 20, backgroundImage: `linear-gradient(rgba(15,30,61,.62), rgba(15,30,61,.62)), url(${course.image})` }}>
-              <button type="button" onClick={() => setPlaying((p) => !p)} className="video-placeholder__play" aria-label={playing ? 'Դադար' : 'Միացնել տեսանյութը'}>
+              <button type="button" onClick={() => setPlaying((p) => !p)} className="video-placeholder__play" aria-label={playing ? "Pause" : "Play video"}>
                 <Play size={30} />
               </button>
-              <span>{playing ? 'Տեսանյութի նմանակում. իրական տեսանյութ չի հոսթավորվում' : `Տեսադաս, ${current.durationMin} րոպե`}</span>
+              <span>{playing ? "Simulated video player; no actual video is available" : `Video lesson, ${current.durationMin} min`}</span>
               <div className="row video-placeholder__bar" style={{ ['--gap' as string]: '12px' }} aria-hidden="true">
                 <Play size={14} />
                 <div className="progress__track grow" style={{ background: 'rgba(255,255,255,.25)', height: 6 }}>
@@ -182,13 +182,12 @@ export function LearnPage() {
 
           {current.type === 'assignment' && relatedAssignment && (
             <Notice tone="info" className="mb-20">
-              <strong>{relatedAssignment.title}</strong>՝ վերջնաժամկետ, առավելագույն միավոր և հանձնման ձևը տես առաջադրանքի էջում։{' '}
-              <Link to={`/student/assignments/${relatedAssignment.id}`}>Բացել առաջադրանքը</Link>
+              <strong>{relatedAssignment.title}</strong>. View the assignment page for the deadline, maximum score, and submission instructions.{' '}
+              <Link to={`/student/assignments/${relatedAssignment.id}`}>Open Assignment</Link>
             </Notice>
           )}
           {current.type === 'quiz' && relatedQuiz && (
-            <Notice tone="info" className="mb-20">
-              Այս դասը թեստ է՝ {relatedQuiz.questions.length} հարցով և {relatedQuiz.timeLimitMin} րոպե ժամանակով։ <Link to={`/student/quizzes/${relatedQuiz.id}`}>Անցնել թեստը</Link>
+            <Notice tone="info" className="mb-20">This lesson is a quiz with {relatedQuiz.questions.length} questions and a {relatedQuiz.timeLimitMin}-minute time limit. <Link to={`/student/quizzes/${relatedQuiz.id}`}>Take Quiz</Link>
             </Notice>
           )}
 
@@ -196,9 +195,9 @@ export function LearnPage() {
             value={tab}
             onChange={setTab}
             items={[
-              { key: 'content', label: 'Նյութ' },
-              { key: 'resources', label: 'Ռեսուրսներ', count: content.resources.length },
-              { key: 'notes', label: 'Իմ նշումները' },
+              { key: 'content', label: "Lesson Content" },
+              { key: 'resources', label: "Resources", count: content.resources.length },
+              { key: 'notes', label: "My Notes" },
             ]}
           />
 
@@ -220,7 +219,7 @@ export function LearnPage() {
                   </section>
                 ))}
                 <div className="key-points">
-                  <h3>Հիմնական մտքեր</h3>
+                  <h3>Key Takeaways</h3>
                   <ul>
                     {content.keyPoints.map((k) => (
                       <li key={k}>{k}</li>
@@ -238,15 +237,15 @@ export function LearnPage() {
                       <span className="file-row__icon"><Icon /></span>
                       <div className="grow">
                         <div className="strong">{r.name}</div>
-                        <div className="xs muted">{r.kind === 'link' ? 'Արտաքին հղում' : r.size}</div>
+                        <div className="xs muted">{r.kind === 'link' ? "External Link" : r.size}</div>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         icon={r.kind === 'link' ? <ExternalLink /> : <Download />}
-                        onClick={() => toast.info(r.kind === 'link' ? 'Արտաքին հղում' : 'Ֆայլի ներբեռնում', 'Ցուցադրական տարբերակում ֆայլեր և հղումներ չեն պահվում։')}
+                        onClick={() => toast.info(r.kind === 'link' ? "External Link" : "File Download", "Files and external links are not available in this demo.")}
                       >
-                        {r.kind === 'link' ? 'Բացել' : 'Ներբեռնել'}
+                        {r.kind === 'link' ? "Open" : "Download"}
                       </Button>
                     </div>
                   );
@@ -255,26 +254,24 @@ export function LearnPage() {
             )}
             {tab === 'notes' && (
               <div className="stack" style={{ ['--gap' as string]: '10px', maxWidth: 640 }}>
-                <Textarea label="Նշումներ այս դասի համար" placeholder="Գրեք կարևոր մտքեր, հարցեր դասավանդողին…" value={notes} onChange={(e) => setNotes(e.target.value)} hint="Նշումները պահվում են միայն այս էջում և կկորչեն թարմացնելիս։" />
+                <Textarea label="Notes for This Lesson" placeholder="Write down key ideas or questions for your instructor…" value={notes} onChange={(e) => setNotes(e.target.value)} hint="Notes are kept only on this page and will be lost when you refresh." />
                 <div>
-                  <Button variant="secondary" disabled={!notes.trim()} onClick={() => toast.success('Նշումը պահվեց', 'Դեմո ռեժիմ. նշումը չի ուղարկվել սերվեր։')}>Պահել նշումը</Button>
+                  <Button variant="secondary" disabled={!notes.trim()} onClick={() => toast.success("Note saved", "Demo: your note has not been sent to a server.")}>Save Note</Button>
                 </div>
               </div>
             )}
           </div>
 
-          <nav className="lesson-nav" aria-label="Դասերի միջև նավարկում">
+          <nav className="lesson-nav" aria-label="Lesson navigation">
             {prev ? (
-              <Button variant="secondary" icon={<ChevronLeft />} onClick={() => go(prev.id)}>
-                Նախորդ դաս
-              </Button>
+              <Button variant="secondary" icon={<ChevronLeft />} onClick={() => go(prev.id)}>Previous Lesson</Button>
             ) : (
               <span />
             )}
             {next ? (
-              <Button variant="primary" iconRight={<ChevronRight />} onClick={() => go(next.id)}>Հաջորդ դաս՝ {next.title.length > 32 ? next.title.slice(0, 32) + '…' : next.title}</Button>
+              <Button variant="primary" iconRight={<ChevronRight />} onClick={() => go(next.id)}>Next Lesson: {next.title.length > 32 ? next.title.slice(0, 32) + '…' : next.title}</Button>
             ) : (
-              <ButtonLink to="/student/progress" variant="primary">Դիտել առաջընթացը</ButtonLink>
+              <ButtonLink to="/student/progress" variant="primary">View Progress</ButtonLink>
             )}
           </nav>
         </main>

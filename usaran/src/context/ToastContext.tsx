@@ -61,7 +61,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <div className="toast__title">{t.title}</div>
                 {t.text && <div className="toast__text">{t.text}</div>}
               </div>
-              <button type="button" className="toast__close" onClick={() => dismiss(t.id)} aria-label="Փակել ծանուցումը">
+              <button type="button" className="toast__close" onClick={() => dismiss(t.id)} aria-label="Dismiss notification">
                 <X size={16} />
               </button>
             </div>

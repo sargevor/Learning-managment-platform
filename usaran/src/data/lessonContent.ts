@@ -21,12 +21,12 @@ export interface LessonContent {
 
 const specific: Record<string, Partial<LessonContent>> = {
   'react-m2-l4': {
-    intro: 'Իրական հավելվածներում տվյալները հաճախ ցուցադրվում են ցուցակներով՝ դասընթացներ, առաջադրանքներ, հաղորդագրություններ։ Այս դասում կտեսնենք, թե ինչպես է React-ը ռենդերում ցուցակները և ինչու է key հատկանիշը կարևոր։',
+    intro: "Real applications often display data as lists: courses, assignments, or messages. In this lesson, we explore how React renders lists and why the key attribute matters.",
     sections: [
       {
-        heading: 'Զանգվածից՝ տարրերի ցուցակ',
+        heading: "From an Array to a List",
         paragraphs: [
-          'React-ում ցուցակը ստեղծվում է զանգվածի map մեթոդով։ Յուրաքանչյուր տարր վերածվում է JSX տարրի, և React-ը ռենդերում է ստացված զանգվածը։',
+          "In React, you can create a list with the array map method. Each item becomes a JSX element, and React renders the resulting array.",
         ],
         code: `function CourseList({ courses }) {
   return (
@@ -39,14 +39,14 @@ const specific: Record<string, Partial<LessonContent>> = {
 }`,
       },
       {
-        heading: 'Ինչու է key-ը կարևոր',
+        heading: "Why Keys Matter",
         paragraphs: [
-          'key-ը օգնում է React-ին հասկանալ, թե որ տարրն է փոխվել, ավելացվել կամ հեռացվել։ Առանց կայուն key-ի React-ը կարող է սխալ վերօգտագործել կոմպոնենտի վիճակը։',
-          'Որպես key օգտագործեք տվյալի եզակի նույնացուցիչը։ Զանգվածի ինդեքսը հարմար է միայն այն դեպքում, երբ ցուցակի հերթականությունը երբեք չի փոխվում։',
+          "Keys help React identify which items have changed, been added, or been removed. Without stable keys, React may reuse component state incorrectly.",
+          "Use a unique data identifier as the key. An array index is only suitable when the list order never changes.",
         ],
       },
     ],
-    keyPoints: ['Ցուցակները ստեղծվում են map մեթոդով', 'key-ը պետք է լինի կայուն և եզակի', 'Մի օգտագործեք ինդեքսը փոփոխվող ցուցակներում'],
+    keyPoints: ["Create lists with the map method", "Keys should be stable and unique", "Avoid using indices in lists that can change"],
   },
 };
 
@@ -55,33 +55,33 @@ export function getLessonContent(course: Course, module: Module, lesson: Lesson)
   return {
     intro:
       custom.intro ??
-      `Այս դասը «${module.title}» մոդուլի մաս է։ Կծանոթանաք «${lesson.title}» թեմայի հիմնական գաղափարներին, կտեսնեք կիրառական օրինակներ և կստանաք առաջարկներ ինքնուրույն աշխատանքի համար։`,
+      `This lesson is part of the ${module.title} module. You will explore the key ideas behind ${lesson.title}, see practical examples, and get suggestions for independent practice.`,
     sections: custom.sections ?? [
       {
-        heading: 'Հիմնական գաղափարը',
+        heading: "The Main Idea",
         paragraphs: [
-          `«${lesson.title}» թեման կարևոր քայլ է «${course.title}» դասընթացում։ Սկզբում ձևակերպում ենք խնդիրը, ապա քննարկում ենք այն լուծելու մոտեցումները և դրանց սահմանափակումները։`,
-          'Դասի վերջում վերադարձեք հիմնական մտքերին և փորձեք դրանք բացատրել ձեր բառերով․ դա ամենաարդյունավետ ձևն է ստուգելու, թե որքան լավ եք յուրացրել նյութը։',
+          `${lesson.title} is an important topic in ${course.title}. We start by defining the problem, then discuss possible approaches and their limitations.`,
+          "At the end of the lesson, revisit the key ideas and explain them in your own words to check your understanding.",
         ],
       },
       {
-        heading: 'Գործնական օրինակ',
+        heading: "Practical Example",
         paragraphs: [
-          'Ստորև բերված օրինակը ցույց է տալիս, թե ինչպես է թեման կիրառվում իրական աշխատանքում։ Կրկնեք քայլերը ձեր միջավայրում և փոփոխեք պարամետրերը՝ արդյունքը համեմատելու համար։',
+          "The example below shows how this topic applies in practice. Follow the steps in your own environment and change the parameters to compare the results.",
         ],
       },
     ],
-    keyPoints: custom.keyPoints ?? ['Ձևակերպեք խնդիրը նախքան լուծում ընտրելը', 'Համեմատեք մի քանի մոտեցում', 'Ամրապնդեք նյութը գործնական վարժությամբ'],
+    keyPoints: custom.keyPoints ?? ["Define the problem before choosing a solution", "Compare several approaches", "Reinforce your learning with a practical exercise"],
     resources: [
-      { name: `${lesson.title} — ամփոփագիր.pdf`, kind: 'pdf', size: '420 ԿԲ' },
-      { name: 'Օրինակների կոդ.zip', kind: 'zip', size: '86 ԿԲ' },
-      { name: 'Լրացուցիչ ընթերցանություն', kind: 'link' },
+      { name: `${lesson.title} — Summary.pdf`, kind: 'pdf', size: "420 KB" },
+      { name: "Sample Code.zip", kind: 'zip', size: "86 KB" },
+      { name: "Further Reading", kind: 'link' },
     ],
   };
 }
 
 export const testimonials = [
-  { name: 'Մարիամ Ղ.', role: 'Բիզնես վերլուծության ուսանող', text: 'Առաջադրանքների մեկնաբանությունները շատ կոնկրետ են․ ամեն անգամ հստակ գիտեմ, թե ինչ բարելավել։', course: 'Python տվյալների վերլուծության համար' },
-  { name: 'Հայկ Վ.', role: 'Ծրագրային ճարտարագիտության ուսանող', text: 'Հարմար է, որ բոլոր վերջնաժամկետները և արդյունքները մեկ տեղում են։ Կիսամյակը պլանավորելը շատ ավելի հեշտ դարձավ։', course: 'React. ժամանակակից ինտերֆեյսների մշակում' },
-  { name: 'Էլեն Ա.', role: 'Մաթեմատիկայի ուսանող', text: 'Կարճ տեսադասերն ու թեստերը թույլ են տալիս սովորել նույնիսկ ճանապարհին՝ հեռախոսից։', course: 'Գծային հանրահաշիվ' },
+  { name: "Mariam G.", role: "Business Analytics Student", text: "The assignment feedback is specific and helpful. I always know exactly what to improve next.", course: "Python for Data Analysis" },
+  { name: "Hayk V.", role: "Software Engineering Student", text: "Having all my deadlines and results in one place makes planning the semester much easier.", course: "React: Building Modern Interfaces" },
+  { name: "Elen A.", role: "Mathematics Student", text: "Short video lessons and quizzes let me keep learning on my phone, even when I am on the go.", course: "Linear Algebra" },
 ];

@@ -30,9 +30,9 @@ export function CourseDetailsPage() {
         <div className="empty-panel">
           <EmptyState
             icon={<BookOpen size={26} />}
-            title="Դասընթացը չի գտնվել"
-            text="Հնարավոր է՝ այն հեռացվել է կամ դեռ հրապարակված չէ։"
-            action={<ButtonLink to="/courses" variant="primary">Վերադառնալ կատալոգ</ButtonLink>}
+            title="Course not found"
+            text="This course may have been removed or is not published yet."
+            action={<ButtonLink to="/courses" variant="primary">Back to Courses</ButtonLink>}
           />
         </div>
       </div>
@@ -62,13 +62,13 @@ export function CourseDetailsPage() {
       <section className="page-band">
         <div className="container cd-grid">
           <div className="stack" style={{ ['--gap' as string]: '0px', minWidth: 0 }}>
-            <Breadcrumbs items={[{ label: 'Գլխավոր', to: '/' }, { label: 'Դասընթացներ', to: '/courses' }, { label: categoryName(course.category), to: `/courses?category=${course.category}` }]} />
+            <Breadcrumbs items={[{ label: "Home", to: '/' }, { label: "Courses", to: '/courses' }, { label: categoryName(course.category), to: `/courses?category=${course.category}` }]} />
             <h1 className="cd-title">{course.title}</h1>
             <p className="cd-lead">{course.shortDescription}</p>
             <div className="cd-meta">
               <span className="r"><Star aria-hidden="true" />{course.rating.toFixed(1)}</span>
-              <span><Users aria-hidden="true" />{formatNumber(course.enrolled)} ուսանող</span>
-              <span><Clock aria-hidden="true" />{course.durationHours} ժամ</span>
+              <span><Users aria-hidden="true" />{formatNumber(course.enrolled)} students</span>
+              <span><Clock aria-hidden="true" />{course.durationHours} hr</span>
               <span><BarChart3 aria-hidden="true" />{difficultyLabel[course.difficulty]}</span>
               <span><Globe aria-hidden="true" />{course.language}</span>
             </div>
@@ -89,18 +89,18 @@ export function CourseDetailsPage() {
             <div className="enroll-card__body">
               {enrolled ? (
                 <>
-                  <ButtonLink to={`/student/courses/${course.id}/learn`} variant="accent" size="lg" block>Շարունակել ուսումը</ButtonLink>
-                  <p className="xs muted" style={{ textAlign: 'center' }}>Դուք գրանցված եք այս դասընթացին (դեմո)</p>
+                  <ButtonLink to={`/student/courses/${course.id}/learn`} variant="accent" size="lg" block>Continue Learning</ButtonLink>
+                  <p className="xs muted" style={{ textAlign: 'center' }}>You are enrolled in this course (demo)</p>
                 </>
               ) : (
-                <Button variant="accent" size="lg" block onClick={() => setConfirmEnroll(true)}>Գրանցվել դասընթացին</Button>
+                <Button variant="accent" size="lg" block onClick={() => setConfirmEnroll(true)}>Enroll in Course</Button>
               )}
               <ul className="enroll-card__list">
-                <li><Layers aria-hidden="true" />{course.modules.length} մոդուլ · {lessonCount(course)} դաս</li>
-                <li><ClipboardList aria-hidden="true" />{courseAssignments.length} առաջադրանք դասավանդողի գնահատմամբ</li>
-                <li><FileQuestion aria-hidden="true" />{courseQuizzes.length} թեստ ակնթարթային արդյունքով</li>
-                <li><Award aria-hidden="true" />Ավարտական վկայական</li>
-                <li><RefreshCw aria-hidden="true" />Թարմացվել է {formatDate(course.updatedAt)}</li>
+                <li><Layers aria-hidden="true" />{course.modules.length} modules · {lessonCount(course)} lessons</li>
+                <li><ClipboardList aria-hidden="true" />{courseAssignments.length} instructor-graded assignments</li>
+                <li><FileQuestion aria-hidden="true" />{courseQuizzes.length} quizzes with instant results</li>
+                <li><Award aria-hidden="true" />Certificate of Completion</li>
+                <li><RefreshCw aria-hidden="true" />Last updated: {formatDate(course.updatedAt)}</li>
               </ul>
             </div>
           </aside>
@@ -110,12 +110,12 @@ export function CourseDetailsPage() {
       <div className="container cd-grid cd-body">
         <div className="stack" style={{ ['--gap' as string]: '48px', minWidth: 0 }}>
           <section>
-            <h2 className="cd-h">Դասընթացի մասին</h2>
+            <h2 className="cd-h">About This Course</h2>
             <p className="cd-text">{course.description}</p>
           </section>
 
           <section>
-            <h2 className="cd-h">Ինչ կսովորեք</h2>
+            <h2 className="cd-h">What You Will Learn</h2>
             <ul className="objectives">
               {course.objectives.map((o) => (
                 <li key={o}>
@@ -129,13 +129,12 @@ export function CourseDetailsPage() {
           <section>
             <div className="row row--between" style={{ marginBottom: 18, flexWrap: 'wrap' }}>
               <div>
-                <h2 className="cd-h" style={{ margin: 0 }}>Ծրագիր</h2>
+                <h2 className="cd-h" style={{ margin: 0 }}>Curriculum</h2>
                 <p className="small muted" style={{ marginTop: 4 }}>
-                  {course.modules.length} մոդուլ, {lessonCount(course)} դաս, ընդհանուր {course.durationHours} ժամ
-                </p>
+                  {course.modules.length} modules, {lessonCount(course)} lessons, {course.durationHours} hours in total </p>
               </div>
               <Button variant="secondary" size="sm" onClick={() => setOpen(allOpen ? new Set() : new Set(course.modules.map((m) => m.id)))}>
-                {allOpen ? 'Փակել բոլորը' : 'Բացել բոլորը'}
+                {allOpen ? "Collapse All" : "Expand All"}
               </Button>
             </div>
             <div className="curriculum">
@@ -147,7 +146,7 @@ export function CourseDetailsPage() {
                       <span className="curriculum__num">{mi + 1}</span>
                       <span className="grow">
                         <span className="strong" style={{ display: 'block' }}>{m.title}</span>
-                        <span className="xs muted">{m.lessons.length} դաս · {m.lessons.reduce((n, l) => n + l.durationMin, 0)} րոպե</span>
+                        <span className="xs muted">{m.lessons.length} lessons · {m.lessons.reduce((n, l) => n + l.durationMin, 0)} min</span>
                       </span>
                       <ChevronDown className={cx('chev', isOpen && 'is-open')} aria-hidden="true" />
                     </button>
@@ -159,7 +158,7 @@ export function CourseDetailsPage() {
                             lesson={l}
                             locked={!l.preview && !enrolled}
                             showType
-                            trailing={l.preview ? <Button variant="ghost" size="sm" icon={<PlayCircle />} onClick={() => setPreview(l)}>Նախադիտում</Button> : undefined}
+                            trailing={l.preview ? <Button variant="ghost" size="sm" icon={<PlayCircle />} onClick={() => setPreview(l)}>Preview</Button> : undefined}
                           />
                         ))}
                       </div>
@@ -171,30 +170,30 @@ export function CourseDetailsPage() {
           </section>
 
           <section>
-            <h2 className="cd-h">Առաջադրանքներ և թեստեր</h2>
-            <p className="cd-text" style={{ marginBottom: 18 }}>Գիտելիքները ամրապնդվում են գործնական աշխատանքներով, որոնք գնահատում է դասավանդողը, և ավտոմատ ստուգվող թեստերով։</p>
+            <h2 className="cd-h">Assignments and Quizzes</h2>
+            <p className="cd-text" style={{ marginBottom: 18 }}>Build your skills with practical assignments reviewed by your instructor and automatically graded quizzes.</p>
             <div className="grid grid-2" style={{ ['--gap' as string]: '14px' }}>
               <div className="info-tile t-peach">
                 <span className="tint-box"><ClipboardList /></span>
                 <div>
-                  <div className="strong">{courseAssignments.length} գործնական առաջադրանք</div>
+                  <div className="strong">{courseAssignments.length} practical assignments</div>
                   <ul className="info-tile__list">
                     {courseAssignments.slice(0, 3).map((a) => (
-                      <li key={a.id}>{a.title} <span className="muted">({a.maxScore} միավոր)</span></li>
+                      <li key={a.id}>{a.title} <span className="muted">({a.maxScore} points)</span></li>
                     ))}
-                    {courseAssignments.length === 0 && <li className="muted">Առաջադրանքները կավելացվեն դասընթացի ընթացքում</li>}
+                    {courseAssignments.length === 0 && <li className="muted">Assignments will be added during the course</li>}
                   </ul>
                 </div>
               </div>
               <div className="info-tile t-sun">
                 <span className="tint-box"><FileQuestion /></span>
                 <div>
-                  <div className="strong">{courseQuizzes.length} ստուգողական թեստ</div>
+                  <div className="strong">{courseQuizzes.length} quizzes</div>
                   <ul className="info-tile__list">
                     {courseQuizzes.map((q) => (
-                      <li key={q.id}>{q.title} <span className="muted">({q.questions.length} հարց)</span></li>
+                      <li key={q.id}>{q.title} <span className="muted">({q.questions.length} questions)</span></li>
                     ))}
-                    {courseQuizzes.length === 0 && <li className="muted">Ինքնաստուգման հարցեր յուրաքանչյուր մոդուլի վերջում</li>}
+                    {courseQuizzes.length === 0 && <li className="muted">Self-check questions at the end of each module</li>}
                   </ul>
                 </div>
               </div>
@@ -214,16 +213,16 @@ export function CourseDetailsPage() {
             {teacher?.bio && <p>{teacher.bio}</p>}
             <div className="cd-meta" style={{ margin: 0 }}>
               <span className="r"><Star aria-hidden="true" />{teacherRating.toFixed(1)}</span>
-              <span><BookOpen aria-hidden="true" />{teacherCourses.length} դասընթաց</span>
+              <span><BookOpen aria-hidden="true" />{teacherCourses.length} courses</span>
             </div>
           </div>
-          <h3 className="cd-side__title">Նմանատիպ դասընթացներ</h3>
+          <h3 className="cd-side__title">Related Courses</h3>
           {related.map((r) => (
             <Link key={r.id} to={`/courses/${r.id}`} className="mini-course">
               <Thumb src={r.image} alt="" ratio="4 / 3" className="mini-course__img" />
               <div>
                 <b>{r.title}</b>
-                <span>★ {r.rating.toFixed(1)} · {r.durationHours} ժամ</span>
+                <span>★ {r.rating.toFixed(1)} · {r.durationHours} hr</span>
               </div>
             </Link>
           ))}
@@ -233,32 +232,30 @@ export function CourseDetailsPage() {
       <Modal
         open={confirmEnroll}
         onClose={() => setConfirmEnroll(false)}
-        title="Գրանցվել դասընթացին"
+        title="Enroll in Course"
         description={course.title}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setConfirmEnroll(false)}>Չեղարկել</Button>
+            <Button variant="secondary" onClick={() => setConfirmEnroll(false)}>Cancel</Button>
             <Button
               variant="primary"
               onClick={() => {
                 setEnrolled(true);
                 setConfirmEnroll(false);
-                toast.success('Դուք գրանցվեցիք դասընթացին', 'Դեմո ռեժիմ. գրանցումը պահվում է միայն այս էջում։');
+                toast.success("You are enrolled", "Demo: your enrollment is kept only on this page.");
               }}
-            >
-              Հաստատել գրանցումը
-            </Button>
+            >Confirm Enrollment</Button>
           </>
         }
       >
-        <p className="small secondary">Գրանցվելուց հետո կբացվեն դասընթացի բոլոր դասերը, առաջադրանքները և թեստերը։ Այս ցուցադրական տարբերակում գրանցումը չի ուղարկվում սերվեր և կչեղարկվի էջը թարմացնելիս։</p>
+        <p className="small secondary">Enrollment unlocks all lessons, assignments, and quizzes in this course. In this demo, enrollment is not sent to a server and resets when you refresh the page.</p>
       </Modal>
 
-      <Modal open={!!preview} onClose={() => setPreview(null)} title={preview?.title ?? ''} description="Դասի նախադիտում" size="lg">
+      <Modal open={!!preview} onClose={() => setPreview(null)} title={preview?.title ?? ''} description="Lesson Preview" size="lg">
         <div className="video-placeholder" style={{ backgroundImage: `linear-gradient(rgba(15,30,61,.55), rgba(15,30,61,.55)), url(${course.image})` }}>
           <span className="video-placeholder__play"><PlayCircle size={34} aria-hidden="true" /></span>
-          <span>Տեսանյութի նախադիտում ({preview?.durationMin} րոպե)</span>
-          <span className="xs" style={{ opacity: 0.75 }}>Ցուցադրական տարբերակում տեսանյութեր չեն հոսթավորվում</span>
+          <span>Video preview ({preview?.durationMin} min)</span>
+          <span className="xs" style={{ opacity: 0.75 }}>Videos are not available in this demo</span>
         </div>
       </Modal>
     </>

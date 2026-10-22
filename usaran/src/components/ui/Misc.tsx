@@ -48,7 +48,7 @@ export interface Crumb {
 
 export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (
-    <nav aria-label="Ճանապարհ" className="breadcrumbs">
+    <nav aria-label="Breadcrumbs" className="breadcrumbs">
       {items.map((c, i) => (
         <span key={i} className="row" style={{ ['--gap' as string]: '4px' }}>
           {i > 0 && <ChevronRight aria-hidden="true" />}
@@ -67,7 +67,7 @@ export interface TabItem<K extends string = string> {
   count?: number;
 }
 
-export function Tabs<K extends string>({ items, value, onChange, label = 'Բաժիններ' }: { items: TabItem<K>[]; value: K; onChange: (k: K) => void; label?: string }) {
+export function Tabs<K extends string>({ items, value, onChange, label = "Sections" }: { items: TabItem<K>[]; value: K; onChange: (k: K) => void; label?: string }) {
   return (
     <div className="tabs" role="tablist" aria-label={label}>
       {items.map((t) => (
@@ -100,16 +100,14 @@ export function Pagination({ page, pageCount, onChange, total, pageSize }: { pag
   if (pageCount <= 1) return null;
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
   return (
-    <nav className="pagination" aria-label="Էջավորում">
+    <nav className="pagination" aria-label="Pagination">
       {total !== undefined && pageSize ? (
-        <span className="small muted">
-          Ցուցադրված է {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)}՝ {total}-ից
-        </span>
+        <span className="small muted">Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)}: {total} total</span>
       ) : (
         <span />
       )}
       <div className="pagination__pages">
-        <button type="button" className="pagination__btn" onClick={() => onChange(page - 1)} disabled={page === 1} aria-label="Նախորդ էջ">
+        <button type="button" className="pagination__btn" onClick={() => onChange(page - 1)} disabled={page === 1} aria-label="Previous page">
           <ChevronLeft />
         </button>
         {pages.map((p) => (
@@ -117,7 +115,7 @@ export function Pagination({ page, pageCount, onChange, total, pageSize }: { pag
             {p}
           </button>
         ))}
-        <button type="button" className="pagination__btn" onClick={() => onChange(page + 1)} disabled={page === pageCount} aria-label="Հաջորդ էջ">
+        <button type="button" className="pagination__btn" onClick={() => onChange(page + 1)} disabled={page === pageCount} aria-label="Next page">
           <ChevronRight />
         </button>
       </div>
@@ -140,9 +138,9 @@ export function Notice({ tone = 'info', children, className }: { tone?: keyof ty
 }
 
 /** Small marker distinguishing illustrative numbers from real analytics. */
-export function DemoFlag({ text = 'Ցուցադրական տվյալներ' }: { text?: string }) {
+export function DemoFlag({ text = "Sample data" }: { text?: string }) {
   return (
-    <span className="demo-flag" title="Թվերը օրինակային են և չեն արտացոլում իրական վերլուծություն">
+    <span className="demo-flag" title="These figures are illustrative and do not represent real analytics">
       <FlaskConical aria-hidden="true" />
       {text}
     </span>

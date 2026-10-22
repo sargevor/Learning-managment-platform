@@ -33,7 +33,7 @@ export function TeacherCourseDetailPage() {
   const [settings, setSettings] = useState({ enroll: true, comments: true, certificate: true });
 
   if (!course || course.teacherId !== DEMO_TEACHER_ID) {
-    return <div className="card"><EmptyState title="Դասընթացը չի գտնվել" text="Հնարավոր է՝ այն ջնջվել է կամ պատկանում է այլ դասավանդողի։" action={<ButtonLink to="/teacher/courses">Իմ դասընթացները</ButtonLink>} /></div>;
+    return <div className="card"><EmptyState title="Course not found" text="It may have been deleted or belongs to another instructor." action={<ButtonLink to="/teacher/courses">My courses</ButtonLink>} /></div>;
   }
 
   const perf = coursePerformance.find((p) => p.courseId === course.id);
@@ -45,16 +45,16 @@ export function TeacherCourseDetailPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Դասընթացներ', to: '/teacher/courses' }, { label: course.title }]}
+        breadcrumbs={[{ label: "Courses", to: '/teacher/courses' }, { label: course.title }]}
         title={course.title}
         description={course.shortDescription}
         actions={
           <>
-            {status === 'published' && <ButtonLink to={`/courses/${course.id}`} variant="secondary" icon={<Eye />}>Նախադիտում</ButtonLink>}
-            <ButtonLink to={`/teacher/courses/${course.id}/content`} variant="secondary" icon={<FolderTree />}>Բովանդակություն</ButtonLink>
-            <ButtonLink to={`/teacher/courses/${course.id}/edit`} variant="secondary" icon={<Pencil />}>Խմբագրել</ButtonLink>
+            {status === 'published' && <ButtonLink to={`/courses/${course.id}`} variant="secondary" icon={<Eye />}>Preview</ButtonLink>}
+            <ButtonLink to={`/teacher/courses/${course.id}/content`} variant="secondary" icon={<FolderTree />}>Content</ButtonLink>
+            <ButtonLink to={`/teacher/courses/${course.id}/edit`} variant="secondary" icon={<Pencil />}>Edit</ButtonLink>
             <Button variant={status === 'published' ? 'secondary' : 'primary'} icon={status === 'published' ? <EyeOff /> : <Eye />} onClick={() => setConfirmPublish(true)}>
-              {status === 'published' ? 'Հանել հրապարակումից' : 'Հրապարակել'}
+              {status === 'published' ? "Unpublish" : "Publish"}
             </Button>
           </>
         }
@@ -63,11 +63,11 @@ export function TeacherCourseDetailPage() {
       <div className="card mb-20 course-summary">
         <Thumb src={course.image} alt="" className="course-summary__thumb" />
         <div className="course-summary__meta">
-          <div><span className="xs muted">Կարգավիճակ</span><StatusBadge status={status} /></div>
-          <div><span className="xs muted">Ուղղություն</span><strong className="small">{categoryName(course.category)}</strong></div>
-          <div><span className="xs muted">Մակարդակ</span><strong className="small">{difficultyLabel[course.difficulty]}</strong></div>
-          <div><span className="xs muted">Կառուցվածք</span><strong className="small">{course.modules.length} մոդուլ, {lessonCount(course)} դաս</strong></div>
-          <div><span className="xs muted">Թարմացվել է</span><strong className="small">{formatDate(course.updatedAt)}</strong></div>
+          <div><span className="xs muted">Status</span><StatusBadge status={status} /></div>
+          <div><span className="xs muted">Category</span><strong className="small">{categoryName(course.category)}</strong></div>
+          <div><span className="xs muted">Level</span><strong className="small">{difficultyLabel[course.difficulty]}</strong></div>
+          <div><span className="xs muted">Structure</span><strong className="small">{course.modules.length} modules, {lessonCount(course)} lessons</strong></div>
+          <div><span className="xs muted">Last Updated</span><strong className="small">{formatDate(course.updatedAt)}</strong></div>
         </div>
       </div>
 
@@ -75,33 +75,33 @@ export function TeacherCourseDetailPage() {
         value={tab}
         onChange={setTab}
         items={[
-          { key: 'overview', label: 'Ընդհանուր' },
-          { key: 'students', label: 'Գրանցումներ', count: students.length },
-          { key: 'work', label: 'Առաջադրանքներ և թեստեր', count: courseAssignments.length + courseQuizzes.length },
-          { key: 'settings', label: 'Կարգավորումներ' },
+          { key: 'overview', label: "Total" },
+          { key: 'students', label: "Enrollments", count: students.length },
+          { key: 'work', label: "Assignments and Quizzes", count: courseAssignments.length + courseQuizzes.length },
+          { key: 'settings', label: "Settings" },
         ]}
       />
       <div style={{ paddingTop: 20 }}>
         {tab === 'overview' && (
           <div className="stack" style={{ ['--gap' as string]: '20px' }}>
             <div className="grid grid-4">
-              <StatCard label="Գրանցված ուսանողներ" value={formatNumber(course.enrolled)} icon={<Users />} />
-              <StatCard label="Ավարտելիություն" value={perf?.completionRate ?? 0} unit="%" icon={<Eye />} tone="success" />
-              <StatCard label="Առաջադրանքների միջին" value={perf?.avgAssignment ?? '—'} unit={perf ? '%' : ''} icon={<ClipboardList />} tone="navy" />
-              <StatCard label="Թեստերի միջին" value={perf?.avgQuiz ?? '—'} unit={perf ? '%' : ''} icon={<FileQuestion />} tone="warning" />
+              <StatCard label="Enrolled Students" value={formatNumber(course.enrolled)} icon={<Users />} />
+              <StatCard label="Completion Rate" value={perf?.completionRate ?? 0} unit="%" icon={<Eye />} tone="success" />
+              <StatCard label="Assignment Average" value={perf?.avgAssignment ?? '—'} unit={perf ? '%' : ''} icon={<ClipboardList />} tone="navy" />
+              <StatCard label="Quiz Average" value={perf?.avgQuiz ?? '—'} unit={perf ? '%' : ''} icon={<FileQuestion />} tone="warning" />
             </div>
             <div className="grid grid-main-aside">
-              <Card title="Դասընթացի կառուցվածք" actions={<ButtonLink to={`/teacher/courses/${course.id}/content`} variant="ghost" size="sm">Խմբագրել</ButtonLink>}>
+              <Card title="Course Structure" actions={<ButtonLink to={`/teacher/courses/${course.id}/content`} variant="ghost" size="sm">Edit</ButtonLink>}>
                 <div className="stack" style={{ ['--gap' as string]: '16px' }}>
                   {course.modules.map((m, i) => (
                     <div key={m.id}>
-                      <div className="small strong" style={{ color: 'var(--navy-900)', marginBottom: 4 }}>Մոդուլ {i + 1}. {m.title}</div>
+                      <div className="small strong" style={{ color: 'var(--navy-900)', marginBottom: 4 }}>Module {i + 1}. {m.title}</div>
                       {m.lessons.map((l) => <LessonItem key={l.id} lesson={l} showType />)}
                     </div>
                   ))}
                 </div>
               </Card>
-              <Card title="Ուսումնական նպատակներ">
+              <Card title="Learning Objectives">
                 <ol className="instructions">
                   {course.objectives.map((o) => <li key={o}>{o}</li>)}
                 </ol>
@@ -113,23 +113,23 @@ export function TeacherCourseDetailPage() {
         {tab === 'students' && (
           <div className="stack" style={{ ['--gap' as string]: '20px' }}>
             {trend && (
-              <ChartCard title="Գրանցումների դինամիկա" subtitle="Նոր ուսանողներ ըստ ամիսների">
-                <LineChart labels={trendLabels} series={[{ name: 'Գրանցումներ', values: trend }]} height={200} ariaLabel="Նոր գրանցումներ ըստ ամիսների" />
+              <ChartCard title="Enrollment Trends" subtitle="New students by month">
+                <LineChart labels={trendLabels} series={[{ name: "Enrollments", values: trend }]} height={200} ariaLabel="New enrollments by month" />
               </ChartCard>
             )}
-            <Card title="Գրանցված ուսանողներ" subtitle={`Ցուցադրված են խմբի ${students.length} ուսանողները`} padded={false}>
+            <Card title="Enrolled Students" subtitle={`Showing ${students.length} students from the group`} padded={false}>
               <DataTable
-                caption="Դասընթացի ուսանողներ"
+                caption="Course Students"
                 rows={students}
                 rowKey={(r) => r.userId}
                 onRowClick={(r) => navigate(`/teacher/students/${r.userId}`)}
-                empty={<EmptyState compact title="Գրանցված ուսանողներ դեռ չկան" text="Հրապարակեք դասընթացը, որպեսզի ուսանողները կարողանան գրանցվել։" />}
+                empty={<EmptyState compact title="No enrolled students yet" text="Publish the course so students can enroll." />}
                 columns={[
-                  { key: 'n', header: 'Ուսանող', sortValue: (r) => fullName(getUser(r.userId)), render: (r) => <Person name={fullName(getUser(r.userId))} sub={getUser(r.userId)?.email} size={32} /> },
-                  { key: 'p', header: 'Առաջընթաց', sortValue: (r) => r.progress, render: (r) => <div style={{ minWidth: 140 }}><ProgressBar value={r.progress} /></div> },
-                  { key: 'a', header: 'Միջին միավոր', align: 'right', sortValue: (r) => r.avgScore, render: (r) => `${r.avgScore}%` },
-                  { key: 's', header: 'Կարգավիճակ', render: (r) => <StatusBadge status={r.status} /> },
-                  { key: 'l', header: 'Վերջին ակտիվություն', sortValue: (r) => r.lastActive, render: (r) => <span className="nowrap">{relativeTime(r.lastActive)}</span> },
+                  { key: 'n', header: "Student", sortValue: (r) => fullName(getUser(r.userId)), render: (r) => <Person name={fullName(getUser(r.userId))} sub={getUser(r.userId)?.email} size={32} /> },
+                  { key: 'p', header: "Progress", sortValue: (r) => r.progress, render: (r) => <div style={{ minWidth: 140 }}><ProgressBar value={r.progress} /></div> },
+                  { key: 'a', header: "Average Score", align: 'right', sortValue: (r) => r.avgScore, render: (r) => `${r.avgScore}%` },
+                  { key: 's', header: "Status", render: (r) => <StatusBadge status={r.status} /> },
+                  { key: 'l', header: "Last Active", sortValue: (r) => r.lastActive, render: (r) => <span className="nowrap">{relativeTime(r.lastActive)}</span> },
                 ]}
               />
             </Card>
@@ -138,9 +138,9 @@ export function TeacherCourseDetailPage() {
 
         {tab === 'work' && (
           <div className="grid grid-2">
-            <Card title="Առաջադրանքներ" actions={<ButtonLink to="/teacher/assignments?new=1" variant="ghost" size="sm">Ավելացնել</ButtonLink>} padded={false}>
+            <Card title="Assignments" actions={<ButtonLink to="/teacher/assignments?new=1" variant="ghost" size="sm">Add</ButtonLink>} padded={false}>
               {courseAssignments.length === 0 ? (
-                <EmptyState compact title="Առաջադրանքներ չկան" />
+                <EmptyState compact title="No assignments" />
               ) : (
                 <div className="list">
                   {courseAssignments.map((a) => {
@@ -150,18 +150,18 @@ export function TeacherCourseDetailPage() {
                         <span className="list-row__icon"><ClipboardList /></span>
                         <div className="grow">
                           <div className="list-row__title">{a.title}</div>
-                          <div className="list-row__sub">Վերջնաժամկետ՝ {formatDate(a.dueDate)}, {subs.length} հանձնում</div>
+                          <div className="list-row__sub">Deadline: {formatDate(a.dueDate)}, {subs.length} submissions</div>
                         </div>
-                        {subs.some((s) => s.status === 'submitted') && <span className="badge badge--warning">{subs.filter((s) => s.status === 'submitted').length} նոր</span>}
+                        {subs.some((s) => s.status === 'submitted') && <span className="badge badge--warning">{subs.filter((s) => s.status === 'submitted').length} new</span>}
                       </Link>
                     );
                   })}
                 </div>
               )}
             </Card>
-            <Card title="Թեստեր" actions={<ButtonLink to="/teacher/quizzes/new/edit" variant="ghost" size="sm">Ավելացնել</ButtonLink>} padded={false}>
+            <Card title="Quizzes" actions={<ButtonLink to="/teacher/quizzes/new/edit" variant="ghost" size="sm">Add</ButtonLink>} padded={false}>
               {courseQuizzes.length === 0 ? (
-                <EmptyState compact title="Թեստեր չկան" text="Ստեղծեք թեստ՝ ուսանողների գիտելիքները ստուգելու համար։" />
+                <EmptyState compact title="No quizzes" text="Create a quiz to assess your students' understanding." />
               ) : (
                 <div className="list">
                   {courseQuizzes.map((q) => (
@@ -169,7 +169,7 @@ export function TeacherCourseDetailPage() {
                       <span className="list-row__icon"><FileQuestion /></span>
                       <div className="grow">
                         <div className="list-row__title">{q.title}</div>
-                        <div className="list-row__sub">{q.questions.length} հարց, {q.timeLimitMin} րոպե</div>
+                        <div className="list-row__sub">{q.questions.length} questions, {q.timeLimitMin} min</div>
                       </div>
                       <StatusBadge status={q.status} />
                     </Link>
@@ -182,17 +182,17 @@ export function TeacherCourseDetailPage() {
 
         {tab === 'settings' && (
           <div className="stack" style={{ ['--gap' as string]: '20px', maxWidth: 760 }}>
-            <Card title="Տեսանելիություն և մասնակցություն" footer={<Button onClick={() => toast.success('Կարգավորումները պահվեցին', 'Դեմո ռեժիմ։')}>Պահել</Button>}>
+            <Card title="Visibility and Participation" footer={<Button onClick={() => toast.success("Settings saved", "Demo only.")}>Save</Button>}>
               <div className="settings-list">
-                <Toggle label="Հրապարակված է կատալոգում" description="Անջատելու դեպքում դասընթացը տեսանելի կլինի միայն գրանցված ուսանողներին" checked={status === 'published'} onChange={(v) => setStatus(v ? 'published' : 'draft')} />
-                <Toggle label="Բաց գրանցում" description="Նոր ուսանողները կարող են ինքնուրույն գրանցվել" checked={settings.enroll} onChange={(v) => setSettings({ ...settings, enroll: v })} />
-                <Toggle label="Քննարկումներ դասերի տակ" description="Ուսանողները կարող են հարցեր տալ յուրաքանչյուր դասի ներքո" checked={settings.comments} onChange={(v) => setSettings({ ...settings, comments: v })} />
-                <Toggle label="Ավարտական վկայական" description="Ավտոմատ տրամադրվում է դասընթացն ավարտելիս" checked={settings.certificate} onChange={(v) => setSettings({ ...settings, certificate: v })} />
+                <Toggle label="Show in the Course Catalog" description="When disabled, only enrolled students can see the course" checked={status === 'published'} onChange={(v) => setStatus(v ? 'published' : 'draft')} />
+                <Toggle label="Open Enrollment" description="New students can enroll on their own" checked={settings.enroll} onChange={(v) => setSettings({ ...settings, enroll: v })} />
+                <Toggle label="Lesson Discussions" description="Students can ask questions below each lesson" checked={settings.comments} onChange={(v) => setSettings({ ...settings, comments: v })} />
+                <Toggle label="Certificate of Completion" description="Automatically awarded on course completion" checked={settings.certificate} onChange={(v) => setSettings({ ...settings, certificate: v })} />
               </div>
             </Card>
-            <Card title="Ջնջել դասընթացը">
-              <p className="small secondary" style={{ marginBottom: 14 }}>Կջնջվեն բոլոր մոդուլները, դասերը, առաջադրանքները և ուսանողների արդյունքները։</p>
-              <Button variant="danger" icon={<Trash2 />} onClick={() => setConfirmDelete(true)}>Ջնջել դասընթացը</Button>
+            <Card title="Delete Course">
+              <p className="small secondary" style={{ marginBottom: 14 }}>All modules, lessons, assignments, and student results will be deleted.</p>
+              <Button variant="danger" icon={<Trash2 />} onClick={() => setConfirmDelete(true)}>Delete Course</Button>
             </Card>
           </div>
         )}
@@ -204,23 +204,23 @@ export function TeacherCourseDetailPage() {
         onConfirm={() => {
           const next = status === 'published' ? 'draft' : 'published';
           setStatus(next);
-          toast.success(next === 'published' ? 'Դասընթացը հրապարակվեց' : 'Դասընթացը հանվեց հրապարակումից', 'Դեմո ռեժիմ. փոփոխությունը տեղային է։');
+          toast.success(next === 'published' ? "Course published" : "Course unpublished", "Demo: this change is local only.");
         }}
         tone="warning"
-        title={status === 'published' ? 'Հանե՞լ հրապարակումից' : 'Հրապարակե՞լ դասընթացը'}
-        text={status === 'published' ? 'Դասընթացը կհեռացվի կատալոգից։ Արդեն գրանցված ուսանողները կշարունակեն մուտք ունենալ։' : 'Դասընթացը կհայտնվի հանրային կատալոգում և հասանելի կլինի գրանցման համար։'}
-        confirmLabel={status === 'published' ? 'Հանել' : 'Հրապարակել'}
+        title={status === 'published' ? "Unpublish this course?" : "Publish this course?"}
+        text={status === 'published' ? "The course will be removed from the catalog. Students who are already enrolled will retain access." : "The course will appear in the public catalog and be open for enrollment."}
+        confirmLabel={status === 'published' ? "Unpublish" : "Publish"}
       />
       <ConfirmDialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => {
-          toast.success('Դասընթացը ջնջվեց', 'Դեմո ռեժիմ. իրականում ոչինչ չի ջնջվել։');
+          toast.success("Course deleted", "Demo: nothing has actually been deleted.");
           navigate('/teacher/courses');
         }}
-        title="Ջնջե՞լ դասընթացը"
-        text={`«${course.title}» դասընթացը կջնջվի ամբողջությամբ։ Այս գործողությունը հնարավոր չէ հետարկել։`}
-        confirmLabel="Ջնջել"
+        title="Delete this course?"
+        text={`${course.title} will be permanently deleted. This action cannot be undone.`}
+        confirmLabel="Delete"
       />
     </>
   );

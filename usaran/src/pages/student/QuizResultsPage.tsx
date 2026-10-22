@@ -11,7 +11,7 @@ import { ProgressRing } from '../../components/ui/Progress';
 import { StatCard } from '../../components/ui/StatCard';
 import { cx, formatDateTime, percent } from '../../lib/format';
 
-const LETTERS = ['Ա', 'Բ', 'Գ', 'Դ', 'Ե', 'Զ'];
+const LETTERS = ["A", "B", "C", "D", "E", "F"];
 
 export function QuizResultsPage() {
   const { id } = useParams();
@@ -27,9 +27,9 @@ export function QuizResultsPage() {
       <div className="card">
         <EmptyState
           icon={<Target size={24} />}
-          title="Արդյունք դեռ չկա"
-          text="Դուք դեռ չեք անցել այս թեստը։"
-          action={quiz ? <ButtonLink to={`/student/quizzes/${quiz.id}`}>Անցնել թեստը</ButtonLink> : <ButtonLink to="/student/quizzes">Բոլոր թեստերը</ButtonLink>}
+          title="No result yet"
+          text="You have not taken this quiz yet."
+          action={quiz ? <ButtonLink to={`/student/quizzes/${quiz.id}`}>Take Quiz</ButtonLink> : <ButtonLink to="/student/quizzes">All Quizzes</ButtonLink>}
         />
       </div>
     );
@@ -47,48 +47,47 @@ export function QuizResultsPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Թեստեր', to: '/student/quizzes' }, { label: quiz.title, to: `/student/quizzes/${quiz.id}` }, { label: 'Արդյունքներ' }]}
-        title="Թեստի արդյունքներ"
+        breadcrumbs={[{ label: "Quizzes", to: '/student/quizzes' }, { label: quiz.title, to: `/student/quizzes/${quiz.id}` }, { label: "Results" }]}
+        title="Quiz Results"
         description={`${quiz.title}, ${course.title}`}
         actions={
           <>
-            <ButtonLink to="/student/quizzes" variant="secondary">Բոլոր թեստերը</ButtonLink>
-            {attemptsUsed < quiz.attemptsAllowed && <ButtonLink to={`/student/quizzes/${quiz.id}`} variant="primary" icon={<RotateCcw />}>Կրկին փորձել</ButtonLink>}
+            <ButtonLink to="/student/quizzes" variant="secondary">All Quizzes</ButtonLink>
+            {attemptsUsed < quiz.attemptsAllowed && <ButtonLink to={`/student/quizzes/${quiz.id}`} variant="primary" icon={<RotateCcw />}>Try Again</ButtonLink>}
           </>
         }
       />
 
-      {isLocal && <Notice tone="neutral" className="mb-20">Արդյունքը հաշվարկվել է բրաուզերում և պահպանված չէ։ Էջը թարմացնելիս այն կվերանա։</Notice>}
+      {isLocal && <Notice tone="neutral" className="mb-20">Your result was calculated in your browser and has not been saved. It will be lost when you refresh the page.</Notice>}
 
       <Card className="mb-20">
         <div className="result-hero">
-          <ProgressRing value={p} size={132} stroke={11} color={passed ? 'var(--success-600)' : 'var(--danger-600)'} label="արդյունք" />
+          <ProgressRing value={p} size={132} stroke={11} color={passed ? 'var(--success-600)' : 'var(--danger-600)'} label="result" />
           <div className="stack grow" style={{ ['--gap' as string]: '8px', minWidth: 240 }}>
-            <div>{passed ? <Badge tone="success" dot>Թեստը հանձնված է</Badge> : <Badge tone="danger" dot>Անցողիկ շեմը չի հաղթահարվել</Badge>}</div>
+            <div>{passed ? <Badge tone="success" dot>Quiz Passed</Badge> : <Badge tone="danger" dot>Passing score not reached</Badge>}</div>
             <h2 style={{ fontSize: 'var(--fs-xl)' }}>
-              {attempt.score} / {attempt.maxScore} միավոր
-            </h2>
+              {attempt.score} / {attempt.maxScore} points</h2>
             <p className="secondary small">
-              {passed ? `Գերազանց է։ Դուք հաղթահարեցիք ${quiz.passPercent}% շեմը։` : `Անցողիկ շեմը ${quiz.passPercent}% է։ Վերանայեք սխալ պատասխանները և փորձեք կրկին։`}
+              {passed ? `Well done! You reached the passing score of ${quiz.passPercent}%.` : `The passing score is ${quiz.passPercent}%. Review your incorrect answers and try again.`}
             </p>
-            <span className="xs muted">Ավարտված է {formatDateTime(attempt.completedAt)}</span>
+            <span className="xs muted">Completed on {formatDateTime(attempt.completedAt)}</span>
           </div>
         </div>
       </Card>
 
       <div className="grid grid-4" style={{ marginBottom: 24 }}>
-        <StatCard label="Ճիշտ պատասխաններ" value={correctCount} unit={`/${quiz.questions.length}`} icon={<CheckCircle2 />} tone="success" />
-        <StatCard label="Սխալ կամ բաց" value={quiz.questions.length - correctCount} icon={<XCircle />} tone="danger" />
-        <StatCard label="Տոկոս" value={p} unit="%" icon={<Target />} />
-        <StatCard label="Տևողություն" value={attempt.durationMin} unit=" ր" icon={<Clock />} tone="navy" meta={`սահմանաչափը՝ ${quiz.timeLimitMin} ր`} />
+        <StatCard label="Correct Answers" value={correctCount} unit={`/${quiz.questions.length}`} icon={<CheckCircle2 />} tone="success" />
+        <StatCard label="Incorrect or Unanswered" value={quiz.questions.length - correctCount} icon={<XCircle />} tone="danger" />
+        <StatCard label="Percentage" value={p} unit="%" icon={<Target />} />
+        <StatCard label="Duration" value={attempt.durationMin} unit=" min" icon={<Clock />} tone="navy" meta={`time limit: ${quiz.timeLimitMin} min`} />
       </div>
 
       <Card
-        title="Պատասխանների վերանայում"
-        actions={<Segmented label="Ցուցադրել" value={show} onChange={setShow} items={[{ key: 'all', label: 'Բոլորը' }, { key: 'wrong', label: 'Միայն սխալները' }]} />}
+        title="Answer Review"
+        actions={<Segmented label="Show" value={show} onChange={setShow} items={[{ key: 'all', label: "All" }, { key: 'wrong', label: "Incorrect Answers Only" }]} />}
       >
         {visible.length === 0 ? (
-          <EmptyState compact icon={<CheckCircle2 size={22} />} title="Սխալ պատասխաններ չկան" text="Բոլոր հարցերին ճիշտ եք պատասխանել։" />
+          <EmptyState compact icon={<CheckCircle2 size={22} />} title="No incorrect answers" text="You answered every question correctly." />
         ) : (
           <div className="stack" style={{ ['--gap' as string]: '22px' }}>
             {visible.map((q) => {
@@ -101,7 +100,7 @@ export function QuizResultsPage() {
                     <h3 style={{ fontSize: 'var(--fs-base)' }}>
                       {i + 1}. {q.text}
                     </h3>
-                    {ok ? <Badge tone="success">+{q.points} միավոր</Badge> : <Badge tone="danger">0 / {q.points}</Badge>}
+                    {ok ? <Badge tone="success">+{q.points} points</Badge> : <Badge tone="danger">0 / {q.points}</Badge>}
                   </div>
                   {q.options.map((o, oi) => {
                     const chosen = given.includes(o.id);
@@ -110,12 +109,12 @@ export function QuizResultsPage() {
                       <div key={o.id} className={cx('option', correct && 'is-correct', chosen && !correct && 'is-wrong')} style={{ cursor: 'default' }}>
                         <span className="option__key">{LETTERS[oi]}</span>
                         <span className="grow">{o.text}</span>
-                        {chosen && <span className="xs strong">Ձեր ընտրությունը</span>}
-                        {correct ? <CheckCircle2 size={18} color="var(--success-600)" aria-label="Ճիշտ տարբերակ" /> : chosen ? <XCircle size={18} color="var(--danger-600)" aria-label="Սխալ ընտրություն" /> : null}
+                        {chosen && <span className="xs strong">Your Selection</span>}
+                        {correct ? <CheckCircle2 size={18} color="var(--success-600)" aria-label="Correct Answer" /> : chosen ? <XCircle size={18} color="var(--danger-600)" aria-label="Incorrect Selection" /> : null}
                       </div>
                     );
                   })}
-                  {given.length === 0 && <span className="small" style={{ color: 'var(--danger-700)' }}>Հարցին պատասխան չի տրվել</span>}
+                  {given.length === 0 && <span className="small" style={{ color: 'var(--danger-700)' }}>This question was not answered</span>}
                   {q.explanation && (
                     <div className="notice notice--neutral">
                       <Lightbulb aria-hidden="true" />

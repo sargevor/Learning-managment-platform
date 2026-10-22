@@ -52,11 +52,11 @@ export function TeacherAssignmentsPage() {
   const save = () => {
     if (!form) return;
     const n: Record<string, string> = {};
-    if (form.a.title.trim().length < 4) n.title = 'Նշեք առաջադրանքի անվանումը';
-    if (!form.instructions.trim()) n.instructions = 'Ավելացրեք առնվազն մեկ հրահանգ';
-    if (!form.a.dueDate) n.dueDate = 'Ընտրեք վերջնաժամկետը';
-    else if (daysUntil(form.a.dueDate) < 0) n.dueDate = 'Վերջնաժամկետը չի կարող լինել անցյալում';
-    if (!form.a.maxScore || form.a.maxScore < 1 || form.a.maxScore > 1000) n.maxScore = 'Նշեք 1-ից 1000 միավոր';
+    if (form.a.title.trim().length < 4) n.title = "Enter an assignment title";
+    if (!form.instructions.trim()) n.instructions = "Add at least one instruction";
+    if (!form.a.dueDate) n.dueDate = "Select a deadline";
+    else if (daysUntil(form.a.dueDate) < 0) n.dueDate = "The deadline cannot be in the past";
+    if (!form.a.maxScore || form.a.maxScore < 1 || form.a.maxScore > 1000) n.maxScore = "Enter a score between 1 and 1000";
     setErrors(n);
     if (Object.keys(n).length) return;
     const a: Assignment = {
@@ -66,7 +66,7 @@ export function TeacherAssignmentsPage() {
       requirements: form.requirements.split('\n').map((s) => s.trim()).filter(Boolean),
     };
     setList((l) => (form.a.id ? l.map((x) => (x.id === a.id ? a : x)) : [a, ...l]));
-    toast.success(form.a.id ? 'Առաջադրանքը թարմացվեց' : 'Առաջադրանքը ստեղծվեց', 'Դեմո ռեժիմ. ուսանողները ծանուցում չեն ստանա։');
+    toast.success(form.a.id ? "Assignment updated" : "Assignment created", "Demo: students will not receive a notification.");
     closeForm();
   };
 
@@ -75,39 +75,39 @@ export function TeacherAssignmentsPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Վահանակ', to: '/teacher/dashboard' }, { label: 'Առաջադրանքներ' }]}
-        title="Առաջադրանքների կառավարում"
-        description="Ստեղծեք և խմբագրեք առաջադրանքներ, հետևեք հանձնումներին և անցեք գնահատման։"
-        actions={<Button icon={<ClipboardPlus />} onClick={() => openForm()}>Նոր առաջադրանք</Button>}
+        breadcrumbs={[{ label: "Dashboard", to: '/teacher/dashboard' }, { label: "Assignments" }]}
+        title="Manage Assignments"
+        description="Create and edit assignments, track submissions, and review student work."
+        actions={<Button icon={<ClipboardPlus />} onClick={() => openForm()}>New Assignment</Button>}
       />
 
       <div className="grid grid-4 mb-20">
-        <StatCard label="Առաջադրանքներ" value={list.length} icon={<ClipboardList />} />
-        <StatCard label="Ակտիվ" value={list.filter((a) => daysUntil(a.dueDate) >= 0).length} icon={<ClipboardList />} tone="success" meta="վերջնաժամկետը դեռ չի անցել" />
-        <StatCard label="Ընդամենը հանձնումներ" value={allSubs.length} icon={<Inbox />} tone="navy" />
-        <StatCard label="Սպասում է գնահատման" value={allSubs.filter((s) => s.status === 'submitted').length} icon={<Users />} tone="warning" meta={<Link to="/teacher/grading">Գնահատման կենտրոն</Link>} />
+        <StatCard label="Assignments" value={list.length} icon={<ClipboardList />} />
+        <StatCard label="Active" value={list.filter((a) => daysUntil(a.dueDate) >= 0).length} icon={<ClipboardList />} tone="success" meta="deadline has not passed" />
+        <StatCard label="Total Submissions" value={allSubs.length} icon={<Inbox />} tone="navy" />
+        <StatCard label="Awaiting grading" value={allSubs.filter((s) => s.status === 'submitted').length} icon={<Users />} tone="warning" meta={<Link to="/teacher/grading">Grading center</Link>} />
       </div>
 
       <div className="card">
         <div className="filters-bar" style={{ padding: 16 }}>
-          <SearchBar value={q} onChange={setQ} placeholder="Որոնել առաջադրանք" />
-          <Select aria-label="Դասընթաց" value={course} onChange={(e) => setCourse(e.target.value)} options={[{ value: 'all', label: 'Բոլոր դասընթացները' }, ...teacherCourses.map((c) => ({ value: c.id, label: c.title }))]} />
-          <Segmented label="Վիճակ" value={state} onChange={setState} items={[{ key: 'all', label: 'Բոլորը' }, { key: 'open', label: 'Ակտիվ' }, { key: 'closed', label: 'Փակված' }]} />
+          <SearchBar value={q} onChange={setQ} placeholder="Search assignments" />
+          <Select aria-label="Course" value={course} onChange={(e) => setCourse(e.target.value)} options={[{ value: 'all', label: "All Courses" }, ...teacherCourses.map((c) => ({ value: c.id, label: c.title }))]} />
+          <Segmented label="Status" value={state} onChange={setState} items={[{ key: 'all', label: "All" }, { key: 'open', label: "Active" }, { key: 'closed', label: "Closed" }]} />
         </div>
         <DataTable<Assignment>
-          caption="Առաջադրանքներ"
+          caption="Assignments"
           rows={rows}
           rowKey={(a) => a.id}
           onRowClick={(a) => navigate(`/teacher/assignments/${a.id}/submissions`)}
           initialSort={{ key: 'due', dir: 'desc' }}
-          empty={<EmptyState icon={<ClipboardList size={24} />} title="Առաջադրանքներ չգտնվեցին" text="Փոխեք զտիչները կամ ստեղծեք նորը։" action={<Button variant="secondary" onClick={() => openForm()}>Նոր առաջադրանք</Button>} />}
+          empty={<EmptyState icon={<ClipboardList size={24} />} title="No assignments found" text="Change your filters or create a new assignment." action={<Button variant="secondary" onClick={() => openForm()}>New Assignment</Button>} />}
           columns={[
-            { key: 'title', header: 'Առաջադրանք', sortValue: (a) => a.title, render: (a) => <><div className="cell-title">{a.title}</div><div className="cell-sub">{getCourse(a.courseId)?.title}</div></> },
-            { key: 'due', header: 'Վերջնաժամկետ', sortValue: (a) => a.dueDate, render: (a) => <><div className="nowrap">{formatDateTime(a.dueDate)}</div><div className="cell-sub">{relativeDue(a.dueDate)}</div></> },
-            { key: 'state', header: 'Վիճակ', render: (a) => (daysUntil(a.dueDate) >= 0 ? <Badge tone="success" dot>Ակտիվ</Badge> : <Badge dot>Փակված</Badge>) },
+            { key: 'title', header: "Assignment", sortValue: (a) => a.title, render: (a) => <><div className="cell-title">{a.title}</div><div className="cell-sub">{getCourse(a.courseId)?.title}</div></> },
+            { key: 'due', header: "Deadline", sortValue: (a) => a.dueDate, render: (a) => <><div className="nowrap">{formatDateTime(a.dueDate)}</div><div className="cell-sub">{relativeDue(a.dueDate)}</div></> },
+            { key: 'state', header: "Status", render: (a) => (daysUntil(a.dueDate) >= 0 ? <Badge tone="success" dot>Active</Badge> : <Badge dot>Closed</Badge>) },
             {
               key: 'subs',
-              header: 'Հանձնումներ',
+              header: "Submitted Assignments",
               sortValue: (a) => submissionsFor(a.id).length,
               render: (a) => {
                 const s = submissionsFor(a.id);
@@ -115,24 +115,24 @@ export function TeacherAssignmentsPage() {
                 return (
                   <div className="row" style={{ ['--gap' as string]: '8px' }}>
                     <span className="tabular">{s.length}</span>
-                    {pending > 0 && <Badge tone="warning">{pending} չգնահատված</Badge>}
+                    {pending > 0 && <Badge tone="warning">{pending} ungraded</Badge>}
                   </div>
                 );
               },
             },
-            { key: 'max', header: 'Միավոր', align: 'right', sortValue: (a) => a.maxScore, render: (a) => a.maxScore },
+            { key: 'max', header: "Score", align: 'right', sortValue: (a) => a.maxScore, render: (a) => a.maxScore },
             {
               key: 'act',
               header: '',
               render: (a) => (
                 <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                  <Dropdown trigger={({ toggle, open }) => <button type="button" className="icon-btn" onClick={toggle} aria-expanded={open} aria-label={`Գործողություններ՝ ${a.title}`}><MoreHorizontal /></button>}>
+                  <Dropdown trigger={({ toggle, open }) => <button type="button" className="icon-btn" onClick={toggle} aria-expanded={open} aria-label={`Actions: ${a.title}`}><MoreHorizontal /></button>}>
                     {(close) => (
                       <>
-                        <Link className="dropdown__item" to={`/teacher/assignments/${a.id}/submissions`} onClick={close}><Inbox />Հանձնումներ</Link>
-                        <button type="button" className="dropdown__item" onClick={() => { openForm(a); close(); }}><Pencil />Խմբագրել</button>
+                        <Link className="dropdown__item" to={`/teacher/assignments/${a.id}/submissions`} onClick={close}><Inbox />Submitted Assignments</Link>
+                        <button type="button" className="dropdown__item" onClick={() => { openForm(a); close(); }}><Pencil />Edit</button>
                         <div className="dropdown__sep" />
-                        <button type="button" className="dropdown__item dropdown__item--danger" onClick={() => { setToDelete(a); close(); }}><Trash2 />Ջնջել</button>
+                        <button type="button" className="dropdown__item dropdown__item--danger" onClick={() => { setToDelete(a); close(); }}><Trash2 />Delete</button>
                       </>
                     )}
                   </Dropdown>
@@ -147,29 +147,29 @@ export function TeacherAssignmentsPage() {
         open={!!form}
         onClose={closeForm}
         size="lg"
-        title={form?.a.id ? 'Խմբագրել առաջադրանքը' : 'Նոր առաջադրանք'}
-        description="Ուսանողները կտեսնեն հրահանգները, պահանջները և վերջնաժամկետը։"
+        title={form?.a.id ? "Edit Assignment" : "New Assignment"}
+        description="Students will see the instructions, requirements, and deadline."
         footer={
           <>
-            <Button variant="secondary" onClick={closeForm}>Չեղարկել</Button>
-            <Button onClick={save}>{form?.a.id ? 'Պահել փոփոխությունները' : 'Ստեղծել առաջադրանք'}</Button>
+            <Button variant="secondary" onClick={closeForm}>Cancel</Button>
+            <Button onClick={save}>{form?.a.id ? "Save Changes" : "Create Assignment"}</Button>
           </>
         }
       >
         {form && (
           <div className="stack" style={{ ['--gap' as string]: '16px' }}>
             <div className="grid grid-2" style={{ ['--gap' as string]: '14px' }}>
-              <Select label="Դասընթաց" value={form.a.courseId} onChange={(e) => setA({ courseId: e.target.value })} options={teacherCourses.map((c) => ({ value: c.id, label: c.title }))} />
-              <Input label="Անվանում" required value={form.a.title} onChange={(e) => setA({ title: e.target.value })} error={errors.title} />
+              <Select label="Course" value={form.a.courseId} onChange={(e) => setA({ courseId: e.target.value })} options={teacherCourses.map((c) => ({ value: c.id, label: c.title }))} />
+              <Input label="Title" required value={form.a.title} onChange={(e) => setA({ title: e.target.value })} error={errors.title} />
             </div>
-            <Textarea label="Կարճ նկարագրություն" rows={2} value={form.a.summary} onChange={(e) => setA({ summary: e.target.value })} style={{ minHeight: 64 }} />
-            <Textarea label="Հրահանգներ" required rows={4} value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} error={errors.instructions} hint="Յուրաքանչյուր քայլ՝ նոր տողում" />
-            <Textarea label="Պահանջներ" rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} hint="Յուրաքանչյուր պահանջ՝ նոր տողում" style={{ minHeight: 80 }} />
+            <Textarea label="Short Description" rows={2} value={form.a.summary} onChange={(e) => setA({ summary: e.target.value })} style={{ minHeight: 64 }} />
+            <Textarea label="Instructions" required rows={4} value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} error={errors.instructions} hint="Put each step on a new line" />
+            <Textarea label="Requirements" rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} hint="Put each requirement on a new line" style={{ minHeight: 80 }} />
             <div className="grid grid-2" style={{ ['--gap' as string]: '14px' }}>
-              <Input label="Վերջնաժամկետ" type="datetime-local" required value={form.a.dueDate} onChange={(e) => setA({ dueDate: e.target.value })} error={errors.dueDate} />
-              <Input label="Առավելագույն միավոր" type="number" min={1} max={1000} required value={form.a.maxScore} onChange={(e) => setA({ maxScore: Number(e.target.value) })} error={errors.maxScore} />
+              <Input label="Deadline" type="datetime-local" required value={form.a.dueDate} onChange={(e) => setA({ dueDate: e.target.value })} error={errors.dueDate} />
+              <Input label="Maximum Score" type="number" min={1} max={1000} required value={form.a.maxScore} onChange={(e) => setA({ maxScore: Number(e.target.value) })} error={errors.maxScore} />
             </div>
-            <Checkbox label="Թույլատրել ֆայլերի կցում" checked={form.a.allowFiles} onChange={(e) => setA({ allowFiles: e.target.checked })} />
+            <Checkbox label="Allow File Attachments" checked={form.a.allowFiles} onChange={(e) => setA({ allowFiles: e.target.checked })} />
           </div>
         )}
       </Modal>
@@ -180,11 +180,11 @@ export function TeacherAssignmentsPage() {
         onConfirm={() => {
           if (!toDelete) return;
           setList((l) => l.filter((a) => a.id !== toDelete.id));
-          toast.success('Առաջադրանքը ջնջվեց', 'Միայն այս էջում։');
+          toast.success("Assignment deleted", "Changes are kept only on this page.");
         }}
-        title="Ջնջե՞լ առաջադրանքը"
-        text={toDelete ? `«${toDelete.title}» առաջադրանքը և նրա ${submissionsFor(toDelete.id).length} հանձնումը կջնջվեն։` : ''}
-        confirmLabel="Ջնջել"
+        title="Delete this assignment?"
+        text={toDelete ? `Delete ${toDelete.title} and its ${submissionsFor(toDelete.id).length} submissions?` : ''}
+        confirmLabel="Delete"
       />
     </>
   );

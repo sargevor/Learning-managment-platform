@@ -85,7 +85,7 @@ export function BarChart({ labels, series, height = 220, max, suffix = '', highl
                       height={Math.max(h, v > 0 ? 2 : 0)}
                       rx={Math.min(8, barW / 2.5)}
                       fill={fill}
-                      onMouseEnter={() => setTip({ x: x + barW / 2, y, text: `${series.length > 1 ? s.name + '՝ ' : label + '՝ '}${v}${suffix}` })}
+                      onMouseEnter={() => setTip({ x: x + barW / 2, y, text: `${series.length > 1 ? s.name + ": " : label + ": "}${v}${suffix}` })}
                       onMouseLeave={() => setTip(null)}
                     />
                   );
@@ -177,7 +177,7 @@ export function LineChart({ labels, series, height = 240, max, min = 0, suffix =
           <strong>{labels[hover]}</strong>
           {series.map((s) => (
             <div key={s.name}>
-              {series.length > 1 ? `${s.name}՝ ` : ''}
+              {series.length > 1 ? `${s.name}: ` : ''}
               {s.values[hover]}
               {suffix}
             </div>
@@ -222,7 +222,7 @@ export function DonutChart({ segments, size = 160, thickness = 22, center }: { s
   return (
     <div className="row" style={{ ['--gap' as string]: '24px', flexWrap: 'wrap' }}>
       <div className="ring" style={{ width: size, height: size }}>
-        <svg width={size} height={size} role="img" aria-label={segments.map((s) => `${s.label}՝ ${s.value}`).join(', ')}>
+        <svg width={size} height={size} role="img" aria-label={segments.map((s) => `${s.label}: ${s.value}`).join(', ')}>
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eceef3" strokeWidth={thickness} />
           {segments.map((s) => {
             const len = (s.value / total) * c;

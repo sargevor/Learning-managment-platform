@@ -14,9 +14,9 @@ export function BrandMark({ light }: { light?: boolean }) {
 
 export function Brand({ light, to = '/', compactText }: { light?: boolean; to?: string; compactText?: boolean }) {
   return (
-    <Link to={to} className={cx('brand', light && 'brand--light')} aria-label="Ուսարան — գլխավոր էջ">
+    <Link to={to} className={cx('brand', light && 'brand--light')} aria-label="LearnSpace — Home">
       <BrandMark light={light} />
-      <span className={cx('brand__text', compactText && 'label')}>Ուսարան</span>
+      <span className={cx('brand__text', compactText && 'label')}>LearnSpace</span>
     </Link>
   );
 }

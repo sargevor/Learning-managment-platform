@@ -11,9 +11,9 @@ export function NotFoundPage({ inApp }: { inApp?: boolean }) {
       <div className="empty-panel">
         <EmptyState
           icon={<Compass size={24} />}
-          title="Էջը չի գտնվել"
-          text="Հղումը կարող է սխալ լինել կամ էջը տեղափոխվել է։ Վերադարձեք գլխավոր էջ և շարունակեք այնտեղից։"
-          action={<ButtonLink to={home} variant="primary">{inApp ? 'Վերադառնալ վահանակ' : 'Գլխավոր էջ'}</ButtonLink>}
+          title="Page not found"
+          text="The link may be incorrect or the page may have moved. Return to the home page to continue."
+          action={<ButtonLink to={home} variant="primary">{inApp ? "Back to Dashboard" : "Home"}</ButtonLink>}
         />
       </div>
     </div>

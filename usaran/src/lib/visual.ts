@@ -40,14 +40,14 @@ export const LESSON_TINT: Record<LessonType, string> = {
 
 /** Portraits for the demo people; everyone else gets tinted initials. */
 const PHOTOS: Record<string, string> = {
-  'Արմեն Սարգսյան': 'p4',
-  'Լիլիթ Գրիգորյան': 'p1',
-  'Դավիթ Պետրոսյան': 'p6',
-  'Նարինե Մարտիրոսյան': 'p5',
-  'Անի Հակոբյան': 'p3',
-  'Տիգրան Մելքոնյան': 'p2',
-  'Հայկ Վարդանյան': 'p8',
-  'Սոնա Միքայելյան': 'p7',
+  "Armen Sargsyan": 'p4',
+  "Lilit Grigoryan": 'p1',
+  "Davit Petrosyan": 'p6',
+  "Narine Martirosyan": 'p5',
+  "Ani Hakobyan": 'p3',
+  "Tigran Melkonyan": 'p2',
+  "Hayk Vardanyan": 'p8',
+  "Sona Mikayelyan": 'p7',
 };
 
 export function photoFor(name: string): string | undefined {

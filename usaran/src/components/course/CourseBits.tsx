@@ -19,11 +19,11 @@ export const LESSON_ICONS: Record<LessonType, typeof PlayCircle> = {
 };
 
 export const LESSON_TYPE_LABEL: Record<LessonType, string> = {
-  video: 'Տեսադաս',
-  text: 'Տեքստային նյութ',
-  resource: 'Ռեսուրս',
-  assignment: 'Առաջադրանք',
-  quiz: 'Թեստ',
+  video: "Video lesson",
+  text: "Reading",
+  resource: "Resource",
+  assignment: "Assignment",
+  quiz: "Quiz",
 };
 
 /* ---------- Course card ---------- */
@@ -55,8 +55,7 @@ export function CourseCard({ course, to, progress, hideDescription }: { course: 
             )}
             <span className="tag">
               <Clock aria-hidden="true" />
-              {course.durationHours} ժամ
-            </span>
+              {course.durationHours} hours</span>
             <span className="tag">
               <Users aria-hidden="true" />
               {formatNumber(course.enrolled)}
@@ -96,8 +95,8 @@ export function LessonItem({ lesson, done, active, locked, onClick, showType, tr
         {showType && <span className="xs muted" style={{ display: 'block' }}>{LESSON_TYPE_LABEL[lesson.type]}</span>}
       </span>
       {trailing}
-      <span className="lesson-item__meta">{lesson.durationMin} ր</span>
-      {done && <span className="sr-only">(ավարտված)</span>}
+      <span className="lesson-item__meta">{lesson.durationMin} min</span>
+      {done && <span className="sr-only">(completed)</span>}
     </>
   );
   return onClick ? (
@@ -133,10 +132,9 @@ export function AssignmentCard({ assignment, status, to, courseTitle, score }: {
         <span className="tag">
           {score !== undefined ? (
             <strong style={{ color: 'var(--success-700)' }}>
-              {score}/{assignment.maxScore} միավոր
-            </strong>
+              {score}/{assignment.maxScore} points</strong>
           ) : (
-            <>Առավելագույնը՝ {assignment.maxScore} միավոր</>
+            <>Maximum: {assignment.maxScore} points</>
           )}
         </span>
       </div>
@@ -160,20 +158,16 @@ export function QuizCard({ quiz, state, to, courseTitle, bestPercent }: { quiz: 
       <div className="row row--wrap small" style={{ ['--gap' as string]: '6px 16px' }}>
         <span className="tag">
           <HelpCircle aria-hidden="true" />
-          {quiz.questions.length} հարց
-        </span>
+          {quiz.questions.length} questions</span>
         <span className="tag">
           <Timer aria-hidden="true" />
-          {quiz.timeLimitMin} րոպե
-        </span>
+          {quiz.timeLimitMin} minutes</span>
         {bestPercent !== undefined ? (
-          <span className="tag">
-            Լավագույն արդյունք՝ <strong style={{ color: bestPercent >= quiz.passPercent ? 'var(--success-700)' : 'var(--danger-700)' }}>{bestPercent}%</strong>
+          <span className="tag">Best result: <strong style={{ color: bestPercent >= quiz.passPercent ? 'var(--success-700)' : 'var(--danger-700)' }}>{bestPercent}%</strong>
           </span>
         ) : (
           <span className="tag">
-            <CalendarClock aria-hidden="true" />
-            մինչև {formatDate(quiz.dueDate)}
+            <CalendarClock aria-hidden="true" />Due {formatDate(quiz.dueDate)}
           </span>
         )}
       </div>

@@ -10,7 +10,7 @@ interface Props {
   onSubmit?: () => void;
 }
 
-export function SearchBar({ value, onChange, placeholder = 'Որոնել…', className, label = 'Որոնում', onSubmit }: Props) {
+export function SearchBar({ value, onChange, placeholder = "Search…", className, label = "Search", onSubmit }: Props) {
   return (
     <div className={cx('search', className)} role="search">
       <Search aria-hidden="true" />
@@ -26,7 +26,7 @@ export function SearchBar({ value, onChange, placeholder = 'Որոնել…', cl
         }}
       />
       {value && (
-        <button type="button" className="search__clear" aria-label="Մաքրել որոնումը" onClick={() => onChange('')}>
+        <button type="button" className="search__clear" aria-label="Clear search" onClick={() => onChange('')}>
           <X />
         </button>
       )}

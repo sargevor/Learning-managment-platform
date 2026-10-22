@@ -14,11 +14,11 @@ import { CATEGORY_ICONS, CATEGORY_TINT } from '../../lib/visual';
 const PAGE_SIZE = 9;
 
 const SORTS = [
-  { value: 'popular', label: 'Ամենահայտնի' },
-  { value: 'rating', label: 'Բարձր վարկանիշ' },
-  { value: 'newest', label: 'Վերջին թարմացումներ' },
-  { value: 'short', label: 'Ամենակարճ' },
-  { value: 'title', label: 'Այբբենական կարգով' },
+  { value: 'popular', label: "Most Popular" },
+  { value: 'rating', label: "Highest Rated" },
+  { value: 'newest', label: "Recently Updated" },
+  { value: 'short', label: "Shortest Duration" },
+  { value: 'title', label: "Alphabetical" },
 ];
 
 export function CatalogPage() {
@@ -62,7 +62,7 @@ export function CatalogPage() {
       rating: (a, b) => b.rating - a.rating,
       newest: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
       short: (a, b) => a.durationHours - b.durationHours,
-      title: (a, b) => a.title.localeCompare(b.title, 'hy'),
+      title: (a, b) => a.title.localeCompare(b.title, 'en'),
     };
     return [...list].sort(sorters[sort]);
   }, [query, cats, levels, sort]);
@@ -81,25 +81,23 @@ export function CatalogPage() {
     <>
       <section className="page-band">
         <div className="container">
-          <Breadcrumbs items={[{ label: 'Գլխավոր', to: '/' }, { label: 'Դասընթացներ' }]} />
-          <h1>Գտեք ձեր <span className="hl">հաջորդ</span> դասընթացը</h1>
-          <p className="page-band__lead">Ընտրեք {publishedCourses.length} դասընթացներից՝ ծրագրավորումից մինչև մաթեմատիկա և արհեստական բանականություն։</p>
+          <Breadcrumbs items={[{ label: "Home", to: '/' }, { label: "Courses" }]} />
+          <h1>Find a course that <span className="hl">inspires you</span></h1>
+          <p className="page-band__lead">Explore {publishedCourses.length} courses in programming, mathematics, artificial intelligence, and more.</p>
           <form className="bigsearch" role="search" onSubmit={(e) => e.preventDefault()}>
             <Search aria-hidden="true" />
-            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Օրինակ՝ React, Python, դիզայն" aria-label="Որոնել ըստ անվանման, թեմայի կամ դասավանդողի" />
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Try React, Python, or design" aria-label="Search by title, topic, or instructor" />
             <Button type="submit" variant="primary" icon={<Search />}>
-              <span className="bigsearch__label">Որոնել</span>
+              <span className="bigsearch__label">Search</span>
             </Button>
           </form>
         </div>
       </section>
 
       <div className="container page-pad" style={{ paddingTop: 28 }}>
-        <div className="fchips" role="group" aria-label="Ուղղություն">
+        <div className="fchips" role="group" aria-label="Category">
           <button type="button" className="fchip" aria-pressed={cats.length === 0} onClick={() => setCats([])}>
-            <span className="tint-box t-accent"><Layers /></span>
-            Բոլորը
-          </button>
+            <span className="tint-box t-accent"><Layers /></span>All</button>
           {categories.map((c) => {
             const Icon = CATEGORY_ICONS[c.id];
             const n = publishedCourses.filter((x) => x.category === c.id).length;
@@ -115,20 +113,19 @@ export function CatalogPage() {
 
         <div className="catalog-toolbar">
           <span className="catalog-toolbar__count" aria-live="polite">
-            {results.length} դասընթաց
-            {cats.length > 0 && <span> · {cats.map(categoryName).join(', ')}</span>}
-            {query && <span> · «{query}»</span>}
+            {results.length} courses {cats.length > 0 && <span> · {cats.map(categoryName).join(', ')}</span>}
+            {query && <span> · “{query}”</span>}
           </span>
           <div className="catalog-toolbar__right">
-            <div className="segmented" role="group" aria-label="Մակարդակ">
-              <button type="button" aria-pressed={levels.length === 0} onClick={() => setLevels([])}>Բոլոր մակարդակները</button>
+            <div className="segmented" role="group" aria-label="Level">
+              <button type="button" aria-pressed={levels.length === 0} onClick={() => setLevels([])}>All Levels</button>
               {(Object.keys(difficultyLabel) as Difficulty[]).map((d) => (
                 <button key={d} type="button" aria-pressed={levels.includes(d)} onClick={() => setLevels((l) => toggle(l, d))}>
                   {difficultyLabel[d]}
                 </button>
               ))}
             </div>
-            <Select aria-label="Դասավորել" options={SORTS} value={sort} onChange={(e) => setSort(e.target.value)} fieldClassName="catalog__sort" className="select--pill" />
+            <Select aria-label="Sort By" options={SORTS} value={sort} onChange={(e) => setSort(e.target.value)} fieldClassName="catalog__sort" className="select--pill" />
           </div>
         </div>
 
@@ -140,9 +137,9 @@ export function CatalogPage() {
           <div className="empty-panel">
             <EmptyState
               icon={<SearchX size={26} />}
-              title="Համապատասխան դասընթաց չգտնվեց"
-              text="Փորձեք այլ բանալի բառ կամ հեռացրեք որոշ զտիչներ։"
-              action={<Button variant="primary" onClick={reset}>Մաքրել բոլոր զտիչները</Button>}
+              title="No matching courses"
+              text="Try a different search term or remove some filters."
+              action={<Button variant="primary" onClick={reset}>Clear All Filters</Button>}
             />
           </div>
         ) : (

@@ -34,7 +34,7 @@ export function CourseFormPage() {
     category: (existing?.category ?? 'programming') as CategoryId,
     difficulty: (existing?.difficulty ?? 'beginner') as Difficulty,
     durationHours: String(existing?.durationHours ?? ''),
-    language: existing?.language ?? 'Հայերեն',
+    language: existing?.language ?? "English",
     image: existing?.image ?? IMAGE_CHOICES[0],
     startDate: '2026-11-02',
   });
@@ -46,16 +46,16 @@ export function CourseFormPage() {
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   if (isEdit && (!existing || existing.teacherId !== DEMO_TEACHER_ID)) {
-    return <div className="card"><EmptyState title="Դասընթացը չի գտնվել" text="Դուք կարող եք խմբագրել միայն ձեր դասընթացները։" /></div>;
+    return <div className="card"><EmptyState title="Course not found" text="You can only edit your own courses." /></div>;
   }
 
   const validate = () => {
     const n: Record<string, string> = {};
-    if (form.title.trim().length < 5) n.title = 'Անվանումը պետք է լինի առնվազն 5 նիշ';
-    if (form.shortDescription.trim().length < 20) n.shortDescription = 'Կարճ նկարագրությունը պետք է լինի առնվազն 20 նիշ';
+    if (form.title.trim().length < 5) n.title = "The title must contain at least 5 characters";
+    if (form.shortDescription.trim().length < 20) n.shortDescription = "The short description must contain at least 20 characters";
     const h = Number(form.durationHours);
-    if (!h || h < 1 || h > 200) n.durationHours = 'Նշեք 1-ից 200 ժամ';
-    if (objectives.filter((o) => o.trim()).length === 0) n.objectives = 'Ավելացրեք առնվազն մեկ ուսումնական նպատակ';
+    if (!h || h < 1 || h > 200) n.durationHours = "Enter a duration between 1 and 200 hours";
+    if (objectives.filter((o) => o.trim()).length === 0) n.objectives = "Add at least one learning objective";
     setErrors(n);
     return Object.keys(n).length === 0;
   };
@@ -63,18 +63,18 @@ export function CourseFormPage() {
   const save = (publish: boolean) => (e?: FormEvent) => {
     e?.preventDefault();
     if (!validate()) {
-      toast.warning('Ստուգեք ձևաթուղթը', 'Որոշ դաշտեր լրացված չեն պատշաճ։');
+      toast.warning("Check the form", "Some fields have not been filled in correctly.");
       return;
     }
-    toast.success(publish ? 'Դասընթացը հրապարակվեց' : 'Սևագիրը պահվեց', 'Դեմո ռեժիմ. տվյալները չեն պահպանվում սերվերում։');
+    toast.success(publish ? "Course published" : "Draft saved", "Demo: no data is saved to a server.");
     navigate(isEdit ? `/teacher/courses/${id}` : '/teacher/courses');
   };
 
   const preview: Course = {
     ...(existing ?? ({} as Course)),
     id: existing?.id ?? 'preview',
-    title: form.title || 'Դասընթացի անվանումը',
-    shortDescription: form.shortDescription || 'Կարճ նկարագրությունը կհայտնվի այստեղ։',
+    title: form.title || "Course Title",
+    shortDescription: form.shortDescription || "Your short description will appear here.",
     description: form.description,
     category: form.category,
     difficulty: form.difficulty,
@@ -93,62 +93,62 @@ export function CourseFormPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Դասընթացներ', to: '/teacher/courses' }, ...(existing ? [{ label: existing.title, to: `/teacher/courses/${existing.id}` }] : []), { label: isEdit ? 'Խմբագրում' : 'Նոր դասընթաց' }]}
-        title={isEdit ? 'Խմբագրել դասընթացը' : 'Նոր դասընթաց'}
-        description={isEdit ? 'Թարմացրեք դասընթացի հիմնական տվյալները և հրապարակման կարգավորումները։' : 'Լրացրեք հիմնական տվյալները։ Մոդուլներն ու դասերը կավելացնեք հաջորդ քայլում։'}
+        breadcrumbs={[{ label: "Courses", to: '/teacher/courses' }, ...(existing ? [{ label: existing.title, to: `/teacher/courses/${existing.id}` }] : []), { label: isEdit ? "Editing" : "New Course" }]}
+        title={isEdit ? "Edit Course" : "New Course"}
+        description={isEdit ? "Update your course details and publishing settings." : "Fill in the main details. You can add modules and lessons in the next step."}
       />
 
       <form className="grid grid-main-aside" onSubmit={save(false)} noValidate>
         <div className="stack" style={{ ['--gap' as string]: '20px', minWidth: 0 }}>
-          <Card title="Հիմնական տվյալներ">
+          <Card title="Basic Details">
             <div className="stack" style={{ ['--gap' as string]: '16px' }}>
-              <Input label="Անվանում" required value={form.title} onChange={(e) => set('title', e.target.value)} error={errors.title} placeholder="Օր.՝ Վեբ մշակման հիմունքներ" maxLength={90} hint={`${form.title.length}/90`} />
-              <Textarea label="Կարճ նկարագրություն" required rows={2} value={form.shortDescription} onChange={(e) => set('shortDescription', e.target.value)} error={errors.shortDescription} hint="Ցուցադրվում է կատալոգի քարտում" maxLength={160} style={{ minHeight: 70 }} />
-              <Textarea label="Մանրամասն նկարագրություն" rows={5} value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Ում համար է դասընթացը, ինչ նախնական գիտելիքներ են պետք, ինչպես է կառուցված…" />
+              <Input label="Title" required value={form.title} onChange={(e) => set('title', e.target.value)} error={errors.title} placeholder="e.g., Web Development Fundamentals" maxLength={90} hint={`${form.title.length}/90`} />
+              <Textarea label="Short Description" required rows={2} value={form.shortDescription} onChange={(e) => set('shortDescription', e.target.value)} error={errors.shortDescription} hint="Shown on the course card" maxLength={160} style={{ minHeight: 70 }} />
+              <Textarea label="Full Description" rows={5} value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Describe who this course is for, any prerequisites, and how it is organized…" />
               <div className="grid grid-3" style={{ ['--gap' as string]: '16px' }}>
-                <Select label="Ուղղություն" value={form.category} onChange={(e) => set('category', e.target.value)} options={categories.map((c) => ({ value: c.id, label: c.name }))} />
-                <Select label="Մակարդակ" value={form.difficulty} onChange={(e) => set('difficulty', e.target.value)} options={Object.entries(difficultyLabel).map(([value, label]) => ({ value, label }))} />
-                <Input label="Տևողություն (ժամ)" type="number" min={1} max={200} required value={form.durationHours} onChange={(e) => set('durationHours', e.target.value)} error={errors.durationHours} />
-                <Select label="Լեզու" value={form.language} onChange={(e) => set('language', e.target.value)} options={[{ value: 'Հայերեն', label: 'Հայերեն' }, { value: 'Հայերեն / անգլերեն', label: 'Հայերեն / անգլերեն' }, { value: 'Անգլերեն', label: 'Անգլերեն' }]} />
-                <Input label="Մեկնարկի ամսաթիվ" type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
+                <Select label="Category" value={form.category} onChange={(e) => set('category', e.target.value)} options={categories.map((c) => ({ value: c.id, label: c.name }))} />
+                <Select label="Level" value={form.difficulty} onChange={(e) => set('difficulty', e.target.value)} options={Object.entries(difficultyLabel).map(([value, label]) => ({ value, label }))} />
+                <Input label="Duration (hours)" type="number" min={1} max={200} required value={form.durationHours} onChange={(e) => set('durationHours', e.target.value)} error={errors.durationHours} />
+                <Select label="Language" value={form.language} onChange={(e) => set('language', e.target.value)} options={[{ value: "English", label: "English" }]} />
+                <Input label="Start Date" type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
               </div>
             </div>
           </Card>
 
-          <Card title="Ուսումնական նպատակներ" subtitle="Ինչ կկարողանա անել ուսանողը դասընթացից հետո">
+          <Card title="Learning Objectives" subtitle="What will students be able to do after this course?">
             <div className="stack" style={{ ['--gap' as string]: '10px' }}>
               {objectives.map((o, i) => (
                 <div key={i} className="row">
                   <span className="xs muted" style={{ width: 18 }}>{i + 1}.</span>
-                  <input className="input grow" value={o} aria-label={`Նպատակ ${i + 1}`} placeholder="Օր.՝ Կառուցել ինտերակտիվ վեբ էջ" onChange={(e) => setObjectives((l) => l.map((x, j) => (j === i ? e.target.value : x)))} />
-                  <Button variant="ghost" iconOnly icon={<Trash2 />} aria-label={`Հեռացնել նպատակ ${i + 1}`} disabled={objectives.length === 1} onClick={() => setObjectives((l) => l.filter((_, j) => j !== i))} />
+                  <input className="input grow" value={o} aria-label={`Objective ${i + 1}`} placeholder="e.g., Build an interactive web page" onChange={(e) => setObjectives((l) => l.map((x, j) => (j === i ? e.target.value : x)))} />
+                  <Button variant="ghost" iconOnly icon={<Trash2 />} aria-label={`Remove objective ${i + 1}`} disabled={objectives.length === 1} onClick={() => setObjectives((l) => l.filter((_, j) => j !== i))} />
                 </div>
               ))}
               {errors.objectives && <span className="field__error">{errors.objectives}</span>}
               <div>
-                <Button variant="secondary" size="sm" icon={<Plus />} onClick={() => setObjectives((l) => [...l, ''])} disabled={objectives.length >= 8}>Ավելացնել նպատակ</Button>
+                <Button variant="secondary" size="sm" icon={<Plus />} onClick={() => setObjectives((l) => [...l, ''])} disabled={objectives.length >= 8}>Add Objective</Button>
               </div>
             </div>
           </Card>
 
-          <Card title="Շապիկի նկար">
+          <Card title="Cover Image">
             <div className="image-choices">
               {IMAGE_CHOICES.concat(existing && !IMAGE_CHOICES.includes(existing.image) ? [existing.image] : []).map((src) => (
-                <button key={src} type="button" className={cx('image-choice', form.image === src && 'is-selected')} onClick={() => set('image', src)} aria-pressed={form.image === src} aria-label="Ընտրել նկարը">
+                <button key={src} type="button" className={cx('image-choice', form.image === src && 'is-selected')} onClick={() => set('image', src)} aria-pressed={form.image === src} aria-label="Choose Image">
                   <img src={src} alt="" loading="lazy" />
                 </button>
               ))}
             </div>
-            <Input label="Կամ նշեք նկարի հղումը" value={form.image} onChange={(e) => set('image', e.target.value)} fieldClassName="mt-20" hint="Ցուցադրական տարբերակում ֆայլեր չեն վերբեռնվում" />
+            <Input label="Or enter an image URL" value={form.image} onChange={(e) => set('image', e.target.value)} fieldClassName="mt-20" hint="Files are not uploaded in this demo" />
           </Card>
 
-          <Card title="Տեսանելիություն և գրանցում">
+          <Card title="Visibility and Enrollment">
             <fieldset className="stack" style={{ border: 0, padding: 0, margin: 0, ['--gap' as string]: '10px' }}>
-              <legend className="field__label" style={{ marginBottom: 8 }}>Ով կարող է տեսնել դասընթացը</legend>
+              <legend className="field__label" style={{ marginBottom: 8 }}>Who can see this course?</legend>
               {([
-                ['public', Globe, 'Հանրային', 'Դասընթացը երևում է կատալոգում բոլորին'],
-                ['link', Link2, 'Հղումով', 'Միայն նրանք, ովքեր ունեն հղումը'],
-                ['private', Lock, 'Փակ', 'Միայն ձեր կողմից հրավիրված ուսանողները'],
+                ['public', Globe, "Public", "Visible to everyone"],
+                ['link', Link2, "Unlisted", "Only people with the link"],
+                ['private', Lock, "Locked", "Only students you invite"],
               ] as const).map(([v, Icon, l, d]) => (
                 <label key={v} className={cx('role-option', visibility === v && 'is-selected')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <input type="radio" name="visibility" className="sr-only" checked={visibility === v} onChange={() => setVisibility(v)} />
@@ -161,21 +161,21 @@ export function CourseFormPage() {
               ))}
             </fieldset>
             <div className="settings-list mt-20">
-              <Toggle label="Բաց գրանցում" description="Ուսանողները կարող են ինքնուրույն գրանցվել" checked={openEnroll} onChange={setOpenEnroll} />
-              <Toggle label="Ավարտական վկայական" description="Տրամադրվում է բոլոր առաջադրանքները հանձնելուց հետո" checked={certificate} onChange={setCertificate} />
+              <Toggle label="Open Enrollment" description="Students can enroll on their own" checked={openEnroll} onChange={setOpenEnroll} />
+              <Toggle label="Certificate of Completion" description="Awarded after all assignments are submitted" checked={certificate} onChange={setCertificate} />
             </div>
           </Card>
         </div>
 
         <aside className="stack" style={{ ['--gap' as string]: '16px', position: 'sticky', top: 88 }}>
-          <div className="small strong" style={{ color: 'var(--navy-900)' }}>Կատալոգի քարտի նախադիտում</div>
+          <div className="small strong" style={{ color: 'var(--navy-900)' }}>Course Card Preview</div>
           <div style={{ pointerEvents: 'none' }}>
             <CourseCard course={preview} />
           </div>
-          <Notice tone="neutral">Պահպանումը ցուցադրական է. դասընթացը չի ստեղծվի սերվերում։</Notice>
-          <Button type="submit" variant="secondary" block icon={<Save />}>Պահել որպես սևագիր</Button>
-          <Button variant="primary" block icon={<Send />} onClick={() => save(true)()}>{isEdit ? 'Պահել և հրապարակել' : 'Ստեղծել և հրապարակել'}</Button>
-          <Button variant="ghost" block onClick={() => navigate(-1)}>Չեղարկել</Button>
+          <Notice tone="neutral">Saving is simulated. No course will be created on a server.</Notice>
+          <Button type="submit" variant="secondary" block icon={<Save />}>Save as Draft</Button>
+          <Button variant="primary" block icon={<Send />} onClick={() => save(true)()}>{isEdit ? "Save and Publish" : "Create and Publish"}</Button>
+          <Button variant="ghost" block onClick={() => navigate(-1)}>Cancel</Button>
         </aside>
       </form>
     </>

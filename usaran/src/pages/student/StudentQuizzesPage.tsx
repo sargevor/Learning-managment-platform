@@ -19,30 +19,30 @@ export function StudentQuizzesPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Վահանակ', to: '/student/dashboard' }, { label: 'Թեստեր' }]}
-        title="Թեստեր"
-        description="Ինքնաստուգման և ստուգողական թեստեր։ Արդյունքը հաշվարկվում է անմիջապես՝ պատասխանների վերլուծությամբ։"
+        breadcrumbs={[{ label: "Dashboard", to: '/student/dashboard' }, { label: "Quizzes" }]}
+        title="Quizzes"
+        description="Test your understanding with quizzes. See your result and answer explanations as soon as you finish."
       />
       <div className="grid grid-3" style={{ marginBottom: 24 }}>
-        <StatCard label="Հասանելի թեստեր" value={count('available')} icon={<FileQuestion />} />
-        <StatCard label="Հանձնված" value={count('passed')} unit={`/${taken.length}`} tone="success" icon={<FileQuestion />} />
-        <StatCard label="Միջին արդյունք" value={average(taken.map((q) => q.bestPercent!))} unit="%" tone="navy" icon={<FileQuestion />} />
+        <StatCard label="Available Quizzes" value={count('available')} icon={<FileQuestion />} />
+        <StatCard label="Passed" value={count('passed')} unit={`/${taken.length}`} tone="success" icon={<FileQuestion />} />
+        <StatCard label="Average Result" value={average(taken.map((q) => q.bestPercent!))} unit="%" tone="navy" icon={<FileQuestion />} />
       </div>
       <div className="stack" style={{ ['--gap' as string]: '18px' }}>
         <Tabs
           value={filter}
           onChange={setFilter}
           items={[
-            { key: 'all', label: 'Բոլորը', count: all.length },
-            { key: 'available', label: 'Հասանելի', count: count('available') },
-            { key: 'passed', label: 'Հանձնված', count: count('passed') },
-            { key: 'failed', label: 'Չհանձնված', count: count('failed') },
-            { key: 'locked', label: 'Փակ', count: count('locked') },
+            { key: 'all', label: "All", count: all.length },
+            { key: 'available', label: "Available", count: count('available') },
+            { key: 'passed', label: "Passed", count: count('passed') },
+            { key: 'failed', label: "Not passed", count: count('failed') },
+            { key: 'locked', label: "Locked", count: count('locked') },
           ]}
         />
         {list.length === 0 ? (
           <div className="card">
-            <EmptyState icon={<FileQuestion size={24} />} title="Այս բաժնում թեստեր չկան" text="Նոր թեստերը կհայտնվեն դասընթացի համապատասխան մոդուլը սկսելիս։" />
+            <EmptyState icon={<FileQuestion size={24} />} title="No quizzes in this section" text="New quizzes will appear when you reach the relevant course module." />
           </div>
         ) : (
           <div className="grid grid-2">

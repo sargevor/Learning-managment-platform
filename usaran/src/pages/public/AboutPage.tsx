@@ -6,11 +6,11 @@ import { Breadcrumbs } from '../../components/ui/Misc';
 import { cx } from '../../lib/format';
 
 const FAQ = [
-  ['Արդյո՞ք սա իրական հարթակ է։', 'Ոչ։ Սա ցուցադրական ինտերֆեյս է՝ օրինակային տվյալներով։ Գրանցումը, մուտքը, հանձնումները և գնահատականները չեն պահպանվում և չեն ուղարկվում սերվեր։'],
-  ['Ինչպե՞ս տեսնել ուսանողի և դասավանդողի միջավայրերը։', 'Մուտքի էջում ընտրեք դեմո դերը, կամ ցանկացած ներքին էջի վերևի մասում օգտագործեք «Ուսանող / Դասավանդող» փոխարկիչը։'],
-  ['Որքա՞ն է տևում մեկ դասընթացը։', 'Դասընթացները տևում են 8-ից 44 ժամ։ Դուք կարող եք սովորել ձեզ հարմար տեմպով, սակայն առաջադրանքներն ունեն վերջնաժամկետներ։'],
-  ['Ինչպե՞ս են գնահատվում աշխատանքները։', 'Գործնական առաջադրանքները գնահատում է դասավանդողը՝ մեկնաբանությամբ, իսկ թեստերը ստուգվում են ավտոմատ և արդյունքը երևում է անմիջապես։'],
-  ['Կարո՞ղ եմ սովորել հեռախոսից։', 'Այո։ Ինտերֆեյսը հարմարեցված է բոլոր չափերի էկրանների համար։'],
+  ["Is this a live learning platform?", "This is a demo interface with sample data. Registrations, sign-ins, submissions, and grades are not saved or sent to a server."],
+  ["How can I explore the student and instructor areas?", "Choose Student or Instructor on the sign-in page, or use the Student / Instructor switch at the top of any dashboard page."],
+  ["How long does a course take?", "Courses range from 8 to 44 hours. You can learn at your own pace, although assignments have deadlines."],
+  ["How is work graded?", "Instructors grade practical assignments and provide feedback. Quizzes are graded automatically, with results available immediately."],
+  ["Can I learn on my phone?", "Yes. The interface adapts to screens of all sizes."],
 ];
 
 export function AboutPage() {
@@ -25,20 +25,18 @@ export function AboutPage() {
     <>
       <section className="page-band">
         <div className="container">
-        <Breadcrumbs items={[{ label: 'Գլխավոր', to: '/' }, { label: 'Հարթակի մասին' }]} />
-        <h1 style={{ maxWidth: 860 }}>Ուսարանը ստեղծված է, որպեսզի ուսումը լինի <span className="hl">կանոնավոր</span>, իսկ դասավանդումը՝ թափանցիկ</h1>
-        <p className="page-band__lead" style={{ maxWidth: 680 }}>
-          Մենք միավորել ենք դասընթացների նյութերը, առաջադրանքները, թեստերը և գնահատականները մեկ հստակ միջավայրում, որպեսզի ուսանողները կենտրոնանան սովորելու, իսկ դասավանդողները՝ ուսանողներին օգնելու վրա։
-        </p>
+        <Breadcrumbs items={[{ label: "Home", to: '/' }, { label: "About" }]} />
+        <h1 style={{ maxWidth: 860 }}>One place to <span className="hl">learn and teach</span></h1>
+        <p className="page-band__lead" style={{ maxWidth: 680 }}>We bring course materials, assignments, quizzes, and grades together so students can focus on learning and instructors can focus on supporting them.</p>
         </div>
       </section>
 
       <section className="section">
         <div className="container grid grid-3">
           {[
-            [Compass, 'Առաքելություն', 'Հասանելի դարձնել որակյալ ուսուցումը՝ անկախ գտնվելու վայրից և ժամանակացույցից։', 't-sky'],
-            [ShieldCheck, 'Թափանցիկություն', 'Ուսանողը միշտ գիտի՝ ինչ է սպասվում իրենից, երբ և ինչպես է գնահատվելու։', 't-mint'],
-            [HeartHandshake, 'Աջակցություն', 'Դասավանդողը ժամանակին տեսնում է, թե ով է դժվարանում, և կարող է օգնել։', 't-rose'],
+            [Compass, "Our Mission", "Make quality learning accessible, wherever you are and whatever your schedule.", 't-sky'],
+            [ShieldCheck, "Transparency", "Students always know what is expected, when work is due, and how it will be graded.", 't-mint'],
+            [HeartHandshake, "Support", "Instructors can spot students who need help and offer support in time.", 't-rose'],
           ].map(([Icon, t, d, tint]) => {
             const I = Icon as typeof Compass;
             return (
@@ -57,34 +55,34 @@ export function AboutPage() {
           <div className="card card--pad">
             <div className="row" style={{ marginBottom: 14 }}>
               <span className="tint-box t-sky"><GraduationCap /></span>
-              <h2>Ուսանողների համար</h2>
+              <h2>For Students</h2>
             </div>
             <ul className="check-list">
-              <li><BookMarked aria-hidden="true" />Դասընթացներ՝ բաժանված մոդուլների և կարճ դասերի</li>
-              <li><CheckSquare aria-hidden="true" />Առաջադրանքներ՝ տեքստային պատասխանով և ֆայլերով</li>
-              <li><LineChart aria-hidden="true" />Գնահատականներ, թեստերի արդյունքներ և առաջընթացի գրաֆիկներ</li>
+              <li><BookMarked aria-hidden="true" />Courses organized into modules and short lessons</li>
+              <li><CheckSquare aria-hidden="true" />Assignments with text responses and file attachments</li>
+              <li><LineChart aria-hidden="true" />Grades, quiz results, and progress charts</li>
             </ul>
-            <ButtonLink to="/student/dashboard" variant="secondary" style={{ marginTop: 18 }}>Բացել ուսանողի դեմոն</ButtonLink>
+            <ButtonLink to="/student/dashboard" variant="secondary" style={{ marginTop: 18 }}>Try the Student Experience</ButtonLink>
           </div>
           <div className="card card--pad" id="teachers">
             <div className="row" style={{ marginBottom: 14 }}>
               <span className="tint-box t-lilac"><Users /></span>
-              <h2>Դասավանդողների համար</h2>
+              <h2>For teachers</h2>
             </div>
             <ul className="check-list">
-              <li><BookMarked aria-hidden="true" />Դասընթացի կառուցվածքի և բովանդակության կառավարում</li>
-              <li><CheckSquare aria-hidden="true" />Գնահատման կենտրոն՝ բոլոր հանձնումներով մեկ տեղում</li>
-              <li><LineChart aria-hidden="true" />Հաշվետվություններ ըստ դասընթացի, ուսանողի և ժամանակահատվածի</li>
+              <li><BookMarked aria-hidden="true" />Manage course structure and content</li>
+              <li><CheckSquare aria-hidden="true" />Review all submissions in one grading center</li>
+              <li><LineChart aria-hidden="true" />View reports by course, student, and date range</li>
             </ul>
-            <ButtonLink to="/teacher/dashboard" variant="secondary" style={{ marginTop: 18 }}>Բացել դասավանդողի դեմոն</ButtonLink>
+            <ButtonLink to="/teacher/dashboard" variant="secondary" style={{ marginTop: 18 }}>Try the Instructor Experience</ButtonLink>
           </div>
         </div>
       </section>
 
       <section className="section section--muted" id="faq">
         <div className="container" style={{ maxWidth: 820 }}>
-          <span className="kicker">Հարցեր</span>
-          <h2 className="section-head__title" style={{ margin: '10px 0 24px' }}>Հաճախ տրվող <span className="hl">հարցեր</span></h2>
+          <span className="kicker">Questions</span>
+          <h2 className="section-head__title" style={{ margin: '10px 0 24px' }}>Frequently Asked <span className="hl">Questions</span></h2>
           <div className="card faq">
             {FAQ.map(([q, a], i) => (
               <div key={q} className="faq__item">

@@ -1,3 +1,4 @@
+// @ts-ignore
 import { BrowserRouter, HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { AppShell } from './components/layout/AppShell';

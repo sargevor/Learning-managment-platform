@@ -42,7 +42,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
             <h2 id="modal-title">{title}</h2>
             {description && <p>{description}</p>}
           </div>
-          <button type="button" className="icon-btn modal__close" onClick={onClose} aria-label="Փակել">
+          <button type="button" className="icon-btn modal__close" onClick={onClose} aria-label="Close">
             <X />
           </button>
         </div>
@@ -77,7 +77,7 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, text, confirmLa
           <p className="secondary small">{text}</p>
         </div>
         <div className="modal__footer">
-          <Button variant="secondary" onClick={onClose} autoFocus>Չեղարկել</Button>
+          <Button variant="secondary" onClick={onClose} autoFocus>Cancel</Button>
           <Button
             variant={tone === 'danger' ? 'danger' : 'primary'}
             onClick={() => {

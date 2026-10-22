@@ -17,18 +17,18 @@ export function SettingsPage({ role }: { role: Role }) {
   const [tab, setTab] = useState<Tab>('notifications');
 
   const studentPrefs = [
-    ['deadlines', 'Մոտեցող վերջնաժամկետներ', 'Հիշեցում 48 և 24 ժամ առաջ'],
-    ['grades', 'Նոր գնահատականներ', 'Երբ դասավանդողը գնահատում է աշխատանքը'],
-    ['content', 'Նոր դասեր և նյութեր', 'Երբ դասընթացում ավելանում է նոր բովանդակություն'],
-    ['quizzes', 'Նոր թեստեր', 'Երբ թեստը դառնում է հասանելի'],
-    ['digest', 'Շաբաթական ամփոփում', 'Ակտիվության և առաջընթացի կարճ ամփոփում ամեն երկուշաբթի'],
+    ['deadlines', "Upcoming Deadlines", "Reminders 48 and 24 hours before the deadline"],
+    ['grades', "New Grades", "When an instructor grades your work"],
+    ['content', "New Lessons and Materials", "When new content is added to a course"],
+    ['quizzes', "New Quizzes", "When a quiz becomes available"],
+    ['digest', "Weekly Summary", "A brief summary of your activity and progress every Monday"],
   ];
   const teacherPrefs = [
-    ['submissions', 'Նոր հանձնումներ', 'Երբ ուսանողը հանձնում է աշխատանք'],
-    ['questions', 'Ուսանողների հարցեր', 'Երբ ուսանողը հարց է ուղարկում'],
-    ['risk', 'Ռիսկային ուսանողներ', 'Երբ ուսանողը 10 օրից ավելի ակտիվ չէ'],
-    ['enroll', 'Նոր գրանցումներ', 'Դասընթացին նոր ուսանողների գրանցման մասին'],
-    ['digest', 'Շաբաթական հաշվետվություն', 'Դասընթացների ցուցանիշների ամփոփում'],
+    ['submissions', "New Submissions", "When a student submits an assignment"],
+    ['questions', "Student Questions", "When a student sends a question"],
+    ['risk', "Students Needing Support", "When a student has been inactive for more than 10 days"],
+    ['enroll', "New Enrollments", "When new students enroll in a course"],
+    ['digest', "Weekly Report", "A summary of course performance"],
   ];
   const prefs = role === 'student' ? studentPrefs : teacherPrefs;
   const [email, setEmail] = useState<Record<string, boolean>>(() => Object.fromEntries(prefs.map(([k], i) => [k, i !== 4])));
@@ -37,51 +37,51 @@ export function SettingsPage({ role }: { role: Role }) {
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
   const [pwErr, setPwErr] = useState<Record<string, string>>({});
   const [twoFa, setTwoFa] = useState(false);
-  const [lang, setLang] = useState('hy');
+  const [lang, setLang] = useState('en');
   const [tz, setTz] = useState('Asia/Yerevan');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const changePassword = (e: FormEvent) => {
     e.preventDefault();
     const n: Record<string, string> = {};
-    if (!pw.current) n.current = 'Մուտքագրեք ընթացիկ գաղտնաբառը';
-    if (pw.next.length < 8) n.next = 'Նոր գաղտնաբառը պետք է լինի առնվազն 8 նիշ';
-    else if (pw.next === pw.current) n.next = 'Նոր գաղտնաբառը պետք է տարբերվի ընթացիկից';
-    if (pw.confirm !== pw.next) n.confirm = 'Գաղտնաբառերը չեն համընկնում';
+    if (!pw.current) n.current = "Enter your current password";
+    if (pw.next.length < 8) n.next = "Your new password must contain at least 8 characters";
+    else if (pw.next === pw.current) n.next = "Your new password must differ from your current password";
+    if (pw.confirm !== pw.next) n.confirm = "Passwords do not match";
     setPwErr(n);
     if (Object.keys(n).length) return;
     setPw({ current: '', next: '', confirm: '' });
-    toast.info('Գաղտնաբառը չի փոխվել', 'Սա ցուցադրական ձևաթուղթ է. իրական հաշիվ և գաղտնաբառ գոյություն չունեն։');
+    toast.info("Password not changed", "This is a demo form. There is no real account or password.");
   };
 
   return (
     <>
-      <PageHeader breadcrumbs={[{ label: 'Վահանակ', to: `/${role}/dashboard` }, { label: 'Կարգավորումներ' }]} title="Կարգավորումներ" description="Ծանուցումներ, անվտանգություն և հաշվի պարամետրեր։" />
+      <PageHeader breadcrumbs={[{ label: "Dashboard", to: `/${role}/dashboard` }, { label: "Settings" }]} title="Settings" description="Manage notifications, security, and account preferences." />
       <div className="stack" style={{ ['--gap' as string]: '20px', maxWidth: 880 }}>
         <Tabs
           value={tab}
           onChange={setTab}
           items={[
-            { key: 'notifications', label: 'Ծանուցումներ' },
-            { key: 'security', label: 'Անվտանգություն' },
-            { key: 'account', label: 'Հաշիվ' },
+            { key: 'notifications', label: "Notifications" },
+            { key: 'security', label: "Security" },
+            { key: 'account', label: "Account" },
           ]}
         />
 
         {tab === 'notifications' && (
           <Card
-            title="Ծանուցումների նախընտրություններ"
-            subtitle="Ընտրեք, թե ինչի մասին և ինչ ձևով տեղեկանալ"
-            footer={<Button variant="primary" onClick={() => toast.success('Նախընտրությունները պահվեցին', 'Միայն այս էջում, դեմո ռեժիմ։')}>Պահել</Button>}
+            title="Notification Preferences"
+            subtitle="Choose what you hear about and how"
+            footer={<Button variant="primary" onClick={() => toast.success("Preferences saved", "Demo: changes are kept only on this page.")}>Save</Button>}
             padded={false}
           >
             <div className="table-wrap">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Իրադարձություն</th>
-                    <th style={{ textAlign: 'center', width: 110 }}>Էլ. փոստ</th>
-                    <th style={{ textAlign: 'center', width: 110 }}>Հարթակում</th>
+                    <th>Event</th>
+                    <th style={{ textAlign: 'center', width: 110 }}>Email</th>
+                    <th style={{ textAlign: 'center', width: 110 }}>In-App</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -93,14 +93,14 @@ export function SettingsPage({ role }: { role: Role }) {
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <label className="toggle" style={{ justifyContent: 'center' }}>
-                          <span className="sr-only">{l}՝ էլ. փոստով</span>
+                          <span className="sr-only">{l} by email</span>
                           <input type="checkbox" role="switch" checked={email[k]} onChange={(e) => setEmail((s) => ({ ...s, [k]: e.target.checked }))} />
                           <span className="toggle__track" aria-hidden="true" />
                         </label>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <label className="toggle" style={{ justifyContent: 'center' }}>
-                          <span className="sr-only">{l}՝ հարթակում</span>
+                          <span className="sr-only">{l} in the app</span>
                           <input type="checkbox" role="switch" checked={push[k]} onChange={(e) => setPush((s) => ({ ...s, [k]: e.target.checked }))} />
                           <span className="toggle__track" aria-hidden="true" />
                         </label>
@@ -116,30 +116,30 @@ export function SettingsPage({ role }: { role: Role }) {
         {tab === 'security' && (
           <>
             <form onSubmit={changePassword} noValidate>
-              <Card title="Գաղտնաբառի փոփոխություն" subtitle="Ցուցադրական ձևաթուղթ. իրական գաղտնաբառ չի փոխվում" footer={<Button type="submit" variant="primary" icon={<KeyRound />}>Փոխել գաղտնաբառը</Button>}>
+              <Card title="Change Password" subtitle="Demo form: your real password will not change" footer={<Button type="submit" variant="primary" icon={<KeyRound />}>Change Password</Button>}>
                 <div className="stack" style={{ ['--gap' as string]: '16px', maxWidth: 420 }}>
-                  <Input label="Ընթացիկ գաղտնաբառ" type="password" autoComplete="current-password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} error={pwErr.current} />
-                  <Input label="Նոր գաղտնաբառ" type="password" autoComplete="new-password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} error={pwErr.next} hint="Առնվազն 8 նիշ, խորհուրդ է տրվում ներառել թիվ և նշան" />
-                  <Input label="Կրկնել նոր գաղտնաբառը" type="password" autoComplete="new-password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} error={pwErr.confirm} />
+                  <Input label="Current Password" type="password" autoComplete="current-password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} error={pwErr.current} />
+                  <Input label="New Password" type="password" autoComplete="new-password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} error={pwErr.next} hint="At least 8 characters. We recommend including a number and a special character." />
+                  <Input label="Confirm New Password" type="password" autoComplete="new-password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} error={pwErr.confirm} />
                 </div>
               </Card>
             </form>
-            <Card title="Երկքայլ նույնականացում">
+            <Card title="Two-Factor Authentication">
               <Toggle
-                label="Միացնել երկքայլ նույնականացումը"
-                description="Մուտքի ժամանակ կպահանջվի հաստատման կոդ հեռախոսից"
+                label="Enable Two-Factor Authentication"
+                description="Require a verification code from your phone when signing in"
                 checked={twoFa}
                 onChange={(v) => {
                   setTwoFa(v);
-                  toast.info(v ? 'Երկքայլ նույնականացումը միացված է' : 'Երկքայլ նույնականացումն անջատված է', 'Միայն ցուցադրական կարգավորում։');
+                  toast.info(v ? "Two-factor authentication enabled" : "Two-factor authentication disabled", "This setting is for demonstration only.");
                 }}
               />
             </Card>
-            <Card title="Ակտիվ նստաշրջաններ" padded={false}>
+            <Card title="Active Sessions" padded={false}>
               <div className="list">
                 {[
-                  [Monitor, 'Chrome, Windows', 'Երևան, ընթացիկ նստաշրջան', true],
-                  [Smartphone, 'Safari, iPhone', 'Երևան, 2 օր առաջ', false],
+                  [Monitor, 'Chrome, Windows', "Yerevan, current session", true],
+                  [Smartphone, 'Safari, iPhone', "Yerevan, 2 days ago", false],
                 ].map(([Icon, t, s, current]) => {
                   const I = Icon as typeof Monitor;
                   return (
@@ -149,7 +149,7 @@ export function SettingsPage({ role }: { role: Role }) {
                         <div className="list-row__title">{t as string}</div>
                         <div className="list-row__sub">{s as string}</div>
                       </div>
-                      {current ? <Badge tone="success">Այս սարքը</Badge> : <Button variant="ghost" size="sm" icon={<LogOut />} onClick={() => toast.info('Նստաշրջանը փակվեց', 'Դեմո ռեժիմ։')}>Դուրս գալ</Button>}
+                      {current ? <Badge tone="success">This Device</Badge> : <Button variant="ghost" size="sm" icon={<LogOut />} onClick={() => toast.info("Session ended", "Demo only.")}>Sign Out</Button>}
                     </div>
                   );
                 })}
@@ -160,23 +160,23 @@ export function SettingsPage({ role }: { role: Role }) {
 
         {tab === 'account' && (
           <>
-            <Card title="Լեզու և տարածաշրջան" footer={<Button variant="primary" onClick={() => toast.success('Կարգավորումները պահվեցին', 'Միայն այս էջում։')}>Պահել</Button>}>
+            <Card title="Language and Region" footer={<Button variant="primary" onClick={() => toast.success("Settings saved", "Changes are kept only on this page.")}>Save</Button>}>
               <div className="grid grid-2" style={{ ['--gap' as string]: '16px' }}>
-                <Select label="Ինտերֆեյսի լեզու" value={lang} onChange={(e) => setLang(e.target.value)} options={[{ value: 'hy', label: 'Հայերեն' }, { value: 'en', label: 'English (շուտով)' }, { value: 'ru', label: 'Русский (շուտով)' }]} hint="Այլ լեզուները հասանելի չեն ցուցադրական տարբերակում" />
-                <Select label="Ժամային գոտի" value={tz} onChange={(e) => setTz(e.target.value)} options={[{ value: 'Asia/Yerevan', label: 'Երևան (UTC+4)' }, { value: 'Europe/Moscow', label: 'Մոսկվա (UTC+3)' }, { value: 'Europe/Paris', label: 'Փարիզ (UTC+1)' }, { value: 'America/Los_Angeles', label: 'Լոս Անջելես (UTC−8)' }]} />
+                <Select label="Interface Language" value={lang} onChange={(e) => setLang(e.target.value)} options={[{ value: 'en', label: "English" }]} hint="English is the available language in this demo" />
+                <Select label="Time Zone" value={tz} onChange={(e) => setTz(e.target.value)} options={[{ value: 'Asia/Yerevan', label: "Yerevan (UTC+4)" }, { value: 'Europe/Moscow', label: "Moscow (UTC+3)" }, { value: 'Europe/Paris', label: "Paris (UTC+1)" }, { value: 'America/Los_Angeles', label: "Los Angeles (UTC−8)" }]} />
               </div>
             </Card>
-            <Card title="Գաղտնիություն">
+            <Card title="Privacy">
               <div className="settings-list">
-                <PrivacyToggle label="Ցուցադրել պրոֆիլը խմբի այլ անդամներին" description="Անունը և նկարը կերևան դասընթացի մասնակիցների ցուցակում" initial />
-                <PrivacyToggle label="Թույլատրել անանուն վերլուծությունը" description="Օգնում է բարելավել դասընթացների որակը" initial />
+                <PrivacyToggle label="Show My Profile to Classmates" description="Your name and photo will appear in the course participant list" initial />
+                <PrivacyToggle label="Allow Anonymous Analytics" description="Help improve the quality of courses" initial />
               </div>
             </Card>
-            <Card title="Վտանգավոր գործողություններ">
-              <Notice tone="danger" className="mb-20">Հաշվի ջնջումից հետո բոլոր դասընթացները, հանձնումները և գնահատականները կկորչեն։ Այս գործողությունը հնարավոր չէ հետարկել։</Notice>
+            <Card title="Delete Account">
+              <Notice tone="danger" className="mb-20">Deleting your account permanently removes your courses, submissions, and grades. This action cannot be undone.</Notice>
               <div className="row row--wrap" style={{ ['--gap' as string]: '10px' }}>
-                <Button variant="danger" icon={<Trash2 />} onClick={() => setConfirmDelete(true)}>Ջնջել հաշիվը</Button>
-                <span className="xs muted row" style={{ ['--gap' as string]: '6px' }}><ShieldCheck size={14} />Դեմո ռեժիմում իրական ջնջում տեղի չի ունենում</span>
+                <Button variant="danger" icon={<Trash2 />} onClick={() => setConfirmDelete(true)}>Delete Account</Button>
+                <span className="xs muted row" style={{ ['--gap' as string]: '6px' }}><ShieldCheck size={14} />No real account is deleted in this demo</span>
               </div>
             </Card>
           </>
@@ -186,12 +186,12 @@ export function SettingsPage({ role }: { role: Role }) {
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => {
-          toast.warning('Հաշիվը չի ջնջվել', 'Դեմո ռեժիմ. դուք վերադարձվեցիք գլխավոր էջ։');
+          toast.warning("Account not deleted", "Demo: you have been returned to the home page.");
           navigate('/');
         }}
-        title="Ջնջե՞լ հաշիվը"
-        text="Իրական հարթակում այս գործողությունը վերջնական կլիներ։ Ցուցադրական տարբերակում ոչինչ չի ջնջվի։"
-        confirmLabel="Այո, ջնջել"
+        title="Delete your account?"
+        text="On a live platform, this action would be permanent. Nothing will be deleted in this demo."
+        confirmLabel="Yes, Delete"
       />
     </>
   );

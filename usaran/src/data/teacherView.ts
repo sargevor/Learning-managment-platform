@@ -34,7 +34,7 @@ export function studentsInCourse(courseId: string) {
   return studentRecords.filter((r) => r.courseIds.includes(courseId));
 }
 
-const SHORT_TITLES: Record<string, string> = { react: 'React', js: 'JavaScript', 'python-data': 'Python', sql: 'SQL', algorithms: 'Ալգորիթմներ' };
+const SHORT_TITLES: Record<string, string> = { react: 'React', js: 'JavaScript', 'python-data': 'Python', sql: 'SQL', algorithms: "Algorithms" };
 
 /** Compact course label for chart axes and legends. */
 export function shortTitle(courseId: string): string {

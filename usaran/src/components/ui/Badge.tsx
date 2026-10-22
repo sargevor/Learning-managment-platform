@@ -14,26 +14,26 @@ export function Badge({ tone = 'neutral', dot, outline, children, className }: {
 
 const STATUS: Record<string, { label: string; tone: Tone }> = {
   // assignments
-  'not-started': { label: 'Չսկսված', tone: 'neutral' },
-  draft: { label: 'Սևագիր', tone: 'info' },
-  submitted: { label: 'Սպասում է գնահատման', tone: 'warning' },
-  graded: { label: 'Գնահատված', tone: 'success' },
-  returned: { label: 'Վերադարձված', tone: 'success' },
-  overdue: { label: 'Ժամկետանց', tone: 'danger' },
+  'not-started': { label: "Not started", tone: 'neutral' },
+  draft: { label: "Draft", tone: 'info' },
+  submitted: { label: "Awaiting grading", tone: 'warning' },
+  graded: { label: "Graded", tone: 'success' },
+  returned: { label: "Returned", tone: 'success' },
+  overdue: { label: "Overdue", tone: 'danger' },
   // courses / enrollment
-  'in-progress': { label: 'Ընթացքում', tone: 'accent' },
-  completed: { label: 'Ավարտված', tone: 'success' },
-  published: { label: 'Հրապարակված', tone: 'success' },
-  archived: { label: 'Արխիվացված', tone: 'neutral' },
+  'in-progress': { label: "In progress", tone: 'accent' },
+  completed: { label: "Completed", tone: 'success' },
+  published: { label: "Published", tone: 'success' },
+  archived: { label: "Archived", tone: 'neutral' },
   // quizzes
-  available: { label: 'Հասանելի', tone: 'accent' },
-  passed: { label: 'Հանձնված', tone: 'success' },
-  failed: { label: 'Չհանձնված', tone: 'danger' },
-  locked: { label: 'Փակ', tone: 'neutral' },
+  available: { label: "Available", tone: 'accent' },
+  passed: { label: "Passed", tone: 'success' },
+  failed: { label: "Not passed", tone: 'danger' },
+  locked: { label: "Locked", tone: 'neutral' },
   // students
-  active: { label: 'Ակտիվ', tone: 'success' },
-  'at-risk': { label: 'Ռիսկային', tone: 'warning' },
-  inactive: { label: 'Պասիվ', tone: 'neutral' },
+  active: { label: "Active", tone: 'success' },
+  'at-risk': { label: "At risk", tone: 'warning' },
+  inactive: { label: "Inactive", tone: 'neutral' },
 };
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {

@@ -14,11 +14,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function RolePicker({ value, onChange }: { value: Role; onChange: (r: Role) => void }) {
   return (
     <fieldset className="role-picker">
-      <legend className="field__label" style={{ marginBottom: 8 }}>Դեմո դեր</legend>
+      <legend className="field__label" style={{ marginBottom: 8 }}>How would you like to use LearnSpace?</legend>
       <div className="grid grid-2" style={{ ['--gap' as string]: '10px' }}>
         {([
-          ['student', 'Ուսանող', 'Դասընթացներ, առաջադրանքներ, արդյունքներ', GraduationCap],
-          ['teacher', 'Դասավանդող', 'Կառավարում, գնահատում, վերլուծություն', Presentation],
+          ['student', "Student", "Courses, assignments, and results", GraduationCap],
+          ['teacher', "Teacher", "Course management, grading, and analytics", Presentation],
         ] as const).map(([r, label, desc, Icon]) => (
           <label key={r} className={cx('role-option', value === r && 'is-selected', r === 'student' ? 't-sky' : 't-lilac')}>
             <input type="radio" name="role" value={r} checked={value === r} onChange={() => onChange(r)} className="sr-only" />
@@ -36,21 +36,21 @@ function AuthAside() {
   return (
     <aside className="auth__aside" aria-hidden="true">
       <div className="auth__copy">
-        <span className="kicker">Ուսարան</span>
-        <b>Սովորեք ձեր տեմպով՝ տեսադասերով, թեստերով և անհատական հետադարձ կապով։</b>
+        <span className="kicker">LearnSpace</span>
+        <b>Learn at your own pace with video lessons, quizzes, and personal feedback.</b>
       </div>
       <div className="auth__arch"><img src={SCENES.hero} alt="" /></div>
       <div className="auth__float auth__float--course">
         <span className="tint-box t-sky"><BookOpenCheck /></span>
         <div>
-          <small>Շարունակել ուսումը</small>
-          <b>React · Մոդուլ 2</b>
+          <small>Continue Learning</small>
+          <b>React · Module 2</b>
         </div>
       </div>
       <div className="auth__float auth__float--grade">
         <span className="tint-box t-mint"><CheckCircle2 /></span>
         <div>
-          <small>Նոր գնահատական</small>
+          <small>New grade</small>
           <b className="tabular">92 / 100</b>
         </div>
       </div>
@@ -68,7 +68,7 @@ export function LoginPage() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const fillDemo = () => {
-    setEmail(role === 'student' ? 'ani.hakobyan@example.am' : 'armen.sargsyan@usaran.am');
+    setEmail(role === 'student' ? 'ani.hakobyan@learnspace.example' : 'armen.sargsyan@learnspace.example');
     setPassword('demo-password');
     setErrors({});
   };
@@ -76,13 +76,13 @@ export function LoginPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const next: typeof errors = {};
-    if (!email) next.email = 'Մուտքագրեք էլ. հասցեն';
-    else if (!EMAIL_RE.test(email)) next.email = 'Էլ. հասցեի ձևաչափը սխալ է';
-    if (!password) next.password = 'Մուտքագրեք գաղտնաբառը';
-    else if (password.length < 6) next.password = 'Գաղտնաբառը պետք է լինի առնվազն 6 նիշ';
+    if (!email) next.email = "Enter your email address";
+    else if (!EMAIL_RE.test(email)) next.email = "Enter a valid email address";
+    if (!password) next.password = "Enter your password";
+    else if (password.length < 6) next.password = "Your password must contain at least 6 characters";
     setErrors(next);
     if (Object.keys(next).length) return;
-    toast.success('Բարի գալուստ դեմո միջավայր', 'Մուտքի տվյալները չեն ստուգվել և չեն պահպանվել։');
+    toast.success("Welcome to the demo", "Your sign-in details have not been verified or saved.");
     navigate(`/${role}/dashboard`);
   };
 
@@ -91,30 +91,29 @@ export function LoginPage() {
       <div className="auth__main">
         <form className="auth__form" onSubmit={submit} noValidate>
           <div>
-            <h1>Բարի <span className="hl">վերադարձ</span></h1>
-            <p className="secondary small" style={{ marginTop: 6 }}>Ընտրեք դեմո դերը և մուտք գործեք ցանկացած վավեր ձևաչափով տվյալներով։</p>
+            <h1>Welcome <span className="hl">back</span></h1>
+            <p className="secondary small" style={{ marginTop: 6 }}>Choose Student or Instructor, then fill in your sign-in details.</p>
           </div>
-          <Notice tone="neutral">Սա ցուցադրական մուտք է։ Իրական նույնականացում չկա, տվյալները չեն ուղարկվում սերվեր։</Notice>
+          <Notice tone="neutral">This is a demo sign-in. No authentication takes place, and no information is sent to a server.</Notice>
           <RolePicker value={role} onChange={setRole} />
-          <Input label="Էլ. հասցե" type="email" autoComplete="email" placeholder="name@example.am" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} required />
+          <Input label="Email" type="email" autoComplete="email" placeholder="name@example.am" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} required />
           <div className="field">
             <div className="row row--between">
-              <label className="field__label" htmlFor="login-password">Գաղտնաբառ<span className="req">*</span></label>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={() => toast.info('Գաղտնաբառի վերականգնում', 'Դեմո տարբերակում նամակ չի ուղարկվում։')}>Մոռացե՞լ եք գաղտնաբառը</button>
+              <label className="field__label" htmlFor="login-password">Password<span className="req">*</span></label>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => toast.info("Password Reset", "No email is sent in this demo.")}>Forgot your password?</button>
             </div>
             <div className="input-group">
               <input id="login-password" className="input" style={{ paddingLeft: 16, paddingRight: 52 }} type={show ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={errors.password ? true : undefined} aria-describedby="login-password-err" />
-              <button type="button" className="icon-btn input-group__action" style={{ width: 36, height: 36, border: 0 }} onClick={() => setShow((s) => !s)} aria-label={show ? 'Թաքցնել գաղտնաբառը' : 'Ցույց տալ գաղտնաբառը'}>
+              <button type="button" className="icon-btn input-group__action" style={{ width: 36, height: 36, border: 0 }} onClick={() => setShow((s) => !s)} aria-label={show ? "Hide password" : "Show password"}>
                 {show ? <EyeOff /> : <Eye />}
               </button>
             </div>
             {errors.password && <span id="login-password-err" className="field__error" role="alert">{errors.password}</span>}
           </div>
-          <Checkbox label="Հիշել ինձ այս սարքում" />
-          <Button type="submit" variant="accent" size="lg" block>Մուտք գործել</Button>
-          <Button variant="secondary" block onClick={fillDemo}>Լրացնել դեմո տվյալներով</Button>
-          <p className="small secondary" style={{ textAlign: 'center' }}>
-            Չունե՞ք հաշիվ։ <Link to="/register" className="strong">Գրանցվել</Link>
+          <Checkbox label="Remember me on this device" />
+          <Button type="submit" variant="accent" size="lg" block>Sign In</Button>
+          <Button variant="secondary" block onClick={fillDemo}>Fill in Sample Details</Button>
+          <p className="small secondary" style={{ textAlign: 'center' }}>Don't have an account? <Link to="/register" className="strong">Sign Up</Link>
           </p>
         </form>
       </div>
@@ -134,56 +133,55 @@ export function RegisterPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const n: Record<string, string> = {};
-    if (!form.firstName.trim()) n.firstName = 'Մուտքագրեք անունը';
-    if (!form.lastName.trim()) n.lastName = 'Մուտքագրեք ազգանունը';
-    if (!EMAIL_RE.test(form.email)) n.email = 'Մուտքագրեք վավեր էլ. հասցե';
-    if (form.password.length < 8) n.password = 'Առնվազն 8 նիշ';
-    else if (!/\d/.test(form.password)) n.password = 'Գաղտնաբառը պետք է պարունակի առնվազն մեկ թիվ';
-    if (form.confirm !== form.password) n.confirm = 'Գաղտնաբառերը չեն համընկնում';
-    if (!form.agree) n.agree = 'Անհրաժեշտ է համաձայնել պայմաններին';
+    if (!form.firstName.trim()) n.firstName = "Enter your first name";
+    if (!form.lastName.trim()) n.lastName = "Enter your last name";
+    if (!EMAIL_RE.test(form.email)) n.email = "Enter a valid email address";
+    if (form.password.length < 8) n.password = "At least 8 characters";
+    else if (!/\d/.test(form.password)) n.password = "Your password must contain at least one number";
+    if (form.confirm !== form.password) n.confirm = "Passwords do not match";
+    if (!form.agree) n.agree = "Confirm that you have read the demo limitations";
     setErrors(n);
     if (Object.keys(n).length) {
-      toast.warning('Ստուգեք ձևաթուղթը', 'Որոշ դաշտեր լրացված չեն կամ սխալ են։');
+      toast.warning("Check the form", "Some fields are missing or invalid.");
       return;
     }
-    toast.success('Դեմո հաշիվը պատրաստ է', 'Հաշիվն իրականում չի ստեղծվել. տվյալները չեն պահպանվում։');
+    toast.success("You are ready to explore", "No real account has been created. Your information is not saved.");
     navigate(`/${role}/dashboard`);
   };
 
-  const strength = Math.min(4, [form.password.length >= 8, /\d/.test(form.password), /[A-ZԱ-Ֆ]/.test(form.password), /[^\w\s]/.test(form.password)].filter(Boolean).length);
+  const strength = Math.min(4, [form.password.length >= 8, /\d/.test(form.password), /[A-Z]/.test(form.password), /[^\w\s]/.test(form.password)].filter(Boolean).length);
 
   return (
     <div className="auth">
       <div className="auth__main">
         <form className="auth__form" onSubmit={submit} noValidate>
           <div>
-            <h1>Միացեք <span className="hl">Ուսարանին</span></h1>
-            <p className="secondary small" style={{ marginTop: 6 }}>Ստեղծեք դեմո հաշիվ՝ հարթակի հնարավորություններին ծանոթանալու համար։</p>
+            <h1>Join <span className="hl">LearnSpace</span></h1>
+            <p className="secondary small" style={{ marginTop: 6 }}>Fill in the form to explore the platform. This is a demo, so no real account will be created.</p>
           </div>
           <RolePicker value={role} onChange={setRole} />
           <div className="grid grid-2" style={{ ['--gap' as string]: '14px' }}>
-            <Input label="Անուն" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} error={errors.firstName} required autoComplete="given-name" />
-            <Input label="Ազգանուն" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} error={errors.lastName} required autoComplete="family-name" />
+            <Input label="First Name" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} error={errors.firstName} required autoComplete="given-name" />
+            <Input label="Last Name" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} error={errors.lastName} required autoComplete="family-name" />
           </div>
-          <Input label="Էլ. հասցե" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} error={errors.email} required autoComplete="email" placeholder="name@example.am" />
+          <Input label="Email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} error={errors.email} required autoComplete="email" placeholder="name@example.am" />
           <div className="stack" style={{ ['--gap' as string]: '6px' }}>
-            <Input label="Գաղտնաբառ" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} error={errors.password} hint="Առնվազն 8 նիշ և մեկ թիվ" required autoComplete="new-password" />
+            <Input label="Password" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} error={errors.password} hint="At least 8 characters and one number" required autoComplete="new-password" />
             {form.password && (
-              <div className="pw-strength" aria-label={`Գաղտնաբառի ուժը՝ ${strength} 4-ից`}>
+              <div className="pw-strength" aria-label={`Password strength: ${strength} out of 4`}>
                 {[0, 1, 2, 3].map((i) => (
                   <span key={i} className={cx(i < strength && `on-${strength}`)} />
                 ))}
               </div>
             )}
           </div>
-          <Input label="Կրկնել գաղտնաբառը" type="password" value={form.confirm} onChange={(e) => set('confirm', e.target.value)} error={errors.confirm} required autoComplete="new-password" />
+          <Input label="Confirm Password" type="password" value={form.confirm} onChange={(e) => set('confirm', e.target.value)} error={errors.confirm} required autoComplete="new-password" />
           <div className="field">
-            <Checkbox label={<>Համաձայն եմ <Link to="/about#faq">օգտագործման պայմաններին</Link></>} checked={form.agree} onChange={(e) => set('agree', e.target.checked)} />
+            <Checkbox label={<>I have read the <Link to="/about#faq">demo limitations</Link></>} checked={form.agree} onChange={(e) => set('agree', e.target.checked)} />
             {errors.agree && <span className="field__error" role="alert">{errors.agree}</span>}
           </div>
-          <Button type="submit" variant="accent" size="lg" block>Ստեղծել հաշիվ</Button>
-          <p className="small secondary" style={{ textAlign: 'center' }}>
-            Արդեն ունե՞ք հաշիվ։ <Link to="/login" className="strong">Մուտք գործել</Link>
+          <Button type="submit" variant="accent" size="lg" block>Create Account</Button>
+          <p className="small secondary" style={{ textAlign: 'center' }}>Already have an account? <Link to="/login" className="strong">Sign In</Link>
           </p>
         </form>
       </div>
