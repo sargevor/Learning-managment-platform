@@ -21,7 +21,7 @@ export function TeacherStudentDetailPage() {
   const user = getUser(id);
 
   if (!record || !user) {
-    return <div className="card"><EmptyState title="Student not found" text="This student may no longer be enrolled in your courses." action={<ButtonLink to="/teacher/students">Student List</ButtonLink>} /></div>;
+    return <div className="card"><EmptyState title="Ուսանողը չի գտնվել" text="Հնարավոր է՝ ուսանողն այլևս գրանցված չէ ձեր դասընթացներին։" action={<ButtonLink to="/teacher/students">Ուսանողների ցուցակ</ButtonLink>} /></div>;
   }
 
   const name = fullName(user);
@@ -32,13 +32,13 @@ export function TeacherStudentDetailPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: "Students", to: '/teacher/students' }, { label: name }]}
+        breadcrumbs={[{ label: 'Ուսանողներ', to: '/teacher/students' }, { label: name }]}
         title={name}
         description={`${user.program ?? ''}${user.institution ? `, ${user.institution}` : ''}`}
         actions={
           <>
-            <Button variant="secondary" icon={<Mail />} onClick={() => toast.info("Email", "Emails are not sent in this demo.")}>Send Email</Button>
-            <Button icon={<MessageSquare />} onClick={() => toast.info("Message", "Messages are not sent in this demo.")}>Message</Button>
+            <Button variant="secondary" icon={<Mail />} onClick={() => toast.info('Էլ. նամակ', 'Ցուցադրական տարբերակում նամակներ չեն ուղարկվում։')}>Գրել նամակ</Button>
+            <Button icon={<MessageSquare />} onClick={() => toast.info('Հաղորդագրություն', 'Ցուցադրական տարբերակում հաղորդագրություններ չեն ուղարկվում։')}>Հաղորդագրություն</Button>
           </>
         }
       />
@@ -55,13 +55,13 @@ export function TeacherStudentDetailPage() {
               <StatusBadge status={record.status} />
             </div>
             <dl className="kv" style={{ marginTop: 20 }}>
-              <dt>Year of Study</dt><dd>{user.year ?? '—'}</dd>
-              <dt>Enrollment Date</dt><dd>{formatDate(user.joinedAt)}</dd>
-              <dt>Last Sign-In</dt><dd>{relativeTime(record.lastActive)}</dd>
-              <dt>This Week</dt><dd>{Math.round(totalMin / 60 * 10) / 10} hr</dd>
+              <dt>Կուրս</dt><dd>{user.year ?? '—'}</dd>
+              <dt>Հարթակում է</dt><dd>{formatDate(user.joinedAt)}-ից</dd>
+              <dt>Վերջին մուտք</dt><dd>{relativeTime(record.lastActive)}</dd>
+              <dt>Այս շաբաթ</dt><dd>{Math.round(totalMin / 60 * 10) / 10} ժամ</dd>
             </dl>
           </Card>
-          <Card title="Participation by Course">
+          <Card title="Մասնակցություն ըստ դասընթացների">
             <div className="stack" style={{ ['--gap' as string]: '16px' }}>
               {record.courseIds.map((cid, i) => {
                 const p = Math.max(5, Math.min(100, record.progress + (i % 2 ? -12 : 8)));
@@ -71,7 +71,7 @@ export function TeacherStudentDetailPage() {
                       <span className="strong" style={{ color: 'var(--navy-900)' }}>{getCourse(cid)?.title}</span>
                     </div>
                     <ProgressBar value={p} />
-                    <div className="xs muted" style={{ marginTop: 4 }}>{p >= 100 ? "Completed" : p > 0 ? "In progress" : "Not started"}</div>
+                    <div className="xs muted" style={{ marginTop: 4 }}>{p >= 100 ? 'Ավարտված' : p > 0 ? 'Ընթացքում' : 'Չսկսված'}</div>
                   </div>
                 );
               })}
@@ -81,35 +81,35 @@ export function TeacherStudentDetailPage() {
 
         <div className="stack" style={{ ['--gap' as string]: '20px', minWidth: 0 }}>
           <div className="grid grid-4">
-            <StatCard label="Overall Progress" value={record.progress} unit="%" icon={<BookOpen />} />
-            <StatCard label="Average Grade" value={record.avgScore} unit="%" icon={<Award />} tone="success" meta={`Grade: ${letterGrade(record.avgScore)}`} />
-            <StatCard label="Assignments" value={record.assignmentsDone} unit={`/${record.assignmentsTotal}`} icon={<ClipboardCheck />} tone="navy" />
-            <StatCard label="Quiz Average" value={record.quizAvg} unit="%" icon={<FileQuestion />} tone="warning" />
+            <StatCard label="Ընդհանուր առաջընթաց" value={record.progress} unit="%" icon={<BookOpen />} />
+            <StatCard label="Միջին գնահատական" value={record.avgScore} unit="%" icon={<Award />} tone="success" meta={`Գնահատական՝ ${letterGrade(record.avgScore)}`} />
+            <StatCard label="Առաջադրանքներ" value={record.assignmentsDone} unit={`/${record.assignmentsTotal}`} icon={<ClipboardCheck />} tone="navy" />
+            <StatCard label="Թեստերի միջին" value={record.quizAvg} unit="%" icon={<FileQuestion />} tone="warning" />
           </div>
 
-          <ChartCard title="This Week's Activity" subtitle="Minutes by day">
-            <BarChart labels={WEEKDAYS_SHORT} series={[{ name: "Minutes", values: record.weeklyMinutes }]} height={190} suffix=" min" ariaLabel="Student activity by day" />
+          <ChartCard title="Ակտիվություն այս շաբաթ" subtitle="Րոպեներ ըստ օրերի">
+            <BarChart labels={WEEKDAYS_SHORT} series={[{ name: 'Րոպե', values: record.weeklyMinutes }]} height={190} suffix=" ր" ariaLabel="Ուսանողի ակտիվությունը ըստ օրերի" />
           </ChartCard>
 
-          <Card title="Submitted Assignments" padded={false}>
+          <Card title="Հանձնված աշխատանքներ" padded={false}>
             <DataTable
-              caption="Student Submissions"
+              caption="Ուսանողի հանձնումները"
               rows={subs}
               rowKey={(r) => r.submission.id}
-              empty={<EmptyState compact title="No submissions" text="This student has not submitted any work in your courses yet." />}
+              empty={<EmptyState compact title="Հանձնումներ չկան" text="Ուսանողը դեռ աշխատանք չի հանձնել ձեր դասընթացներում։" />}
               initialSort={{ key: 'd', dir: 'desc' }}
               columns={[
-                { key: 'a', header: "Assignment", sortValue: (r) => r.assignment.title, render: (r) => <><div className="cell-title">{r.assignment.title}</div><div className="cell-sub">{shortTitle(r.course.id)}</div></> },
-                { key: 'd', header: "Submitted", sortValue: (r) => r.submission.submittedAt ?? '', render: (r) => <span className="nowrap">{r.submission.submittedAt ? formatDateTime(r.submission.submittedAt) : '—'}</span> },
-                { key: 's', header: "Status", render: (r) => <StatusBadge status={r.submission.status} /> },
-                { key: 'sc', header: "Score", align: 'right', sortValue: (r) => r.submission.score ?? -1, render: (r) => (r.submission.score !== undefined ? <strong>{r.submission.score}/{r.assignment.maxScore}</strong> : <ButtonLink to={`/teacher/grading?submission=${r.submission.id}`} variant="secondary" size="sm">Grade</ButtonLink>) },
+                { key: 'a', header: 'Առաջադրանք', sortValue: (r) => r.assignment.title, render: (r) => <><div className="cell-title">{r.assignment.title}</div><div className="cell-sub">{shortTitle(r.course.id)}</div></> },
+                { key: 'd', header: 'Հանձնված', sortValue: (r) => r.submission.submittedAt ?? '', render: (r) => <span className="nowrap">{r.submission.submittedAt ? formatDateTime(r.submission.submittedAt) : '—'}</span> },
+                { key: 's', header: 'Կարգավիճակ', render: (r) => <StatusBadge status={r.submission.status} /> },
+                { key: 'sc', header: 'Միավոր', align: 'right', sortValue: (r) => r.submission.score ?? -1, render: (r) => (r.submission.score !== undefined ? <strong>{r.submission.score}/{r.assignment.maxScore}</strong> : <ButtonLink to={`/teacher/grading?submission=${r.submission.id}`} variant="secondary" size="sm">Գնահատել</ButtonLink>) },
               ]}
             />
           </Card>
 
-          <Card title="Quiz Results" padded={false}>
+          <Card title="Թեստերի արդյունքներ" padded={false}>
             {quizzes.length === 0 ? (
-              <EmptyState compact title="No quizzes" />
+              <EmptyState compact title="Թեստեր չկան" />
             ) : (
               <div className="list">
                 {quizzes.map((q, i) => {

@@ -27,8 +27,8 @@ export function TeacherDashboard() {
   const perf = coursePerformance;
 
   const deadlines = [
-    ...teacherAssignments.map((a) => ({ id: a.id, title: a.title, due: a.dueDate, kind: "Assignment", courseId: a.courseId, to: `/teacher/assignments/${a.id}/submissions` })),
-    ...teacherQuizzes.map((q) => ({ id: q.id, title: q.title, due: q.dueDate, kind: "Quiz", courseId: q.courseId, to: `/teacher/quizzes/${q.id}/edit` })),
+    ...teacherAssignments.map((a) => ({ id: a.id, title: a.title, due: a.dueDate, kind: 'Առաջադրանք', courseId: a.courseId, to: `/teacher/assignments/${a.id}/submissions` })),
+    ...teacherQuizzes.map((q) => ({ id: q.id, title: q.title, due: q.dueDate, kind: 'Թեստ', courseId: q.courseId, to: `/teacher/quizzes/${q.id}/edit` })),
   ]
     .filter((d) => daysUntil(d.due) >= 0)
     .sort((a, b) => a.due.localeCompare(b.due))
@@ -38,11 +38,11 @@ export function TeacherDashboard() {
     <>
       <section className="welcome welcome--teacher">
         <div className="welcome__text">
-          <h1>Hello, <span className="hl">{teacher.firstName}</span></h1>
-          <p>Today, {pending.length} submissions need grading and {studentRecords.filter((s) => s.status === 'at-risk').length} students need attention.</p>
+          <h1>Բարի օր, <span className="hl">{teacher.firstName}</span></h1>
+          <p>Այսօր գնահատման է սպասում {pending.length} աշխատանք, իսկ {studentRecords.filter((s) => s.status === 'at-risk').length} ուսանող կարիք ունի ուշադրության։</p>
           <div className="welcome__actions">
-            <ButtonLink to="/teacher/grading" variant="primary" icon={<CheckSquare />}>Open Grading Center</ButtonLink>
-            <ButtonLink to="/teacher/courses/create" variant="secondary" icon={<PlusCircle />}>Create Course</ButtonLink>
+            <ButtonLink to="/teacher/grading" variant="primary" icon={<CheckSquare />}>Բացել գնահատման կենտրոնը</ButtonLink>
+            <ButtonLink to="/teacher/courses/create" variant="secondary" icon={<PlusCircle />}>Ստեղծել դասընթաց</ButtonLink>
           </div>
         </div>
         <div className="welcome__art" aria-hidden="true">
@@ -51,49 +51,49 @@ export function TeacherDashboard() {
       </section>
 
       <div className="grid grid-4 mb-20">
-        <StatCard label="Courses" value={teacherCourses.length} icon={<BookMarked />} meta={`${published.length} published, ${teacherCourses.length - published.length} drafts`} />
-        <StatCard label="Enrolled Students" value={formatNumber(totalStudents)} icon={<Users />} tone="navy" meta={<><span className="up">+214</span> this month</>} />
-        <StatCard label="Awaiting Review" value={pending.length} icon={<CheckSquare />} tone="warning" meta={<Link to="/teacher/grading">Open Grading Center</Link>} />
-        <StatCard label="Average Result" value={average(perf.map((p) => p.avgAssignment))} unit="%" icon={<Target />} tone="success" meta={<><span className="up">+3%</span> compared with last month</>} />
+        <StatCard label="Դասընթացներ" value={teacherCourses.length} icon={<BookMarked />} meta={`${published.length} հրապարակված, ${teacherCourses.length - published.length} սևագիր`} />
+        <StatCard label="Գրանցված ուսանողներ" value={formatNumber(totalStudents)} icon={<Users />} tone="navy" meta={<><span className="up">+214</span> այս ամիս</>} />
+        <StatCard label="Սպասող հանձնումներ" value={pending.length} icon={<CheckSquare />} tone="warning" meta={<Link to="/teacher/grading">Բացել գնահատման կենտրոնը</Link>} />
+        <StatCard label="Միջին արդյունք" value={average(perf.map((p) => p.avgAssignment))} unit="%" icon={<Target />} tone="success" meta={<><span className="up">+3%</span> նախորդ ամսվա համեմատ</>} />
       </div>
 
       <div className="grid grid-main-aside">
         <div className="stack" style={{ ['--gap' as string]: '20px', minWidth: 0 }}>
           <ChartCard
-            title="Course Performance"
-            subtitle={chart === 'scores' ? "Average assignment and quiz scores, %" : "New enrollments by month"}
+            title="Դասընթացների արդյունավետություն"
+            subtitle={chart === 'scores' ? 'Առաջադրանքների և թեստերի միջին միավորը, %' : 'Նոր գրանցումներ ըստ ամիսների'}
             legend={
               chart === 'scores'
                 ? [
-                    { label: "Assignments", color: CHART_COLORS[0] },
-                    { label: "Quizzes", color: CHART_COLORS[1] },
-                    { label: "Completion Rate", color: CHART_COLORS[2] },
+                    { label: 'Առաջադրանքներ', color: CHART_COLORS[0] },
+                    { label: 'Թեստեր', color: CHART_COLORS[1] },
+                    { label: 'Ավարտելիություն', color: CHART_COLORS[2] },
                   ]
                 : perf.map((p, i) => ({ label: shortTitle(p.courseId), color: CHART_COLORS[i] }))
             }
-            actions={<Segmented label="Chart Type" value={chart} onChange={setChart} items={[{ key: 'scores', label: "Results" }, { key: 'enroll', label: "Enrollments" }]} />}
+            actions={<Segmented label="Գրաֆիկի տեսակ" value={chart} onChange={setChart} items={[{ key: 'scores', label: 'Արդյունքներ' }, { key: 'enroll', label: 'Գրանցումներ' }]} />}
           >
             {chart === 'scores' ? (
               <BarChart
                 labels={perf.map((p) => shortTitle(p.courseId))}
                 series={[
-                  { name: "Assignments", values: perf.map((p) => p.avgAssignment) },
-                  { name: "Quizzes", values: perf.map((p) => p.avgQuiz) },
-                  { name: "Completion Rate", values: perf.map((p) => p.completionRate) },
+                  { name: 'Առաջադրանքներ', values: perf.map((p) => p.avgAssignment) },
+                  { name: 'Թեստեր', values: perf.map((p) => p.avgQuiz) },
+                  { name: 'Ավարտելիություն', values: perf.map((p) => p.completionRate) },
                 ]}
                 max={100}
                 suffix="%"
                 height={240}
-                ariaLabel="Average course results"
+                ariaLabel="Դասընթացների միջին արդյունքները"
               />
             ) : (
-              <LineChart labels={trendLabels} series={perf.map((p, i) => ({ name: shortTitle(p.courseId), values: enrollmentTrend[p.courseId], color: CHART_COLORS[i] }))} height={240} ariaLabel="Enrollment trends" />
+              <LineChart labels={trendLabels} series={perf.map((p, i) => ({ name: shortTitle(p.courseId), values: enrollmentTrend[p.courseId], color: CHART_COLORS[i] }))} height={240} ariaLabel="Գրանցումների դինամիկան" />
             )}
           </ChartCard>
 
-          <Card title="Awaiting Review" subtitle={`${pending.length} submissions`} actions={<ButtonLink to="/teacher/grading" variant="ghost" size="sm">Grading center</ButtonLink>} padded={false}>
+          <Card title="Գնահատման սպասող աշխատանքներ" subtitle={`${pending.length} աշխատանք`} actions={<ButtonLink to="/teacher/grading" variant="ghost" size="sm">Գնահատման կենտրոն</ButtonLink>} padded={false}>
             {pending.length === 0 ? (
-              <EmptyState compact title="All submissions have been graded" />
+              <EmptyState compact title="Բոլոր աշխատանքները գնահատված են" />
             ) : (
               <div className="list">
                 {pending.slice(0, 5).map((r) => (
@@ -103,7 +103,7 @@ export function TeacherDashboard() {
                       <div className="list-row__title">{fullName(r.student)}</div>
                       <div className="list-row__sub">{r.assignment.title}, {r.course.title}</div>
                     </div>
-                    {r.submission.late && <Badge tone="danger">Late</Badge>}
+                    {r.submission.late && <Badge tone="danger">Ուշացած</Badge>}
                     <span className="xs muted nowrap">{relativeTime(r.submission.submittedAt!)}</span>
                   </Link>
                 ))}
@@ -113,15 +113,15 @@ export function TeacherDashboard() {
         </div>
 
         <div className="stack" style={{ ['--gap' as string]: '20px' }}>
-          <Card title="Quick Actions">
+          <Card title="Արագ գործողություններ">
             <div className="stack" style={{ ['--gap' as string]: '8px' }}>
-              <ButtonLink to="/teacher/courses/create" variant="secondary" block icon={<PlusCircle />} style={{ justifyContent: 'flex-start' }}>Create Course</ButtonLink>
-              <ButtonLink to="/teacher/assignments?new=1" variant="secondary" block icon={<ClipboardPlus />} style={{ justifyContent: 'flex-start' }}>Add Assignment</ButtonLink>
-              <ButtonLink to="/teacher/quizzes/new/edit" variant="secondary" block icon={<FilePlus2 />} style={{ justifyContent: 'flex-start' }}>Create Quiz</ButtonLink>
+              <ButtonLink to="/teacher/courses/create" variant="secondary" block icon={<PlusCircle />} style={{ justifyContent: 'flex-start' }}>Ստեղծել դասընթաց</ButtonLink>
+              <ButtonLink to="/teacher/assignments?new=1" variant="secondary" block icon={<ClipboardPlus />} style={{ justifyContent: 'flex-start' }}>Ավելացնել առաջադրանք</ButtonLink>
+              <ButtonLink to="/teacher/quizzes/new/edit" variant="secondary" block icon={<FilePlus2 />} style={{ justifyContent: 'flex-start' }}>Ստեղծել թեստ</ButtonLink>
             </div>
           </Card>
 
-          <Card title="Upcoming Deadlines" padded={false}>
+          <Card title="Մոտակա վերջնաժամկետներ" padded={false}>
             <div className="list">
               {deadlines.map((d) => {
                 const [day, mon] = formatShortDate(d.due).split(' ');
@@ -141,7 +141,7 @@ export function TeacherDashboard() {
             </div>
           </Card>
 
-          <Card title="Recent Student Activity" padded={false}>
+          <Card title="Ուսանողների վերջին ակտիվությունը" padded={false}>
             <div className="list">
               {recentActivity.map((e) => {
                 const Icon = ACTIVITY_ICON[e.kind];
