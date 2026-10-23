@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cx } from '../../lib/format';
+import { tr } from '../../i18n';
 
 export type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'accent';
 
@@ -14,26 +15,26 @@ export function Badge({ tone = 'neutral', dot, outline, children, className }: {
 
 const STATUS: Record<string, { label: string; tone: Tone }> = {
   // assignments
-  'not-started': { label: "Not started", tone: 'neutral' },
-  draft: { label: "Draft", tone: 'info' },
-  submitted: { label: "Awaiting grading", tone: 'warning' },
-  graded: { label: "Graded", tone: 'success' },
-  returned: { label: "Returned", tone: 'success' },
-  overdue: { label: "Overdue", tone: 'danger' },
+  'not-started': { label: tr("Not started", "Չսկսված"), tone: 'neutral' },
+  draft: { label: tr("Draft", "Սևագիր"), tone: 'info' },
+  submitted: { label: tr("Awaiting grading", "Սպասում է գնահատման"), tone: 'warning' },
+  graded: { label: tr("Graded", "Գնահատված"), tone: 'success' },
+  returned: { label: tr("Returned", "Վերադարձված"), tone: 'success' },
+  overdue: { label: tr("Overdue", "Ժամկետանց"), tone: 'danger' },
   // courses / enrollment
-  'in-progress': { label: "In progress", tone: 'accent' },
-  completed: { label: "Completed", tone: 'success' },
-  published: { label: "Published", tone: 'success' },
-  archived: { label: "Archived", tone: 'neutral' },
+  'in-progress': { label: tr("In progress", "Ընթացքում"), tone: 'accent' },
+  completed: { label: tr("Completed", "Ավարտված"), tone: 'success' },
+  published: { label: tr("Published", "Հրապարակված"), tone: 'success' },
+  archived: { label: tr("Archived", "Արխիվացված"), tone: 'neutral' },
   // quizzes
-  available: { label: "Available", tone: 'accent' },
-  passed: { label: "Passed", tone: 'success' },
-  failed: { label: "Not passed", tone: 'danger' },
-  locked: { label: "Locked", tone: 'neutral' },
+  available: { label: tr("Available", "Հասանելի"), tone: 'accent' },
+  passed: { label: tr("Passed", "Հանձնված"), tone: 'success' },
+  failed: { label: tr("Not passed", "Չհանձնված"), tone: 'danger' },
+  locked: { label: tr("Locked", "Փակ"), tone: 'neutral' },
   // students
-  active: { label: "Active", tone: 'success' },
-  'at-risk': { label: "At risk", tone: 'warning' },
-  inactive: { label: "Inactive", tone: 'neutral' },
+  active: { label: tr("Active", "Ակտիվ"), tone: 'success' },
+  'at-risk': { label: tr("At risk", "Ռիսկի գոտում"), tone: 'warning' },
+  inactive: { label: tr("Inactive", "Ոչ ակտիվ"), tone: 'neutral' },
 };
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {

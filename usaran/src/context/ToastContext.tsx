@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
+import { tr } from '../i18n';
 
 type ToastTone = 'success' | 'warning' | 'error' | 'info';
 
@@ -61,7 +62,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <div className="toast__title">{t.title}</div>
                 {t.text && <div className="toast__text">{t.text}</div>}
               </div>
-              <button type="button" className="toast__close" onClick={() => dismiss(t.id)} aria-label="Dismiss notification">
+              <button type="button" className="toast__close" onClick={() => dismiss(t.id)} aria-label={tr("Dismiss notification", "Փակել ծանուցումը")}>
                 <X size={16} />
               </button>
             </div>

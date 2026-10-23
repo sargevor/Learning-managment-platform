@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { cx } from '../../lib/format';
+import { compareText, cx } from '../../lib/format';
 import { EmptyState } from './EmptyState';
+import { tr } from '../../i18n';
 
 export interface Column<T> {
   key: string;
@@ -35,13 +36,13 @@ export function DataTable<T>({ columns, rows, rowKey, onRowClick, selectedKey, e
     return [...rows].sort((a, b) => {
       const va = get(a);
       const vb = get(b);
-      const r = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb), 'en');
+      const r = typeof va === 'number' && typeof vb === 'number' ? va - vb : compareText(String(va), String(vb));
       return sort.dir === 'asc' ? r : -r;
     });
   }, [rows, sort, columns]);
 
   if (rows.length === 0) {
-    return <>{empty ?? <EmptyState compact title="No data" text="Try changing your filters or search." />}</>;
+    return <>{empty ?? <EmptyState compact title={tr("No data", "Տվյալներ չկան")} text={tr("Try changing your filters or search.", "Փոխեք զտիչները կամ որոնման հարցումը։")} />}</>;
   }
 
   return (

@@ -15,6 +15,7 @@ import { Badge, StatusBadge } from '../../components/ui/Badge';
 import { StatCard } from '../../components/ui/StatCard';
 import { ProgressBar } from '../../components/ui/Progress';
 import { average, relativeTime } from '../../lib/format';
+import { tr } from '../../i18n';
 
 const PAGE = 8;
 
@@ -40,42 +41,42 @@ export function TeacherStudentsPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Վահանակ', to: '/teacher/dashboard' }, { label: 'Ուսանողներ' }]}
-        title="Ուսանողներ"
-        description="Ձեր դասընթացներին գրանցված ուսանողները, նրանց մասնակցությունը և արդյունքները։"
-        actions={<Button variant="secondary" icon={<Download />} onClick={() => toast.info('Արտահանում', 'Ցուցադրական տարբերակում ֆայլ չի ստեղծվում։')}>Արտահանել ցուցակը</Button>}
+        breadcrumbs={[{ label: tr("Dashboard", "Վահանակ"), to: '/teacher/dashboard' }, { label: tr("Students", "Ուսանողներ") }]}
+        title={tr("Students", "Ուսանողներ")}
+        description={tr("View students enrolled in your courses, their participation, and their results.", "Ձեր դասընթացներին գրանցված ուսանողները, նրանց մասնակցությունը և արդյունքները։")}
+        actions={<Button variant="secondary" icon={<Download />} onClick={() => toast.info(tr("Export", "Արտահանում"), tr("No file is created in this demo.", "Ցուցադրական տարբերակում ֆայլ չի ստեղծվում։"))}>{tr("Export List", "Արտահանել ցուցակը")}</Button>}
       />
       <div className="grid grid-4 mb-20">
-        <StatCard label="Ընդամենը ուսանող" value={studentRecords.length} icon={<Users />} meta="ցուցադրված է խմբի նմուշը" />
-        <StatCard label="Ակտիվ" value={studentRecords.filter((r) => r.status === 'active').length} icon={<UserCheck />} tone="success" />
-        <StatCard label="Ռիսկային" value={studentRecords.filter((r) => r.status === 'at-risk').length} icon={<AlertTriangle />} tone="warning" meta="ցածր միավոր կամ առաջընթաց" />
-        <StatCard label="Պասիվ" value={studentRecords.filter((r) => r.status === 'inactive').length} icon={<UserX />} tone="danger" meta="ավելի քան 12 օր" />
+        <StatCard label={tr("Total Students", "Ուսանողների ընդհանուր թիվ")} value={studentRecords.length} icon={<Users />} meta={tr("showing a selection of students from the group", "ցուցադրված է ուսանողների ընտրանին")} />
+        <StatCard label={tr("Active", "Ակտիվ")} value={studentRecords.filter((r) => r.status === 'active').length} icon={<UserCheck />} tone="success" />
+        <StatCard label={tr("At risk", "Ռիսկի գոտում")} value={studentRecords.filter((r) => r.status === 'at-risk').length} icon={<AlertTriangle />} tone="warning" meta={tr("low scores or progress", "ցածր միավոր կամ առաջընթաց")} />
+        <StatCard label={tr("Inactive", "Ոչ ակտիվ")} value={studentRecords.filter((r) => r.status === 'inactive').length} icon={<UserX />} tone="danger" meta={tr("more than 12 days", "ավելի քան 12 օր")} />
       </div>
       <Card padded={false}>
         <div className="filters-bar" style={{ padding: 16 }}>
-          <SearchBar value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Որոնել անունով կամ էլ. հասցեով" />
-          <Select aria-label="Դասընթաց" value={course} onChange={(e) => { setCourse(e.target.value); setPage(1); }} options={[{ value: 'all', label: 'Բոլոր դասընթացները' }, ...teacherCourses.filter((c) => c.status === 'published').map((c) => ({ value: c.id, label: c.title }))]} />
-          <Select aria-label="Կարգավիճակ" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} options={[{ value: 'all', label: 'Բոլոր կարգավիճակները' }, { value: 'active', label: 'Ակտիվ' }, { value: 'at-risk', label: 'Ռիսկային' }, { value: 'inactive', label: 'Պասիվ' }]} />
+          <SearchBar value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder={tr("Search by name or email", "Որոնել անունով կամ էլ. հասցեով")} />
+          <Select aria-label={tr("Course", "Դասընթաց")} value={course} onChange={(e) => { setCourse(e.target.value); setPage(1); }} options={[{ value: 'all', label: tr("All Courses", "Բոլոր դասընթացները") }, ...teacherCourses.filter((c) => c.status === 'published').map((c) => ({ value: c.id, label: c.title }))]} />
+          <Select aria-label={tr("Status", "Կարգավիճակ")} value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} options={[{ value: 'all', label: tr("All Statuses", "Բոլոր կարգավիճակները") }, { value: 'active', label: tr("Active", "Ակտիվ") }, { value: 'at-risk', label: tr("At risk", "Ռիսկի գոտում") }, { value: 'inactive', label: tr("Inactive", "Ոչ ակտիվ") }]} />
         </div>
         <DataTable<StudentRecord>
-          caption="Ուսանողների ցուցակ"
+          caption={tr("Student List", "Ուսանողների ցուցակ")}
           rows={rows.slice((current - 1) * PAGE, current * PAGE)}
           rowKey={(r) => r.userId}
           onRowClick={(r) => navigate(`/teacher/students/${r.userId}`)}
-          empty={<EmptyState icon={<Users size={24} />} title="Ուսանողներ չգտնվեցին" text="Փոխեք որոնման պայմանները։" />}
+          empty={<EmptyState icon={<Users size={24} />} title={tr("No students found", "Ուսանողներ չգտնվեցին")} text={tr("Try changing your search criteria.", "Փոխեք որոնման պայմանները։")} />}
           columns={[
-            { key: 'n', header: 'Ուսանող', sortValue: (r) => fullName(getUser(r.userId)), render: (r) => <Person name={fullName(getUser(r.userId))} sub={getUser(r.userId)?.email} size={34} /> },
-            { key: 'c', header: 'Դասընթացներ', render: (r) => <div className="row row--wrap" style={{ ['--gap' as string]: '4px' }}>{r.courseIds.map((c) => <Badge key={c} outline>{shortTitle(c)}</Badge>)}</div> },
-            { key: 'p', header: 'Առաջընթաց', sortValue: (r) => r.progress, render: (r) => <div style={{ minWidth: 120 }}><ProgressBar value={r.progress} /></div> },
-            { key: 'a', header: 'Առաջադրանքներ', align: 'right', sortValue: (r) => r.assignmentsDone / r.assignmentsTotal, render: (r) => `${r.assignmentsDone}/${r.assignmentsTotal}` },
-            { key: 'qz', header: 'Թեստեր', align: 'right', sortValue: (r) => r.quizAvg, render: (r) => `${r.quizAvg}%` },
-            { key: 'avg', header: 'Միջին', align: 'right', sortValue: (r) => r.avgScore, render: (r) => <strong>{r.avgScore}%</strong> },
-            { key: 's', header: 'Կարգավիճակ', sortValue: (r) => r.status, render: (r) => <StatusBadge status={r.status} /> },
-            { key: 'l', header: 'Վերջին մուտք', sortValue: (r) => r.lastActive, render: (r) => <span className="nowrap small">{relativeTime(r.lastActive)}</span> },
+            { key: 'n', header: tr("Student", "Ուսանող"), sortValue: (r) => fullName(getUser(r.userId)), render: (r) => <Person name={fullName(getUser(r.userId))} sub={getUser(r.userId)?.email} size={34} /> },
+            { key: 'c', header: tr("Courses", "Դասընթացներ"), render: (r) => <div className="row row--wrap" style={{ ['--gap' as string]: '4px' }}>{r.courseIds.map((c) => <Badge key={c} outline>{shortTitle(c)}</Badge>)}</div> },
+            { key: 'p', header: tr("Progress", "Առաջընթաց"), sortValue: (r) => r.progress, render: (r) => <div style={{ minWidth: 120 }}><ProgressBar value={r.progress} /></div> },
+            { key: 'a', header: tr("Assignments", "Առաջադրանքներ"), align: 'right', sortValue: (r) => r.assignmentsDone / r.assignmentsTotal, render: (r) => `${r.assignmentsDone}/${r.assignmentsTotal}` },
+            { key: 'qz', header: tr("Quizzes", "Թեստեր"), align: 'right', sortValue: (r) => r.quizAvg, render: (r) => `${r.quizAvg}%` },
+            { key: 'avg', header: tr("Average", "Միջին"), align: 'right', sortValue: (r) => r.avgScore, render: (r) => <strong>{r.avgScore}%</strong> },
+            { key: 's', header: tr("Status", "Կարգավիճակ"), sortValue: (r) => r.status, render: (r) => <StatusBadge status={r.status} /> },
+            { key: 'l', header: tr("Last Sign-In", "Վերջին մուտք"), sortValue: (r) => r.lastActive, render: (r) => <span className="nowrap small">{relativeTime(r.lastActive)}</span> },
           ]}
         />
         <div style={{ padding: 16, borderTop: '1px solid var(--border)' }}>
-          {pageCount > 1 ? <Pagination page={current} pageCount={pageCount} onChange={setPage} total={rows.length} pageSize={PAGE} /> : <span className="small muted">Ընդամենը {rows.length} ուսանող, միջին արդյունքը՝ {average(rows.map((r) => r.avgScore))}%</span>}
+          {pageCount > 1 ? <Pagination page={current} pageCount={pageCount} onChange={setPage} total={rows.length} pageSize={PAGE} /> : <span className="small muted">{tr("Total: ", "Ընդամենը ")}{rows.length}{tr(" students, average result: ", " ուսանող, միջին արդյունքը՝ ")}{average(rows.map((r) => r.avgScore))}%</span>}
         </div>
       </Card>
     </>

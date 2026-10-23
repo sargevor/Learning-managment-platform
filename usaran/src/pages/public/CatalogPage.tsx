@@ -8,17 +8,18 @@ import { CourseCard } from '../../components/course/CourseBits';
 import { Select } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
 import { Breadcrumbs, CardSkeleton, EmptyState, Pagination } from '../../components/ui/Misc';
-import { cx } from '../../lib/format';
+import { compareText, cx } from '../../lib/format';
 import { CATEGORY_ICONS, CATEGORY_TINT } from '../../lib/visual';
+import { tr } from '../../i18n';
 
 const PAGE_SIZE = 9;
 
 const SORTS = [
-  { value: 'popular', label: "Most Popular" },
-  { value: 'rating', label: "Highest Rated" },
-  { value: 'newest', label: "Recently Updated" },
-  { value: 'short', label: "Shortest Duration" },
-  { value: 'title', label: "Alphabetical" },
+  { value: 'popular', label: tr("Most Popular", "Ամենահայտնիները") },
+  { value: 'rating', label: tr("Highest Rated", "Ամենաբարձր վարկանիշով") },
+  { value: 'newest', label: tr("Recently Updated", "Վերջերս թարմացված") },
+  { value: 'short', label: tr("Shortest Duration", "Ամենակարճ տևողությամբ") },
+  { value: 'title', label: tr("Alphabetical", "Այբբենական կարգով") },
 ];
 
 export function CatalogPage() {
@@ -62,7 +63,7 @@ export function CatalogPage() {
       rating: (a, b) => b.rating - a.rating,
       newest: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
       short: (a, b) => a.durationHours - b.durationHours,
-      title: (a, b) => a.title.localeCompare(b.title, 'en'),
+      title: (a, b) => compareText(a.title, b.title),
     };
     return [...list].sort(sorters[sort]);
   }, [query, cats, levels, sort]);
@@ -81,23 +82,23 @@ export function CatalogPage() {
     <>
       <section className="page-band">
         <div className="container">
-          <Breadcrumbs items={[{ label: "Home", to: '/' }, { label: "Courses" }]} />
-          <h1>Find a course that <span className="hl">inspires you</span></h1>
-          <p className="page-band__lead">Explore {publishedCourses.length} courses in programming, mathematics, artificial intelligence, and more.</p>
+          <Breadcrumbs items={[{ label: tr("Home", "Գլխավոր"), to: '/' }, { label: tr("Courses", "Դասընթացներ") }]} />
+          <h1>{tr("Find a course that ", "Գտեք ձեզ ")}<span className="hl">{tr("inspires you", "ոգեշնչող դասընթաց")}</span></h1>
+          <p className="page-band__lead">{tr("Explore ", "Ընտրեք ")}{publishedCourses.length}{tr(" courses in programming, mathematics, artificial intelligence, and more.", " դասընթացներից՝ ծրագրավորումից մինչև մաթեմատիկա և արհեստական բանականություն։")}</p>
           <form className="bigsearch" role="search" onSubmit={(e) => e.preventDefault()}>
             <Search aria-hidden="true" />
-            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Try React, Python, or design" aria-label="Search by title, topic, or instructor" />
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr("Try React, Python, or design", "Օրինակ՝ React, Python, դիզայն")} aria-label={tr("Search by title, topic, or instructor", "Որոնել ըստ անվանման, թեմայի կամ դասավանդողի")} />
             <Button type="submit" variant="primary" icon={<Search />}>
-              <span className="bigsearch__label">Search</span>
+              <span className="bigsearch__label">{tr("Search", "Որոնել")}</span>
             </Button>
           </form>
         </div>
       </section>
 
       <div className="container page-pad" style={{ paddingTop: 28 }}>
-        <div className="fchips" role="group" aria-label="Category">
+        <div className="fchips" role="group" aria-label={tr("Category", "Ուղղություն")}>
           <button type="button" className="fchip" aria-pressed={cats.length === 0} onClick={() => setCats([])}>
-            <span className="tint-box t-accent"><Layers /></span>All</button>
+            <span className="tint-box t-accent"><Layers /></span>{tr("All", "Բոլորը")}</button>
           {categories.map((c) => {
             const Icon = CATEGORY_ICONS[c.id];
             const n = publishedCourses.filter((x) => x.category === c.id).length;
@@ -113,19 +114,19 @@ export function CatalogPage() {
 
         <div className="catalog-toolbar">
           <span className="catalog-toolbar__count" aria-live="polite">
-            {results.length} courses {cats.length > 0 && <span> · {cats.map(categoryName).join(', ')}</span>}
-            {query && <span> · “{query}”</span>}
+            {results.length}{tr(" courses ", " դասընթաց")}{cats.length > 0 && <span> · {cats.map(categoryName).join(', ')}</span>}
+            {query && <span>{tr(" · “", " · «")}{query}{tr("”", "»")}</span>}
           </span>
           <div className="catalog-toolbar__right">
-            <div className="segmented" role="group" aria-label="Level">
-              <button type="button" aria-pressed={levels.length === 0} onClick={() => setLevels([])}>All Levels</button>
+            <div className="segmented" role="group" aria-label={tr("Level", "Մակարդակ")}>
+              <button type="button" aria-pressed={levels.length === 0} onClick={() => setLevels([])}>{tr("All Levels", "Բոլոր մակարդակները")}</button>
               {(Object.keys(difficultyLabel) as Difficulty[]).map((d) => (
                 <button key={d} type="button" aria-pressed={levels.includes(d)} onClick={() => setLevels((l) => toggle(l, d))}>
                   {difficultyLabel[d]}
                 </button>
               ))}
             </div>
-            <Select aria-label="Sort By" options={SORTS} value={sort} onChange={(e) => setSort(e.target.value)} fieldClassName="catalog__sort" className="select--pill" />
+            <Select aria-label={tr("Sort By", "Դասավորել")} options={SORTS} value={sort} onChange={(e) => setSort(e.target.value)} fieldClassName="catalog__sort" className="select--pill" />
           </div>
         </div>
 
@@ -137,9 +138,9 @@ export function CatalogPage() {
           <div className="empty-panel">
             <EmptyState
               icon={<SearchX size={26} />}
-              title="No matching courses"
-              text="Try a different search term or remove some filters."
-              action={<Button variant="primary" onClick={reset}>Clear All Filters</Button>}
+              title={tr("No matching courses", "Համապատասխան դասընթաց չգտնվեց")}
+              text={tr("Try a different search term or remove some filters.", "Փորձեք այլ բանալի բառ կամ հեռացրեք որոշ զտիչներ։")}
+              action={<Button variant="primary" onClick={reset}>{tr("Clear All Filters", "Մաքրել բոլոր զտիչները")}</Button>}
             />
           </div>
         ) : (

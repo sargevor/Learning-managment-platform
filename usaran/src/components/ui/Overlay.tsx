@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
 import { cx } from '../../lib/format';
 import { Button } from './Button';
+import { tr } from '../../i18n';
 
 /* ---------- Modal ---------- */
 
@@ -42,7 +43,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
             <h2 id="modal-title">{title}</h2>
             {description && <p>{description}</p>}
           </div>
-          <button type="button" className="icon-btn modal__close" onClick={onClose} aria-label="Close">
+          <button type="button" className="icon-btn modal__close" onClick={onClose} aria-label={tr("Close", "Փակել")}>
             <X />
           </button>
         </div>
@@ -77,7 +78,7 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, text, confirmLa
           <p className="secondary small">{text}</p>
         </div>
         <div className="modal__footer">
-          <Button variant="secondary" onClick={onClose} autoFocus>Cancel</Button>
+          <Button variant="secondary" onClick={onClose} autoFocus>{tr("Cancel", "Չեղարկել")}</Button>
           <Button
             variant={tone === 'danger' ? 'danger' : 'primary'}
             onClick={() => {

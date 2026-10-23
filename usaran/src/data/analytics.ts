@@ -1,17 +1,18 @@
 import type { ActivityPoint, CoursePerformance, Notification, StudentRecord } from '../types';
 import { WEEKDAYS_SHORT } from '../lib/format';
+import { tr } from '../i18n';
 
 /* ---------- Demo student activity ---------- */
 
 export const studentWeeklyMinutes: ActivityPoint[] = [45, 80, 30, 95, 60, 25, 0].map((value, i) => ({ label: WEEKDAYS_SHORT[i], value }));
 
 export const studentWeeklyTrend: ActivityPoint[] = [
-  ['28 հլս', 180], ['4 օգս', 240], ['11 օգս', 210], ['18 օգս', 300], ['25 օգս', 150], ['1 սեպ', 120],
-  ['8 սեպ', 260], ['15 սեպ', 310], ['22 սեպ', 280], ['29 սեպ', 345], ['6 հոկ', 290], ['13 հոկ', 335],
+  [tr("Jul 28", "28 հլս"), 180], [tr("Aug 4", "4 օգս"), 240], [tr("Aug 11", "11 օգս"), 210], [tr("Aug 18", "18 օգս"), 300], [tr("Aug 25", "25 օգս"), 150], [tr("Sep 1", "1 սեպ"), 120],
+  [tr("Sep 8", "8 սեպ"), 260], [tr("Sep 15", "15 սեպ"), 310], [tr("Sep 22", "22 սեպ"), 280], [tr("Sep 29", "29 սեպ"), 345], [tr("Oct 6", "6 հոկ"), 290], [tr("Oct 13", "13 հոկ"), 335],
 ].map(([label, value]) => ({ label: String(label), value: Number(value) }));
 
 export const studentScoreTrend: ActivityPoint[] = [
-  ['Հլս', 84], ['Օգս', 90], ['Սեպ', 86], ['Հոկ', 88],
+  [tr("Jul", "Հլս"), 84], [tr("Aug", "Օգս"), 90], [tr("Sep", "Սեպ"), 86], [tr("Oct", "Հոկ"), 88],
 ].map(([label, value]) => ({ label: String(label), value: Number(value) }));
 
 /* ---------- Teacher analytics (illustrative) ---------- */
@@ -30,7 +31,7 @@ export const enrollmentTrend: Record<string, number[]> = {
   sql: [30, 38, 41, 55, 60, 64, 71, 80, 86, 92, 101, 118],
 };
 
-export const trendLabels = ['նոյ', 'դեկ', 'հնվ', 'փտր', 'մրտ', 'ապր', 'մյս', 'հնս', 'հլս', 'օգս', 'սեպ', 'հոկ'];
+export const trendLabels = [tr("Nov", "նոյ"), tr("Dec", "դեկ"), tr("Jan", "հնվ"), tr("Feb", "փտր"), tr("Mar", "մրտ"), tr("Apr", "ապր"), tr("May", "մյս"), tr("Jun", "հնս"), tr("Jul", "հլս"), tr("Aug", "օգս"), tr("Sep", "սեպ"), tr("Oct", "հոկ")];
 
 export const teacherWeeklyActivity: ActivityPoint[] = [312, 405, 388, 451, 397, 210, 164].map((value, i) => ({ label: WEEKDAYS_SHORT[i], value }));
 
@@ -103,21 +104,21 @@ export interface ActivityEvent {
 }
 
 export const recentActivity: ActivityEvent[] = [
-  { id: 'e1', studentId: 's4', kind: 'submission', text: 'հանձնեց «Կոմպոնենտների գրադարան» առաջադրանքը', courseId: 'react', time: '2026-10-15T10:42' },
-  { id: 'e2', studentId: 's1', kind: 'lesson', text: 'ավարտեց «Ցուցակներ և key հատկանիշ» դասը', courseId: 'react', time: '2026-10-15T09:40' },
-  { id: 'e3', studentId: 's11', kind: 'quiz', text: 'անցավ «Pandas հիմունքներ» թեստը՝ 92%', courseId: 'python-data', time: '2026-10-15T08:15' },
-  { id: 'e4', studentId: 's7', kind: 'enroll', text: 'գրանցվեց դասընթացին', courseId: 'sql', time: '2026-10-14T21:03' },
-  { id: 'e5', studentId: 's2', kind: 'submission', text: 'հանձնեց «Հարցումների հավաքածու» առաջադրանքը', courseId: 'sql', time: '2026-10-14T18:27' },
-  { id: 'e6', studentId: 's12', kind: 'quiz', text: 'անցավ «React-ի հիմնական գաղափարներ» թեստը՝ 75%', courseId: 'react', time: '2026-10-14T16:50' },
+  { id: 'e1', studentId: 's4', kind: 'submission', text: tr("submitted the Component Library assignment", "հանձնեց «Բաղադրիչների գրադարան» առաջադրանքը"), courseId: 'react', time: '2026-10-15T10:42' },
+  { id: 'e2', studentId: 's1', kind: 'lesson', text: tr("completed the Lists and the key Attribute lesson", "ավարտեց «Ցուցակներ և key հատկանիշ» դասը"), courseId: 'react', time: '2026-10-15T09:40' },
+  { id: 'e3', studentId: 's11', kind: 'quiz', text: tr("completed the pandas Fundamentals quiz with 92%", "անցավ «Pandas-ի հիմունքներ» թեստը՝ 92% արդյունքով"), courseId: 'python-data', time: '2026-10-15T08:15' },
+  { id: 'e4', studentId: 's7', kind: 'enroll', text: tr("enrolled in the course", "գրանցվեց դասընթացին"), courseId: 'sql', time: '2026-10-14T21:03' },
+  { id: 'e5', studentId: 's2', kind: 'submission', text: tr("submitted the Query Collection assignment", "հանձնեց «Հարցումների հավաքածու» առաջադրանքը"), courseId: 'sql', time: '2026-10-14T18:27' },
+  { id: 'e6', studentId: 's12', kind: 'quiz', text: tr("completed the React Core Concepts quiz with 75%", "անցավ «React-ի հիմնական գաղափարներ» թեստը՝ 75% արդյունքով"), courseId: 'react', time: '2026-10-14T16:50' },
 ];
 
 /* ---------- Notifications ---------- */
 
 export const notifications: Notification[] = [
-  { id: 'n1', role: 'student', title: 'Մոտենում է վերջնաժամկետը', text: '«Գծային ռեգրեսիայի մոդել» առաջադրանքը պետք է հանձնել վաղը չէ մյուս օրը։', time: '2026-10-15T08:00', unread: true, to: '/student/assignments/a-ml-regression' },
-  { id: 'n2', role: 'student', title: 'Նոր գնահատական', text: 'Լիլիթ Գրիգորյանը գնահատեց «Հարցազրույցների վերլուծություն» աշխատանքը։', time: '2026-10-03T11:00', unread: true, to: '/student/grades' },
-  { id: 'n3', role: 'student', title: 'Նոր թեստ', text: 'React դասընթացում հասանելի է «React-ի հիմնական գաղափարներ» թեստը։', time: '2026-10-12T10:00', unread: false, to: '/student/quizzes/q-react-basics' },
-  { id: 'n4', role: 'teacher', title: '5 նոր հանձնում', text: '«Կոմպոնենտների գրադարան» առաջադրանքը սպասում է գնահատման։', time: '2026-10-15T10:42', unread: true, to: '/teacher/grading' },
-  { id: 'n5', role: 'teacher', title: 'Ակտիվության անկում', text: '3 ուսանող ավելի քան 12 օր չի մուտք գործել դասընթաց։', time: '2026-10-14T09:00', unread: true, to: '/teacher/students' },
-  { id: 'n6', role: 'teacher', title: 'Սևագիր դասընթաց', text: '«Ալգորիթմներ և տվյալների կառուցվածքներ» դասընթացը դեռ հրապարակված չէ։', time: '2026-10-11T15:20', unread: false, to: '/teacher/courses/algorithms' },
+  { id: 'n1', role: 'student', title: tr("Deadline approaching", "Մոտենում է վերջնաժամկետը"), text: tr("The Linear Regression Model assignment is due the day after tomorrow.", "«Գծային ռեգրեսիայի մոդել» առաջադրանքը պետք է հանձնել վաղը չէ մյուս օրը։"), time: '2026-10-15T08:00', unread: true, to: '/student/assignments/a-ml-regression' },
+  { id: 'n2', role: 'student', title: tr("New grade", "Նոր գնահատական"), text: tr("Lilit Grigoryan graded your Interview Analysis assignment.", "Լիլիթ Գրիգորյանը գնահատեց ձեր «Հարցազրույցների վերլուծություն» աշխատանքը։"), time: '2026-10-03T11:00', unread: true, to: '/student/grades' },
+  { id: 'n3', role: 'student', title: tr("New quiz", "Նոր թեստ"), text: tr("The React Core Concepts quiz is now available in the React course.", "React դասընթացում հասանելի է «React-ի հիմնական գաղափարներ» թեստը։"), time: '2026-10-12T10:00', unread: false, to: '/student/quizzes/q-react-basics' },
+  { id: 'n4', role: 'teacher', title: tr("5 new submissions", "5 նոր հանձնում"), text: tr("Submissions for Component Library are awaiting grading.", "«Բաղադրիչների գրադարան» առաջադրանքը սպասում է գնահատման։"), time: '2026-10-15T10:42', unread: true, to: '/teacher/grading' },
+  { id: 'n5', role: 'teacher', title: tr("Activity has dropped", "Ակտիվության անկում"), text: tr("3 students have not accessed the course for more than 12 days.", "3 ուսանող ավելի քան 12 օր մուտք չի գործել դասընթաց։"), time: '2026-10-14T09:00', unread: true, to: '/teacher/students' },
+  { id: 'n6', role: 'teacher', title: tr("Draft course", "Սևագիր դասընթաց"), text: tr("Algorithms and Data Structures has not been published yet.", "«Ալգորիթմներ և տվյալների կառուցվածքներ» դասընթացը դեռ հրապարակված չէ։"), time: '2026-10-11T15:20', unread: false, to: '/teacher/courses/algorithms' },
 ];

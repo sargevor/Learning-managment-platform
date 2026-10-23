@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { cx } from '../../lib/format';
+import { tr } from '../../i18n';
 
 /** Arch mark: a stone arch in brand navy with the periwinkle keystone line. */
 export function BrandMark({ light }: { light?: boolean }) {
@@ -14,9 +15,9 @@ export function BrandMark({ light }: { light?: boolean }) {
 
 export function Brand({ light, to = '/', compactText }: { light?: boolean; to?: string; compactText?: boolean }) {
   return (
-    <Link to={to} className={cx('brand', light && 'brand--light')} aria-label="LearnSpace — Home">
+    <Link to={to} className={cx('brand', light && 'brand--light')} aria-label={tr("LearnSpace — Home", "LearnSpace — գլխավոր էջ")}>
       <BrandMark light={light} />
-      <span className={cx('brand__text', compactText && 'label')}>LearnSpace</span>
+      <span className={cx('brand__text', compactText && 'label')}>{tr("LearnSpace", "LearnSpace")}</span>
     </Link>
   );
 }

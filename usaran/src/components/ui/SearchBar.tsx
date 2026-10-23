@@ -1,5 +1,6 @@
 import { Search, X } from 'lucide-react';
 import { cx } from '../../lib/format';
+import { tr } from '../../i18n';
 
 interface Props {
   value: string;
@@ -10,7 +11,7 @@ interface Props {
   onSubmit?: () => void;
 }
 
-export function SearchBar({ value, onChange, placeholder = "Search…", className, label = "Search", onSubmit }: Props) {
+export function SearchBar({ value, onChange, placeholder = tr("Search…", "Որոնել…"), className, label = tr("Search", "Որոնում"), onSubmit }: Props) {
   return (
     <div className={cx('search', className)} role="search">
       <Search aria-hidden="true" />
@@ -26,7 +27,7 @@ export function SearchBar({ value, onChange, placeholder = "Search…", classNam
         }}
       />
       {value && (
-        <button type="button" className="search__clear" aria-label="Clear search" onClick={() => onChange('')}>
+        <button type="button" className="search__clear" aria-label={tr("Clear search", "Մաքրել որոնումը")} onClick={() => onChange('')}>
           <X />
         </button>
       )}
