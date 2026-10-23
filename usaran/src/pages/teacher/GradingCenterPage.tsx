@@ -10,6 +10,7 @@ import { Select } from '../../components/ui/Field';
 import { SearchBar } from '../../components/ui/SearchBar';
 import { Badge } from '../../components/ui/Badge';
 import { cx, relativeTime } from '../../lib/format';
+import { tr } from '../../i18n';
 
 export function GradingCenterPage() {
   const [params, setParams] = useSearchParams();
@@ -43,22 +44,22 @@ export function GradingCenterPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: "Dashboard", to: '/teacher/dashboard' }, { label: "Grading center" }]}
-        title="Grading center"
-        description="Review submissions from all your courses in one queue. Select a submission to grade it and provide feedback."
+        breadcrumbs={[{ label: tr("Dashboard", "Վահանակ"), to: '/teacher/dashboard' }, { label: tr("Grading center", "Գնահատման կենտրոն") }]}
+        title={tr("Grading center", "Գնահատման կենտրոն")}
+        description={tr("Review submissions from all your courses in one queue. Select a submission to grade it and provide feedback.", "Ձեր բոլոր դասընթացների հանձնված աշխատանքները մեկ հերթում։ Ընտրեք աշխատանքը՝ այն գնահատելու և մեկնաբանություն գրելու համար։")}
       />
       <div className="filters-bar mb-20">
-        <SearchBar value={q} onChange={setQ} placeholder="Search by student name" />
+        <SearchBar value={q} onChange={setQ} placeholder={tr("Search by student name", "Որոնել ուսանողի անունով")} />
         <Select
-          aria-label="Course"
+          aria-label={tr("Course", "Դասընթաց")}
           value={course}
           onChange={(e) => {
             setCourse(e.target.value);
             setAssignment('all');
           }}
-          options={[{ value: 'all', label: "All Courses" }, ...teacherCourses.filter((c) => c.status === 'published').map((c) => ({ value: c.id, label: c.title }))]}
+          options={[{ value: 'all', label: tr("All Courses", "Բոլոր դասընթացները") }, ...teacherCourses.filter((c) => c.status === 'published').map((c) => ({ value: c.id, label: c.title }))]}
         />
-        <Select aria-label="Assignment" value={assignment} onChange={(e) => setAssignment(e.target.value)} options={[{ value: 'all', label: "All Assignments" }, ...assignmentOptions.map((a) => ({ value: a.id, label: a.title }))]} />
+        <Select aria-label={tr("Assignment", "Առաջադրանք")} value={assignment} onChange={(e) => setAssignment(e.target.value)} options={[{ value: 'all', label: tr("All Assignments", "Բոլոր առաջադրանքները") }, ...assignmentOptions.map((a) => ({ value: a.id, label: a.title }))]} />
       </div>
 
       <div className="grading-layout">
@@ -71,14 +72,14 @@ export function GradingCenterPage() {
                 setSelectedId(undefined);
               }}
               items={[
-                { key: 'pending', label: "Pending", count: pendingCount },
-                { key: 'graded', label: "Graded", count: filtered.length - pendingCount },
+                { key: 'pending', label: tr("Pending", "Չգնահատված"), count: pendingCount },
+                { key: 'graded', label: tr("Graded", "Գնահատված"), count: filtered.length - pendingCount },
               ]}
             />
           </div>
-          <div className="grading-queue" role="listbox" aria-label="Submission Queue">
+          <div className="grading-queue" role="listbox" aria-label={tr("Submission Queue", "Աշխատանքների հերթ")}>
             {queue.length === 0 ? (
-              <EmptyState compact icon={<CheckSquare size={22} />} title={tab === 'pending' ? "The queue is empty" : "No graded submissions"} text={tab === 'pending' ? "All submissions matching these filters have been graded." : "Try changing your filters."} />
+              <EmptyState compact icon={<CheckSquare size={22} />} title={tab === 'pending' ? tr("The queue is empty", "Հերթը դատարկ է") : tr("No graded submissions", "Գնահատված աշխատանքներ չկան")} text={tab === 'pending' ? tr("All submissions matching these filters have been graded.", "Ընտրված զտիչներով բոլոր աշխատանքները գնահատված են։") : tr("Try changing your filters.", "Փոխեք զտիչները։")} />
             ) : (
               queue.map((r) => {
                 const active = selected?.submission.id === r.submission.id;
@@ -94,7 +95,7 @@ export function GradingCenterPage() {
                       <span className="xs secondary" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.assignment.title}</span>
                       <span className="row" style={{ ['--gap' as string]: '6px', marginTop: 4 }}>
                         <span className="xs muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.course.title}</span>
-                        {r.submission.late && <Badge tone="danger">Late</Badge>}
+                        {r.submission.late && <Badge tone="danger">{tr("Late", "Ուշացած")}</Badge>}
                         {statusOf(r) === 'graded' && <Badge tone="success">{o?.score ?? r.submission.score}/{r.assignment.maxScore}</Badge>}
                       </span>
                     </span>
@@ -109,7 +110,7 @@ export function GradingCenterPage() {
           {selected ? (
             <GradingPanel row={selected} override={overrides[selected.submission.id]} onSave={(id, g) => setOverrides((o) => ({ ...o, [id]: g }))} />
           ) : (
-            <EmptyState icon={<Inbox size={24} />} title="Select a Submission" text="Choose a submission from the queue on the left to review and grade it." />
+            <EmptyState icon={<Inbox size={24} />} title={tr("Select a Submission", "Ընտրեք աշխատանքը")} text={tr("Choose a submission from the queue on the left to review and grade it.", "Ձախ կողմի հերթից ընտրեք աշխատանք՝ այն դիտելու և գնահատելու համար։")} />
           )}
         </Card>
       </div>

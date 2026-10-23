@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { Role } from '../../types';
 import { Brand } from './Brand';
+import { LangSwitch } from './LangSwitch';
 import { Dropdown } from '../ui/Overlay';
 import { Avatar, Person } from '../ui/Misc';
 import { SearchBar } from '../ui/SearchBar';
@@ -15,6 +16,7 @@ import { getEnrolledCourses } from '../../data/enrollments';
 import { useDemoSession } from '../../context/DemoSession';
 import { useToast } from '../../context/ToastContext';
 import { cx, relativeTime } from '../../lib/format';
+import { tr } from '../../i18n';
 
 interface NavItem {
   to: string;
@@ -30,27 +32,27 @@ function useNav(role: Role): { group: string; items: NavItem[] }[] {
       const open = assignments.filter((a) => enrolledIds.includes(a.courseId)).filter((a) => ['not-started', 'draft'].includes(assignmentStatusFor(a, studentSubmission(a.id)))).length;
       return [
         {
-          group: "Learning",
+          group: tr("Learning", "Ուսուցում"),
           items: [
-            { to: '/student/dashboard', label: "Dashboard", icon: LayoutDashboard },
-            { to: '/student/courses', label: "My courses", icon: BookOpen },
-            { to: '/student/assignments', label: "Assignments", icon: ClipboardList, badge: open },
-            { to: '/student/quizzes', label: "Quizzes", icon: FileQuestion },
-            { to: '/courses', label: "Course catalog", icon: LibraryBig },
+            { to: '/student/dashboard', label: tr("Dashboard", "Վահանակ"), icon: LayoutDashboard },
+            { to: '/student/courses', label: tr("My courses", "Իմ դասընթացները"), icon: BookOpen },
+            { to: '/student/assignments', label: tr("Assignments", "Առաջադրանքներ"), icon: ClipboardList, badge: open },
+            { to: '/student/quizzes', label: tr("Quizzes", "Թեստեր"), icon: FileQuestion },
+            { to: '/courses', label: tr("Course catalog", "Կատալոգ"), icon: LibraryBig },
           ],
         },
         {
-          group: "Results",
+          group: tr("Results", "Արդյունքներ"),
           items: [
-            { to: '/student/grades', label: "Grades", icon: GraduationCap },
-            { to: '/student/progress', label: "Progress", icon: TrendingUp },
+            { to: '/student/grades', label: tr("Grades", "Գնահատականներ"), icon: GraduationCap },
+            { to: '/student/progress', label: tr("Progress", "Առաջընթաց"), icon: TrendingUp },
           ],
         },
         {
-          group: "Account",
+          group: tr("Account", "Հաշիվ"),
           items: [
-            { to: '/student/profile', label: "Profile", icon: User },
-            { to: '/student/settings', label: "Settings", icon: Settings },
+            { to: '/student/profile', label: tr("Profile", "Անձնական էջ"), icon: User },
+            { to: '/student/settings', label: tr("Settings", "Կարգավորումներ"), icon: Settings },
           ],
         },
       ];
@@ -58,27 +60,27 @@ function useNav(role: Role): { group: string; items: NavItem[] }[] {
     const pending = pendingTeacherSubmissions().length;
     return [
       {
-        group: "Teaching",
+        group: tr("Teaching", "Դասավանդում"),
         items: [
-          { to: '/teacher/dashboard', label: "Dashboard", icon: LayoutDashboard },
-          { to: '/teacher/courses', label: "Courses", icon: BookMarked },
-          { to: '/teacher/assignments', label: "Assignments", icon: ClipboardList },
-          { to: '/teacher/quizzes', label: "Quizzes", icon: FileQuestion },
-          { to: '/teacher/grading', label: "Grading center", icon: CheckSquare, badge: pending },
+          { to: '/teacher/dashboard', label: tr("Dashboard", "Վահանակ"), icon: LayoutDashboard },
+          { to: '/teacher/courses', label: tr("Courses", "Դասընթացներ"), icon: BookMarked },
+          { to: '/teacher/assignments', label: tr("Assignments", "Առաջադրանքներ"), icon: ClipboardList },
+          { to: '/teacher/quizzes', label: tr("Quizzes", "Թեստեր"), icon: FileQuestion },
+          { to: '/teacher/grading', label: tr("Grading center", "Գնահատման կենտրոն"), icon: CheckSquare, badge: pending },
         ],
       },
       {
-        group: "Students and analytics",
+        group: tr("Students and analytics", "Ուսանողներ և վերլուծություն"),
         items: [
-          { to: '/teacher/students', label: "Students", icon: Users },
-          { to: '/teacher/reports', label: "Reports", icon: BarChart3 },
+          { to: '/teacher/students', label: tr("Students", "Ուսանողներ"), icon: Users },
+          { to: '/teacher/reports', label: tr("Reports", "Հաշվետվություններ"), icon: BarChart3 },
         ],
       },
       {
-        group: "Account",
+        group: tr("Account", "Հաշիվ"),
         items: [
-          { to: '/teacher/profile', label: "Profile", icon: User },
-          { to: '/teacher/settings', label: "Settings", icon: Settings },
+          { to: '/teacher/profile', label: tr("Profile", "Անձնական էջ"), icon: User },
+          { to: '/teacher/settings', label: tr("Settings", "Կարգավորումներ"), icon: Settings },
         ],
       },
     ];
@@ -112,7 +114,7 @@ export function AppShell({ role }: { role: Role }) {
 
   return (
     <div className={cx('shell', collapsed && 'is-collapsed', mobileOpen && 'is-mobile-open')}>
-      <aside className="sidebar" aria-label="Sidebar navigation">
+      <aside className="sidebar" aria-label={tr("Sidebar navigation", "Կողային նավարկում")}>
         <div className="sidebar__top">
           <Brand to={`/${role}/dashboard`} />
         </div>
@@ -132,14 +134,14 @@ export function AppShell({ role }: { role: Role }) {
         </nav>
         <div className="sidebar__bottom">
           <div className={cx('sidebar__switch', role === 'student' ? 't-lilac' : 't-sky')}>
-            <strong>{role === 'student' ? "Teacher workspace" : "Student workspace"}</strong>
-            <span>{role === 'student' ? "See how teachers review and grade assignments." : "Explore the platform from a student's perspective."}</span>
-            <Link to={role === 'student' ? '/teacher/dashboard' : '/student/dashboard'} className="btn btn--primary btn--sm">Switch <ArrowRight aria-hidden="true" />
+            <strong>{role === 'student' ? tr("Teacher workspace", "Դասավանդողի միջավայր") : tr("Student workspace", "Ուսանողի միջավայր")}</strong>
+            <span>{role === 'student' ? tr("See how teachers review and grade assignments.", "Տեսեք, թե ինչպես է դասավանդողը գնահատում աշխատանքները։") : tr("Explore the platform from a student's perspective.", "Տեսեք հարթակն ուսանողի աչքերով։")}</span>
+            <Link to={role === 'student' ? '/teacher/dashboard' : '/student/dashboard'} className="btn btn--primary btn--sm">{tr("Switch ", "Անցնել ")}<ArrowRight aria-hidden="true" />
             </Link>
           </div>
-          <button type="button" className="sidebar__link sidebar__collapse" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+          <button type="button" className="sidebar__link sidebar__collapse" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? tr("Expand sidebar", "Բացել կողային վահանակը") : tr("Collapse sidebar", "Ծալել կողային վահանակը")}>
             {collapsed ? <ChevronsRight aria-hidden="true" /> : <ChevronsLeft aria-hidden="true" />}
-            <span className="label">Collapse</span>
+            <span className="label">{tr("Collapse", "Ծալել")}</span>
           </button>
         </div>
       </aside>
@@ -147,25 +149,26 @@ export function AppShell({ role }: { role: Role }) {
 
       <div className="shell__main">
         <header className="topbar">
-          <button type="button" className="icon-btn topbar__menu" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
+          <button type="button" className="icon-btn topbar__menu" onClick={() => setMobileOpen(true)} aria-label={tr("Open navigation", "Բացել նավարկումը")}>
             <Menu />
           </button>
-          <SearchBar className="topbar__search" value={query} onChange={setQuery} onSubmit={runSearch} placeholder={role === 'student' ? "Search my courses…" : "Search courses…"} />
+          <SearchBar className="topbar__search" value={query} onChange={setQuery} onSubmit={runSearch} placeholder={role === 'student' ? tr("Search my courses…", "Որոնել իմ դասընթացներում…") : tr("Search courses…", "Որոնել դասընթացներ…")} />
           <div className="topbar__actions">
-            <div className="role-switch" role="group" aria-label="Choose a role">
-              <Link to="/student/dashboard" className={cx(role === 'student' && 'active')} aria-label="Student">
+            <LangSwitch />
+            <div className="role-switch" role="group" aria-label={tr("Choose a role", "Դերի ընտրություն")}>
+              <Link to="/student/dashboard" className={cx(role === 'student' && 'active')} aria-label={tr("Student", "Ուսանող")}>
                 <GraduationCap aria-hidden="true" />
-                <span>Student</span>
+                <span>{tr("Student", "Ուսանող")}</span>
               </Link>
-              <Link to="/teacher/dashboard" className={cx(role === 'teacher' && 'active')} aria-label="Teacher">
+              <Link to="/teacher/dashboard" className={cx(role === 'teacher' && 'active')} aria-label={tr("Teacher", "Դասավանդող")}>
                 <Presentation aria-hidden="true" />
-                <span>Teacher</span>
+                <span>{tr("Teacher", "Դասավանդող")}</span>
               </Link>
             </div>
             <Dropdown
               width={340}
               trigger={({ toggle, open }) => (
-                <button type="button" className="icon-btn" onClick={toggle} aria-expanded={open} aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`}>
+                <button type="button" className="icon-btn" onClick={toggle} aria-expanded={open} aria-label={tr(`Notifications${unread ? `, ${unread} unread` : ''}`, `Ծանուցումներ${unread ? `, ${unread} չընթերցված` : ''}`)}>
                   <Bell />
                   {unread > 0 && <span className="icon-btn__dot" />}
                 </button>
@@ -174,8 +177,8 @@ export function AppShell({ role }: { role: Role }) {
               {(close) => (
                 <>
                   <div className="dropdown__head row row--between">
-                    <strong className="small">Notifications</strong>
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => setReadIds(new Set(notes.map((n) => n.id)))}>Mark as read</button>
+                    <strong className="small">{tr("Notifications", "Ծանուցումներ")}</strong>
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => setReadIds(new Set(notes.map((n) => n.id)))}>{tr("Mark all as read", "Բոլորը նշել որպես ընթերցված")}</button>
                   </div>
                   {notes.map((n) => {
                     const isUnread = n.unread && !readIds.has(n.id);
@@ -204,8 +207,8 @@ export function AppShell({ role }: { role: Role }) {
             </Dropdown>
             <Dropdown
               trigger={({ toggle, open }) => (
-                <button type="button" className="profile-btn" onClick={toggle} aria-expanded={open} aria-label="User menu">
-                  <Person name={name} sub={role === 'student' ? "Student" : "Teacher"} size={34} />
+                <button type="button" className="profile-btn" onClick={toggle} aria-expanded={open} aria-label={tr("User menu", "Օգտատիրոջ ընտրացանկ")}>
+                  <Person name={name} sub={role === 'student' ? tr("Student", "Ուսանող") : tr("Teacher", "Դասավանդող")} size={34} />
                 </button>
               )}
             >
@@ -219,37 +222,37 @@ export function AppShell({ role }: { role: Role }) {
                     </div>
                   </div>
                   <div className="dropdown__sep" />
-                  <Link className="dropdown__item" to={`/${role}/profile`} onClick={close}><User />My profile</Link>
-                  <Link className="dropdown__item" to={`/${role}/settings`} onClick={close}><Settings />Settings</Link>
+                  <Link className="dropdown__item" to={`/${role}/profile`} onClick={close}><User />{tr("My profile", "Անձնական էջ")}</Link>
+                  <Link className="dropdown__item" to={`/${role}/settings`} onClick={close}><Settings />{tr("Settings", "Կարգավորումներ")}</Link>
                   <Link className="dropdown__item" to={role === 'student' ? '/teacher/dashboard' : '/student/dashboard'} onClick={close}>
-                    <Repeat />Switch to {role === 'student' ? "teacher" : "student"} view</Link>
+                    <Repeat />{tr("Switch to ", "Անցնել ")}{role === 'student' ? tr("teacher", "դասավանդողի") : tr("student", "ուսանողի")}{tr(" view", " դերին")}</Link>
                   <div className="dropdown__sep" />
                   <button
                     type="button"
                     className="dropdown__item dropdown__item--danger"
                     onClick={() => {
                       close();
-                      toast.info("You have left the demo", "No real session was created, so nothing was saved.");
+                      toast.info(tr("You have left the demo", "Դուք դուրս եկաք ցուցադրական միջավայրից"), tr("No real session was created, so nothing was saved.", "Իրական նստաշրջան չի եղել, ուստի ոչինչ չի պահպանվել։"));
                       navigate('/login');
                     }}
                   >
-                    <LogOut />Sign out</button>
+                    <LogOut />{tr("Sign out", "Ելք")}</button>
                 </>
               )}
             </Dropdown>
           </div>
         </header>
         <div className="demo-banner" role="note">
-          <FlaskConical aria-hidden="true" />Demo workspace: all data is illustrative. Changes stay on this page and are not sent to a server.</div>
+          <FlaskConical aria-hidden="true" />{tr("Demo workspace: all data is illustrative. Changes stay on this page and are not sent to a server.", "Ցուցադրական միջավայր։ Բոլոր տվյալները հորինված են, իսկ փոփոխությունները պահվում են միայն այս էջում և չեն ուղարկվում սերվեր։")}</div>
         <main className="content" id="main">
           <Outlet />
         </main>
         <footer className="app-footer">
-          <span>© 2026 LearnSpace · Demo</span>
-          <nav aria-label="Additional navigation">
-            <Link to="/">Home</Link>
-            <Link to="/courses">Course catalog</Link>
-            <Link to="/about">About</Link>
+          <span>{tr("© 2026 LearnSpace · Demo", "© 2026 LearnSpace, ցուցադրական տարբերակ")}</span>
+          <nav aria-label={tr("Additional navigation", "Լրացուցիչ նավարկում")}>
+            <Link to="/">{tr("Home", "Գլխավոր էջ")}</Link>
+            <Link to="/courses">{tr("Course catalog", "Կատալոգ")}</Link>
+            <Link to="/about">{tr("About", "Հարթակի մասին")}</Link>
           </nav>
         </footer>
       </div>

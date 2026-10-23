@@ -13,6 +13,7 @@ import { Card, EmptyState, Notice, PageHeader, Person } from '../../components/u
 import { ConfirmDialog } from '../../components/ui/Overlay';
 import { ProgressRing } from '../../components/ui/Progress';
 import { cx, daysUntil, formatDateTime, formatFileSize, relativeDue, TODAY } from '../../lib/format';
+import { tr } from '../../i18n';
 
 export function AssignmentDetailPage() {
   const { id } = useParams();
@@ -34,7 +35,7 @@ export function AssignmentDetailPage() {
   if (!assignment || !isEnrolled(assignment.courseId)) {
     return (
       <div className="card">
-        <EmptyState title="Assignment not found" text="It may have been removed, or you may not be enrolled in the course." action={<ButtonLink to="/student/assignments">All Assignments</ButtonLink>} />
+        <EmptyState title={tr("Assignment not found", "Առաջադրանքը չի գտնվել")} text={tr("It may have been removed, or you may not be enrolled in the course.", "Հնարավոր է՝ այն հեռացվել է կամ դուք գրանցված չեք համապատասխան դասընթացին։")} action={<ButtonLink to="/student/assignments">{tr("All Assignments", "Բոլոր առաջադրանքները")}</ButtonLink>} />
       </div>
     );
   }
@@ -50,7 +51,7 @@ export function AssignmentDetailPage() {
     if (!list) return;
     const next = Array.from(list).map((f) => ({ name: f.name, sizeKb: Math.max(1, Math.round(f.size / 1024)) }));
     const tooBig = next.filter((f) => f.sizeKb > 20 * 1024);
-    if (tooBig.length) toast.error("File is too large", "The maximum file size is 20 MB.");
+    if (tooBig.length) toast.error(tr("File is too large", "Ֆայլը չափազանց մեծ է"), tr("The maximum file size is 20 MB.", "Առավելագույն չափը 20 ՄԲ է։"));
     setFiles((cur) => [...cur, ...next.filter((f) => f.sizeKb <= 20 * 1024)]);
     setError('');
   };
@@ -59,14 +60,14 @@ export function AssignmentDetailPage() {
     const el = textRef.current;
     if (!el) return;
     const { selectionStart: s, selectionEnd: e } = el;
-    const selected = answer.slice(s, e) || "text";
+    const selected = answer.slice(s, e) || tr("text", "տեքստ");
     setAnswer(answer.slice(0, s) + before + selected + after + answer.slice(e));
     requestAnimationFrame(() => el.focus());
   };
 
   const validate = () => {
     if (answer.trim().length < 20 && files.length === 0) {
-      setError("Write a response of at least 20 characters or attach a file.");
+      setError(tr("Write a response of at least 20 characters or attach a file.", "Գրեք առնվազն 20 նիշանոց պատասխան կամ կցեք ֆայլ։"));
       return false;
     }
     return true;
@@ -76,19 +77,19 @@ export function AssignmentDetailPage() {
     setStatus(days < 0 ? 'overdue' : 'draft');
     const now = new Date(TODAY);
     setSavedAt(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
-    toast.success("Draft saved", "Kept only on this page. No data has been sent to a server.");
+    toast.success(tr("Draft saved", "Սևագիրը պահվեց"), tr("Kept only on this page. No data has been sent to a server.", "Պահվել է միայն այս էջում։ Տվյալները չեն ուղարկվել սերվեր։"));
   };
 
   const submit = () => {
     setStatus('submitted');
     setSubmittedAt(TODAY.toISOString().slice(0, 16));
-    toast.success("Assignment marked as submitted", "Demo: your work has not been sent to a server.");
+    toast.success(tr("Assignment marked as submitted", "Աշխատանքը նշվեց որպես հանձնված"), tr("Demo: your work has not been sent to a server.", "Ցուցադրական ռեժիմ։ Ձեր աշխատանքը չի ուղարկվել սերվեր։"));
   };
 
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: "Assignments", to: '/student/assignments' }, { label: course.title, to: `/student/courses/${course.id}/learn` }, { label: assignment.title }]}
+        breadcrumbs={[{ label: tr("Assignments", "Առաջադրանքներ"), to: '/student/assignments' }, { label: course.title, to: `/student/courses/${course.id}/learn` }, { label: assignment.title }]}
         title={assignment.title}
         description={assignment.summary}
         actions={status && <StatusBadge status={status} />}
@@ -97,13 +98,13 @@ export function AssignmentDetailPage() {
       <div className="grid grid-main-aside">
         <div className="stack" style={{ ['--gap' as string]: '20px', minWidth: 0 }}>
           {graded && (
-            <Card title="Grade and Feedback">
+            <Card title={tr("Grade and Feedback", "Գնահատական և մեկնաբանություն")}>
               <div className="row row--top row--wrap" style={{ ['--gap' as string]: '24px' }}>
-                <ProgressRing value={(original!.score! / assignment.maxScore) * 100} size={104} color="var(--success-600)" label="result" />
+                <ProgressRing value={(original!.score! / assignment.maxScore) * 100} size={104} color="var(--success-600)" label={tr("result", "արդյունք")} />
                 <div className="stack grow" style={{ ['--gap' as string]: '10px', minWidth: 240 }}>
                   <div className="row" style={{ ['--gap' as string]: '8px' }}>
                     <span style={{ fontSize: 'var(--fs-2xl)', fontWeight: 700, color: 'var(--navy-900)' }}>{original!.score}</span>
-                    <span className="muted">/ {assignment.maxScore} points</span>
+                    <span className="muted">/ {assignment.maxScore}{tr(" points", " միավոր")}</span>
                   </div>
                   <div className="answer-box" style={{ background: 'var(--surface-muted)' }}>
                     <div className="row xs muted" style={{ ['--gap' as string]: '6px', marginBottom: 6 }}>
@@ -116,13 +117,13 @@ export function AssignmentDetailPage() {
             </Card>
           )}
 
-          <Card title="Instructions">
+          <Card title={tr("Instructions", "Հրահանգներ")}>
             <ol className="instructions">
               {assignment.instructions.map((s) => (
                 <li key={s}>{s}</li>
               ))}
             </ol>
-            <h3 style={{ fontSize: 'var(--fs-sm)', margin: '20px 0 10px' }}>Requirements</h3>
+            <h3 style={{ fontSize: 'var(--fs-sm)', margin: '20px 0 10px' }}>{tr("Requirements", "Պահանջներ")}</h3>
             <ul className="check-list">
               {assignment.requirements.map((r) => (
                 <li key={r}><CheckCircle2 aria-hidden="true" />{r}</li>
@@ -131,13 +132,13 @@ export function AssignmentDetailPage() {
           </Card>
 
           <Card
-            title="Your Work"
-            subtitle={editable ? (savedAt ? `Draft saved at ${savedAt}` : "You can edit your response before submitting") : submittedAt ? `Submitted on ${formatDateTime(submittedAt)}` : undefined}
+            title={tr("Your Work", "Ձեր աշխատանքը")}
+            subtitle={editable ? (savedAt ? tr(`Draft saved at ${savedAt}`, `Սևագիրը պահվել է ${savedAt}-ին`) : tr("You can edit your response before submitting", "Պատասխանը կարող եք խմբագրել մինչև հանձնելը")) : submittedAt ? tr(`Submitted on ${formatDateTime(submittedAt)}`, `Հանձնված է ${formatDateTime(submittedAt)}`) : undefined}
             footer={
               editable ? (
                 <>
-                  <Button variant="secondary" onClick={saveDraft}>Save Draft</Button>
-                  <Button variant="primary" icon={<Send />} onClick={() => validate() && setConfirm(true)}>Submit Assignment</Button>
+                  <Button variant="secondary" onClick={saveDraft}>{tr("Save Draft", "Պահել սևագիրը")}</Button>
+                  <Button variant="primary" icon={<Send />} onClick={() => validate() && setConfirm(true)}>{tr("Submit Assignment", "Հանձնել աշխատանքը")}</Button>
                 </>
               ) : status === 'submitted' ? (
                 <Button
@@ -145,27 +146,27 @@ export function AssignmentDetailPage() {
                   icon={<Undo2 />}
                   onClick={() => {
                     setStatus(days < 0 ? 'overdue' : 'draft');
-                    toast.info("Submission withdrawn", "You can edit your work and submit it again.");
+                    toast.info(tr("Submission withdrawn", "Հանձնումը հետ կանչվեց"), tr("You can edit your work and submit it again.", "Կարող եք խմբագրել աշխատանքը և նորից հանձնել այն։"));
                   }}
-                >Withdraw and Edit</Button>
+                >{tr("Withdraw and Edit", "Հետ կանչել և խմբագրել")}</Button>
               ) : undefined
             }
           >
-            {status === 'overdue' && <Notice tone="danger" className="mb-20">The deadline was {relativeDue(assignment.dueDate)}. Late submissions may receive a reduced score.</Notice>}
-            {status === 'submitted' && <Notice tone="warning" className="mb-20">Your work is awaiting review by your instructor.</Notice>}
+            {status === 'overdue' && <Notice tone="danger" className="mb-20">{tr("The deadline was ", "Վերջնաժամկետն անցել է ")}{relativeDue(assignment.dueDate)}{tr(". Late submissions may receive a reduced score.", "։ Ուշացած աշխատանքը կարող է գնահատվել նվազեցված միավորով։")}</Notice>}
+            {status === 'submitted' && <Notice tone="warning" className="mb-20">{tr("Your work is awaiting review by your instructor.", "Աշխատանքը սպասում է դասավանդողի գնահատմանը։")}</Notice>}
 
             {editable ? (
               <div className="stack" style={{ ['--gap' as string]: '16px' }}>
                 <div className="field">
-                  <label className="field__label" htmlFor="answer">Written Response</label>
+                  <label className="field__label" htmlFor="answer">{tr("Written Response", "Տեքստային պատասխան")}</label>
                   <div className="editor">
-                    <div className="editor__toolbar" role="toolbar" aria-label="Formatting">
-                      <button type="button" onClick={() => wrap('**')} aria-label="Bold"><Bold /></button>
-                      <button type="button" onClick={() => wrap('_')} aria-label="Italic"><Italic /></button>
-                      <button type="button" onClick={() => wrap('\n- ', '')} aria-label="Bulleted List"><List /></button>
-                      <button type="button" onClick={() => wrap('\n1. ', '')} aria-label="Numbered List"><ListOrdered /></button>
-                      <button type="button" onClick={() => wrap('`')} aria-label="Code"><Code /></button>
-                      <button type="button" onClick={() => wrap('[', '](https://)')} aria-label="Link"><Link2 /></button>
+                    <div className="editor__toolbar" role="toolbar" aria-label={tr("Formatting", "Ձևաչափում")}>
+                      <button type="button" onClick={() => wrap('**')} aria-label={tr("Bold", "Թավ")}><Bold /></button>
+                      <button type="button" onClick={() => wrap('_')} aria-label={tr("Italic", "Շեղ")}><Italic /></button>
+                      <button type="button" onClick={() => wrap('\n- ', '')} aria-label={tr("Bulleted List", "Կետավոր ցուցակ")}><List /></button>
+                      <button type="button" onClick={() => wrap('\n1. ', '')} aria-label={tr("Numbered List", "Համարակալված ցուցակ")}><ListOrdered /></button>
+                      <button type="button" onClick={() => wrap('`')} aria-label={tr("Code", "Կոդ")}><Code /></button>
+                      <button type="button" onClick={() => wrap('[', '](https://)')} aria-label={tr("Link", "Հղում")}><Link2 /></button>
                     </div>
                     <textarea
                       id="answer"
@@ -177,11 +178,11 @@ export function AssignmentDetailPage() {
                         setAnswer(e.target.value);
                         setError('');
                       }}
-                      placeholder="Describe your solution and decisions, and include a link to your project…"
+                      placeholder={tr("Describe your solution and decisions, and include a link to your project…", "Նկարագրեք ձեր լուծումը, որոշումները և հղում տվեք նախագծին…")}
                     />
                     <div className="editor__footer">
-                      <span>Markdown supported</span>
-                      <span>{words} words</span>
+                      <span>{tr("Markdown supported", "Աջակցվում է Markdown ձևաչափը")}</span>
+                      <span>{words}{tr(" words", " բառ")}</span>
                     </div>
                   </div>
                   {error && <span className="field__error" role="alert">{error}</span>}
@@ -189,7 +190,7 @@ export function AssignmentDetailPage() {
 
                 {assignment.allowFiles && (
                   <div className="field">
-                    <span className="field__label">Attachments</span>
+                    <span className="field__label">{tr("Attachments", "Կցված ֆայլեր")}</span>
                     <div
                       className={cx('dropzone', dragOver && 'is-over')}
                       role="button"
@@ -208,8 +209,8 @@ export function AssignmentDetailPage() {
                       }}
                     >
                       <UploadCloud size={26} aria-hidden="true" />
-                      <span><strong>Choose a File</strong> or drag it here</span>
-                      <span className="xs muted">Attach PDF, ZIP, IPYNB, or image files up to 20 MB each. Files are not uploaded; only their names are displayed.</span>
+                      <span><strong>{tr("Choose a File", "Ընտրեք ֆայլ")}</strong>{tr(" or drag it here", " կամ քաշեք այստեղ")}</span>
+                      <span className="xs muted">{tr("Attach PDF, ZIP, IPYNB, or image files up to 20 MB each. Files are not uploaded; only their names are displayed.", "Կցեք PDF, ZIP, IPYNB ֆայլեր կամ պատկերներ՝ յուրաքանչյուրը մինչև 20 ՄԲ։ Ֆայլերը չեն վերբեռնվում, ցուցադրվում են միայն դրանց անունները։")}</span>
                     </div>
                     <input ref={fileInput} type="file" multiple hidden onChange={(e) => addFiles(e.target.files)} />
                     {files.length > 0 && (
@@ -221,7 +222,7 @@ export function AssignmentDetailPage() {
                               <div className="strong">{f.name}</div>
                               <div className="xs muted">{formatFileSize(f.sizeKb)}</div>
                             </div>
-                            <Button variant="ghost" size="sm" iconOnly aria-label={`Remove ${f.name}`} onClick={() => setFiles((l) => l.filter((_, j) => j !== i))} icon={<Trash2 />} />
+                            <Button variant="ghost" size="sm" iconOnly aria-label={tr(`Remove ${f.name}`, `Հեռացնել ${f.name}`)} onClick={() => setFiles((l) => l.filter((_, j) => j !== i))} icon={<Trash2 />} />
                           </div>
                         ))}
                       </div>
@@ -231,7 +232,7 @@ export function AssignmentDetailPage() {
               </div>
             ) : (
               <div className="stack" style={{ ['--gap' as string]: '12px' }}>
-                <div className="answer-box">{answer || <span className="muted">No written answer</span>}</div>
+                <div className="answer-box">{answer || <span className="muted">{tr("No written answer", "Տեքստային պատասխան չկա")}</span>}</div>
                 {files.map((f) => (
                   <div key={f.name} className="file-row">
                     <span className="file-row__icon"><FileText /></span>
@@ -247,25 +248,25 @@ export function AssignmentDetailPage() {
         </div>
 
         <div className="stack" style={{ ['--gap' as string]: '20px' }}>
-          <Card title="Details">
+          <Card title={tr("Details", "Մանրամասներ")}>
             <dl className="kv">
-              <dt>Course</dt>
+              <dt>{tr("Course", "Դասընթաց")}</dt>
               <dd>{course.title}</dd>
-              <dt>Deadline</dt>
+              <dt>{tr("Deadline", "Վերջնաժամկետ")}</dt>
               <dd>{formatDateTime(assignment.dueDate)}</dd>
-              <dt>Time Remaining</dt>
-              <dd className={cx(days >= 0 && days <= 3 && editable && 'tag--urgent')}>{days < 0 ? "Overdue" : relativeDue(assignment.dueDate)}</dd>
-              <dt>Maximum Score</dt>
+              <dt>{tr("Time Remaining", "Մնացած ժամանակ")}</dt>
+              <dd className={cx(days >= 0 && days <= 3 && editable && 'tag--urgent')}>{days < 0 ? tr("Overdue", "Ժամկետն անցել է") : relativeDue(assignment.dueDate)}</dd>
+              <dt>{tr("Maximum Score", "Առավելագույն միավոր")}</dt>
               <dd>{assignment.maxScore}</dd>
-              <dt>Files</dt>
-              <dd>{assignment.allowFiles ? "Allowed" : "Not Required"}</dd>
-              <dt>Status</dt>
+              <dt>{tr("Files", "Ֆայլեր")}</dt>
+              <dd>{assignment.allowFiles ? tr("Allowed", "Թույլատրված է") : tr("Not Required", "Չի պահանջվում")}</dd>
+              <dt>{tr("Status", "Կարգավիճակ")}</dt>
               <dd>{status && <StatusBadge status={status} />}</dd>
             </dl>
           </Card>
-          <Card title="Teacher">
+          <Card title={tr("Teacher", "Դասավանդող")}>
             <Person name={fullName(teacher)} sub={teacher?.title} size={42} />
-            <Button variant="secondary" block style={{ marginTop: 16 }} onClick={() => toast.info("Message", "Messages are not sent in this demo.")}>Ask Your Instructor</Button>
+            <Button variant="secondary" block style={{ marginTop: 16 }} onClick={() => toast.info(tr("Message", "Հաղորդագրություն"), tr("Messages are not sent in this demo.", "Ցուցադրական տարբերակում հաղորդագրություններ չեն ուղարկվում։"))}>{tr("Ask Your Instructor", "Հարց տալ դասավանդողին")}</Button>
           </Card>
         </div>
       </div>
@@ -275,9 +276,9 @@ export function AssignmentDetailPage() {
         onClose={() => setConfirm(false)}
         onConfirm={submit}
         tone="warning"
-        title="Submit your assignment?"
-        text={`Your response will be marked as ready for review. Attached files: ${files.length}. Response length: ${words} words. Nothing is sent in this demo.`}
-        confirmLabel="Submit"
+        title={tr("Submit your assignment?", "Հանձնե՞լ աշխատանքը")}
+        text={tr(`Your response will be marked as ready for review. Attached files: ${files.length}. Response length: ${words} words. Nothing is sent in this demo.`, `Հանձնելուց հետո պատասխանը կփոխանցվի գնահատման։ Կցված է ${files.length} ֆայլ, պատասխանը՝ ${words} բառ։ Ցուցադրական ռեժիմում ոչինչ չի ուղարկվում։`)}
+        confirmLabel={tr("Submit", "Հանձնել")}
       />
     </>
   );

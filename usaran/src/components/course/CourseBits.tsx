@@ -9,6 +9,7 @@ import { Badge, StatusBadge } from '../ui/Badge';
 import { Avatar, Thumb } from '../ui/Misc';
 import { CATEGORY_TINT, LESSON_TINT } from '../../lib/visual';
 import { ProgressBar } from '../ui/Progress';
+import { tr } from '../../i18n';
 
 export const LESSON_ICONS: Record<LessonType, typeof PlayCircle> = {
   video: PlayCircle,
@@ -19,11 +20,11 @@ export const LESSON_ICONS: Record<LessonType, typeof PlayCircle> = {
 };
 
 export const LESSON_TYPE_LABEL: Record<LessonType, string> = {
-  video: "Video lesson",
-  text: "Reading",
-  resource: "Resource",
-  assignment: "Assignment",
-  quiz: "Quiz",
+  video: tr("Video lesson", "Տեսադաս"),
+  text: tr("Reading", "Տեքստային նյութ"),
+  resource: tr("Resource", "Լրացուցիչ նյութ"),
+  assignment: tr("Assignment", "Առաջադրանք"),
+  quiz: tr("Quiz", "Թեստ"),
 };
 
 /* ---------- Course card ---------- */
@@ -55,7 +56,7 @@ export function CourseCard({ course, to, progress, hideDescription }: { course: 
             )}
             <span className="tag">
               <Clock aria-hidden="true" />
-              {course.durationHours} hours</span>
+              {course.durationHours}{tr(" hours", " ժամ")}</span>
             <span className="tag">
               <Users aria-hidden="true" />
               {formatNumber(course.enrolled)}
@@ -95,8 +96,8 @@ export function LessonItem({ lesson, done, active, locked, onClick, showType, tr
         {showType && <span className="xs muted" style={{ display: 'block' }}>{LESSON_TYPE_LABEL[lesson.type]}</span>}
       </span>
       {trailing}
-      <span className="lesson-item__meta">{lesson.durationMin} min</span>
-      {done && <span className="sr-only">(completed)</span>}
+      <span className="lesson-item__meta">{lesson.durationMin}{tr(" min", " ր")}</span>
+      {done && <span className="sr-only">{tr("(completed)", "(ավարտված)")}</span>}
     </>
   );
   return onClick ? (
@@ -132,9 +133,9 @@ export function AssignmentCard({ assignment, status, to, courseTitle, score }: {
         <span className="tag">
           {score !== undefined ? (
             <strong style={{ color: 'var(--success-700)' }}>
-              {score}/{assignment.maxScore} points</strong>
+              {score}/{assignment.maxScore}{tr(" points", " միավոր")}</strong>
           ) : (
-            <>Maximum: {assignment.maxScore} points</>
+            <>{tr("Maximum: ", "Առավելագույնը՝ ")}{assignment.maxScore}{tr(" points", " միավոր")}</>
           )}
         </span>
       </div>
@@ -158,16 +159,16 @@ export function QuizCard({ quiz, state, to, courseTitle, bestPercent }: { quiz: 
       <div className="row row--wrap small" style={{ ['--gap' as string]: '6px 16px' }}>
         <span className="tag">
           <HelpCircle aria-hidden="true" />
-          {quiz.questions.length} questions</span>
+          {quiz.questions.length}{tr(" questions", " հարց")}</span>
         <span className="tag">
           <Timer aria-hidden="true" />
-          {quiz.timeLimitMin} minutes</span>
+          {quiz.timeLimitMin}{tr(" minutes", " րոպե")}</span>
         {bestPercent !== undefined ? (
-          <span className="tag">Best result: <strong style={{ color: bestPercent >= quiz.passPercent ? 'var(--success-700)' : 'var(--danger-700)' }}>{bestPercent}%</strong>
+          <span className="tag">{tr("Best result: ", "Լավագույն արդյունք՝ ")}<strong style={{ color: bestPercent >= quiz.passPercent ? 'var(--success-700)' : 'var(--danger-700)' }}>{bestPercent}%</strong>
           </span>
         ) : (
           <span className="tag">
-            <CalendarClock aria-hidden="true" />Due {formatDate(quiz.dueDate)}
+            <CalendarClock aria-hidden="true" />{tr("Due ", "մինչև ")}{formatDate(quiz.dueDate)}
           </span>
         )}
       </div>

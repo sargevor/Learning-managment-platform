@@ -13,9 +13,10 @@ import { StatCard } from '../../components/ui/StatCard';
 import { ProgressBar } from '../../components/ui/Progress';
 import { StatusBadge } from '../../components/ui/Badge';
 import { LESSON_ICONS } from '../../components/course/CourseBits';
-import { average, cx, daysUntil, formatMinutes, formatShortDate, relativeDue, relativeTime } from '../../lib/format';
+import { average, cx, daysUntil, formatMinutes, dateParts, relativeDue, relativeTime } from '../../lib/format';
 import { SCENES } from '../../lib/visual';
 import type { EnrollmentState } from '../../types';
+import { tr } from '../../i18n';
 
 export function StudentDashboard() {
   const { student } = useDemoSession();
@@ -27,8 +28,8 @@ export function StudentDashboard() {
 
   const open = assignments.filter((a) => a.status === 'not-started' || a.status === 'draft');
   const deadlines = [
-    ...open.map((a) => ({ id: a.assignment.id, title: a.assignment.title, course: a.course.title, due: a.assignment.dueDate, kind: 'Առաջադրանք', to: `/student/assignments/${a.assignment.id}`, status: a.status as string })),
-    ...quizzes.filter((q) => q.state === 'available').map((q) => ({ id: q.quiz.id, title: q.quiz.title, course: q.course.title, due: q.quiz.dueDate, kind: 'Թեստ', to: `/student/quizzes/${q.quiz.id}`, status: 'available' })),
+    ...open.map((a) => ({ id: a.assignment.id, title: a.assignment.title, course: a.course.title, due: a.assignment.dueDate, kind: tr("Assignment", "Առաջադրանք"), to: `/student/assignments/${a.assignment.id}`, status: a.status as string })),
+    ...quizzes.filter((q) => q.state === 'available').map((q) => ({ id: q.quiz.id, title: q.quiz.title, course: q.course.title, due: q.quiz.dueDate, kind: tr("Quiz", "Թեստ"), to: `/student/quizzes/${q.quiz.id}`, status: 'available' })),
   ]
     .filter((d) => daysUntil(d.due) >= 0)
     .sort((a, b) => a.due.localeCompare(b.due))
@@ -56,21 +57,20 @@ export function StudentDashboard() {
     <>
       <section className="welcome">
         <div className="welcome__text">
-          <h1>Բարի վերադարձ, <span className="hl">{student.firstName}</span></h1>
-          <p>
-            Այս շաբաթ ուսմանը տրամադրել եք {formatMinutes(weekMinutes)}։ {deadlines[0] ? `Մոտակա վերջնաժամկետը՝ «${deadlines[0].title}», ${relativeDue(deadlines[0].due)}։` : 'Մոտակա վերջնաժամկետներ չկան։'}
+          <h1>{tr("Welcome back, ", "Բարի վերադարձ, ")}<span className="hl">{student.firstName}</span></h1>
+          <p>{tr("This week, you have spent ", "Այս շաբաթ ուսմանը տրամադրել եք ")}{formatMinutes(weekMinutes)}{tr(". ", "։ ")}{deadlines[0] ? tr(`Your next deadline is ${deadlines[0].title}, ${relativeDue(deadlines[0].due)}.`, `Մոտակա վերջնաժամկետը՝ «${deadlines[0].title}», ${relativeDue(deadlines[0].due)}։`) : tr("No upcoming deadlines.", "Մոտակա վերջնաժամկետներ չկան։")}
           </p>
           <div className="welcome__actions">
             {continueCourse && (
-              <ButtonLink to={`/student/courses/${continueCourse.course.id}/learn`} variant="primary" icon={<PlayCircle />}>Շարունակել ուսումը</ButtonLink>
+              <ButtonLink to={`/student/courses/${continueCourse.course.id}/learn`} variant="primary" icon={<PlayCircle />}>{tr("Continue Learning", "Շարունակել ուսումը")}</ButtonLink>
             )}
-            <ButtonLink to="/student/assignments" variant="secondary">Առաջադրանքներ</ButtonLink>
+            <ButtonLink to="/student/assignments" variant="secondary">{tr("Assignments", "Առաջադրանքներ")}</ButtonLink>
           </div>
         </div>
         <div className="welcome__stats">
-          <div><strong>{counts['in-progress']}</strong><span>ընթացքում</span></div>
-          <div><strong>{counts.completed}</strong><span>ավարտված</span></div>
-          <div><strong>{open.length}</strong><span>բաց առաջադրանք</span></div>
+          <div><strong>{counts['in-progress']}</strong><span>{tr("in progress", "ընթացքում")}</span></div>
+          <div><strong>{counts.completed}</strong><span>{tr("completed", "ավարտված")}</span></div>
+          <div><strong>{open.length}</strong><span>{tr("open assignments", "չկատարված առաջադրանք")}</span></div>
         </div>
         <div className="welcome__art" aria-hidden="true">
           <div className="welcome__arch"><img src={SCENES.study} alt="" /></div>
@@ -80,45 +80,45 @@ export function StudentDashboard() {
       <div className="quick-links" style={{ marginBottom: 24 }}>
         <Link to="/student/assignments" className="quick-link t-peach">
           <span className="list-row__icon"><ClipboardList /></span>
-          <span>Առաջադրանքներ<span className="quick-link__sub">{open.length} սպասում է կատարման</span></span>
+          <span>{tr("Assignments", "Առաջադրանքներ")}<span className="quick-link__sub">{open.length}{tr(" to complete", " սպասում է կատարման")}</span></span>
         </Link>
         <Link to="/student/quizzes" className="quick-link t-sun">
           <span className="list-row__icon"><FileQuestion /></span>
-          <span>Թեստեր<span className="quick-link__sub">{quizzes.filter((q) => q.state === 'available').length} հասանելի</span></span>
+          <span>{tr("Quizzes", "Թեստեր")}<span className="quick-link__sub">{quizzes.filter((q) => q.state === 'available').length}{tr(" available", " հասանելի")}</span></span>
         </Link>
         <Link to="/student/grades" className="quick-link t-mint">
           <span className="list-row__icon"><GraduationCap /></span>
-          <span>Գնահատականներ<span className="quick-link__sub">Միջինը՝ {average(grades.map((g) => g.percent))}%</span></span>
+          <span>{tr("Grades", "Գնահատականներ")}<span className="quick-link__sub">{tr("Average: ", "Միջինը՝ ")}{average(grades.map((g) => g.percent))}%</span></span>
         </Link>
         <Link to="/student/progress" className="quick-link t-lilac">
           <span className="list-row__icon"><TrendingUp /></span>
-          <span>Առաջընթաց<span className="quick-link__sub">{completedLessons} ավարտված դաս</span></span>
+          <span>{tr("Progress", "Առաջընթաց")}<span className="quick-link__sub">{completedLessons}{tr(" completed lessons", " ավարտված դաս")}</span></span>
         </Link>
       </div>
 
       <div className="grid grid-4" style={{ marginBottom: 24 }}>
-        <StatCard label="Ավարտված դասեր" value={completedLessons} icon={<BookOpenCheck />} meta={<><span className="up">+6</span> վերջին 7 օրում</>} />
-        <StatCard label="Հանձնված աշխատանքներ" value={submittedCount} unit={`/${assignments.length}`} icon={<ClipboardList />} tone="navy" meta="բոլոր դասընթացներում" />
-        <StatCard label="Միջին գնահատական" value={average(grades.map((g) => g.percent))} unit="%" icon={<Trophy />} tone="success" meta={<><span className="up">+2%</span> նախորդ ամսվա համեմատ</>} />
-        <StatCard label="Ուսման ժամանակը" value={(weekMinutes / 60).toFixed(1)} unit="ժ" icon={<Clock />} tone="warning" meta="այս շաբաթ, նպատակը՝ 6 ժ" />
+        <StatCard label={tr("Completed Lessons", "Ավարտված դասեր")} value={completedLessons} icon={<BookOpenCheck />} meta={<><span className="up">+6</span>{tr(" in the last 7 days", " վերջին 7 օրում")}</>} />
+        <StatCard label={tr("Submitted Assignments", "Հանձնված աշխատանքներ")} value={submittedCount} unit={`/${assignments.length}`} icon={<ClipboardList />} tone="navy" meta={tr("across all courses", "բոլոր դասընթացներում")} />
+        <StatCard label={tr("Average Grade", "Միջին գնահատական")} value={average(grades.map((g) => g.percent))} unit="%" icon={<Trophy />} tone="success" meta={<><span className="up">+2%</span>{tr(" compared with last month", " նախորդ ամսվա համեմատ")}</>} />
+        <StatCard label={tr("Learning Time", "Ուսման ժամանակը")} value={(weekMinutes / 60).toFixed(1)} unit={tr("hr", "ժ")} icon={<Clock />} tone="warning" meta={tr("this week, goal: 6 hr", "այս շաբաթ, նպատակը՝ 6 ժ")} />
       </div>
 
       <div className="grid grid-main-aside">
         <div className="stack" style={{ ['--gap' as string]: '20px', minWidth: 0 }}>
-          <Card title="Իմ դասընթացները" actions={<ButtonLink to="/student/courses" variant="ghost" size="sm">Բոլորը</ButtonLink>} padded={false}>
+          <Card title={tr("My courses", "Իմ դասընթացները")} actions={<ButtonLink to="/student/courses" variant="ghost" size="sm">{tr("All", "Բոլորը")}</ButtonLink>} padded={false}>
             <div style={{ padding: '0 20px' }}>
               <Tabs
                 value={tab}
                 onChange={setTab}
                 items={[
-                  { key: 'in-progress', label: 'Ընթացքում', count: counts['in-progress'] },
-                  { key: 'not-started', label: 'Չսկսված', count: counts['not-started'] },
-                  { key: 'completed', label: 'Ավարտված', count: counts.completed },
+                  { key: 'in-progress', label: tr("In progress", "Ընթացքում"), count: counts['in-progress'] },
+                  { key: 'not-started', label: tr("Not started", "Չսկսված"), count: counts['not-started'] },
+                  { key: 'completed', label: tr("Completed", "Ավարտված"), count: counts.completed },
                 ]}
               />
             </div>
             {shown.length === 0 ? (
-              <EmptyState compact title="Այս բաժնում դասընթացներ չկան" text="Դիտեք կատալոգը և գրանցվեք նոր դասընթացի։" action={<ButtonLink to="/courses" variant="secondary" size="sm">Բացել կատալոգը</ButtonLink>} />
+              <EmptyState compact title={tr("No courses in this section", "Այս բաժնում դասընթացներ չկան")} text={tr("Browse the catalog and enroll in a new course.", "Դիտեք կատալոգը և գրանցվեք նոր դասընթացի։")} action={<ButtonLink to="/courses" variant="secondary" size="sm">{tr("Browse Courses", "Բացել կատալոգը")}</ButtonLink>} />
             ) : (
               shown.map(({ course, enrollment, progress, state }) => {
                 const last = findLesson(enrollment.lastLessonId);
@@ -128,12 +128,12 @@ export function StudentDashboard() {
                     <div style={{ minWidth: 0 }}>
                       <Link to={`/student/courses/${course.id}/learn`} className="strong" style={{ color: 'var(--navy-900)' }}>{course.title}</Link>
                       <div className="xs muted" style={{ marginTop: 2 }}>
-                        {state === 'not-started' ? 'Դեռ չեք սկսել' : state === 'completed' ? `Ավարտված է, վերջին այցը՝ ${relativeTime(enrollment.lastAccessed)}` : `Վերջին դասը՝ ${last?.lesson.title ?? '—'}`}
+                        {state === 'not-started' ? tr("Not started yet", "Դեռ չեք սկսել") : state === 'completed' ? tr(`Completed, last visited: ${relativeTime(enrollment.lastAccessed)}`, `Ավարտված է, վերջին այցը՝ ${relativeTime(enrollment.lastAccessed)}`) : tr(`Last lesson: ${last?.lesson.title ?? '—'}`, `Վերջին դասը՝ ${last?.lesson.title ?? '—'}`)}
                       </div>
                     </div>
                     <ProgressBar value={progress} />
                     <ButtonLink to={`/student/courses/${course.id}/learn`} variant={state === 'completed' ? 'secondary' : 'primary'} size="sm">
-                      {state === 'not-started' ? 'Սկսել' : state === 'completed' ? 'Կրկնել' : 'Շարունակել'}
+                      {state === 'not-started' ? tr("Start", "Սկսել") : state === 'completed' ? tr("Review", "Վերանայել") : tr("Continue", "Շարունակել")}
                     </ButtonLink>
                   </div>
                 );
@@ -141,11 +141,11 @@ export function StudentDashboard() {
             )}
           </Card>
 
-          <ChartCard title="Շաբաթական ակտիվություն" subtitle="Ուսմանը տրամադրված րոպեներ ըստ օրերի" demo>
-            <BarChart labels={studentWeeklyMinutes.map((p) => p.label)} series={[{ name: 'Րոպե', values: studentWeeklyMinutes.map((p) => p.value) }]} suffix=" ր" height={200} ariaLabel="Ուսման րոպեները շաբաթվա օրերով" />
+          <ChartCard title={tr("Weekly Activity", "Շաբաթական ակտիվություն")} subtitle={tr("Minutes spent learning each day", "Ուսմանը տրամադրված րոպեներ ըստ օրերի")} demo>
+            <BarChart labels={studentWeeklyMinutes.map((p) => p.label)} series={[{ name: tr("Minutes", "Րոպե"), values: studentWeeklyMinutes.map((p) => p.value) }]} suffix={tr(" min", " ր")} height={200} ariaLabel={tr("Learning minutes by day of the week", "Ուսման րոպեներն ըստ շաբաթվա օրերի")} />
           </ChartCard>
 
-          <Card title="Վերջերս դիտված դասեր" padded={false}>
+          <Card title={tr("Recently Viewed Lessons", "Վերջերս դիտված դասեր")} padded={false}>
             <div className="list">
               {recentLessons.map(({ e, found }) => {
                 const Icon = found ? LESSON_ICONS[found.lesson.type] : PlayCircle;
@@ -165,14 +165,14 @@ export function StudentDashboard() {
         </div>
 
         <div className="stack" style={{ ['--gap' as string]: '20px' }}>
-          <Card title="Մոտակա վերջնաժամկետներ" actions={<ButtonLink to="/student/assignments" variant="ghost" size="sm">Բոլորը</ButtonLink>} padded={false}>
+          <Card title={tr("Upcoming Deadlines", "Մոտակա վերջնաժամկետներ")} actions={<ButtonLink to="/student/assignments" variant="ghost" size="sm">{tr("All", "Բոլորը")}</ButtonLink>} padded={false}>
             {deadlines.length === 0 ? (
-              <EmptyState compact icon={<Target size={22} />} title="Ամեն ինչ արված է" text="Մոտակա օրերին վերջնաժամկետներ չկան։" />
+              <EmptyState compact icon={<Target size={22} />} title={tr("All caught up", "Ամեն ինչ արված է")} text={tr("There are no deadlines in the next few days.", "Մոտակա օրերին վերջնաժամկետներ չկան։")} />
             ) : (
               <div className="list">
                 {deadlines.map((d) => {
                   const urgent = daysUntil(d.due) <= 2;
-                  const [day, mon] = formatShortDate(d.due).split(' ');
+                  const { day, month: mon } = dateParts(d.due);
                   return (
                     <Link key={d.id} to={d.to} className="list-row" style={{ padding: '12px 18px' }}>
                       <div className={cx('deadline-date', urgent && 'deadline-date--urgent')}>
@@ -191,7 +191,7 @@ export function StudentDashboard() {
             )}
           </Card>
 
-          <Card title="Թեստերի վերջին արդյունքներ" actions={<ButtonLink to="/student/quizzes" variant="ghost" size="sm">Բոլորը</ButtonLink>} padded={false}>
+          <Card title={tr("Recent Quiz Results", "Թեստերի վերջին արդյունքներ")} actions={<ButtonLink to="/student/quizzes" variant="ghost" size="sm">{tr("All", "Բոլորը")}</ButtonLink>} padded={false}>
             <div className="list">
               {recentQuiz.map(({ q, a }) => {
                 const p = Math.round((a.score / a.maxScore) * 100);
@@ -199,7 +199,7 @@ export function StudentDashboard() {
                   <Link key={a.id} to={`/student/quizzes/${q.quiz.id}/results`} className="list-row" style={{ padding: '12px 18px' }}>
                     <div className="grow" style={{ minWidth: 0 }}>
                       <div className="list-row__title">{q.quiz.title}</div>
-                      <div className="list-row__sub">{relativeTime(a.completedAt)}, {a.score}/{a.maxScore} միավոր</div>
+                      <div className="list-row__sub">{relativeTime(a.completedAt)}, {a.score}/{a.maxScore}{tr(" points", " միավոր")}</div>
                     </div>
                     <span className={`score-pill score-pill--${scoreTone(p)}`}>{p}%</span>
                   </Link>
@@ -208,7 +208,7 @@ export function StudentDashboard() {
             </div>
           </Card>
 
-          <Card title="Ընդհանուր պատկեր">
+          <Card title={tr("Overview", "Ընդհանուր պատկեր")}>
             <div className="stack" style={{ ['--gap' as string]: '14px' }}>
               {enrolled.map((e) => (
                 <div key={e.course.id}>

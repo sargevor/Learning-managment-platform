@@ -1,5 +1,6 @@
 import { Atom, Brain, Briefcase, Code2, Database, Languages, Palette, Sigma } from 'lucide-react';
 import type { CategoryId, LessonType } from '../types';
+import { tr } from '../i18n';
 
 /** Public assets resolve against Vite's base so the relative static build works from any folder. */
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
@@ -40,14 +41,14 @@ export const LESSON_TINT: Record<LessonType, string> = {
 
 /** Portraits for the demo people; everyone else gets tinted initials. */
 const PHOTOS: Record<string, string> = {
-  "Armen Sargsyan": 'p4',
-  "Lilit Grigoryan": 'p1',
-  "Davit Petrosyan": 'p6',
-  "Narine Martirosyan": 'p5',
-  "Ani Hakobyan": 'p3',
-  "Tigran Melkonyan": 'p2',
-  "Hayk Vardanyan": 'p8',
-  "Sona Mikayelyan": 'p7',
+  [tr("Armen Sargsyan", "Արմեն Սարգսյան")]: 'p4',
+  [tr("Lilit Grigoryan", "Լիլիթ Գրիգորյան")]: 'p1',
+  [tr("Davit Petrosyan", "Դավիթ Պետրոսյան")]: 'p6',
+  [tr("Narine Martirosyan", "Նարինե Մարտիրոսյան")]: 'p5',
+  [tr("Ani Hakobyan", "Անի Հակոբյան")]: 'p3',
+  [tr("Tigran Melkonyan", "Տիգրան Մելքոնյան")]: 'p2',
+  [tr("Hayk Vardanyan", "Հայկ Վարդանյան")]: 'p8',
+  [tr("Sona Mikayelyan", "Սոնա Միքայելյան")]: 'p7',
 };
 
 export function photoFor(name: string): string | undefined {

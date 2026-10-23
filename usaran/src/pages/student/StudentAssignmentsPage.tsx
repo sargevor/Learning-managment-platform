@@ -11,6 +11,7 @@ import { SearchBar } from '../../components/ui/SearchBar';
 import { Select } from '../../components/ui/Field';
 import { StatusBadge } from '../../components/ui/Badge';
 import { cx, daysUntil, formatDateTime, relativeDue } from '../../lib/format';
+import { tr } from '../../i18n';
 
 type Filter = 'all' | 'todo' | 'submitted' | 'graded' | 'overdue';
 
@@ -46,39 +47,39 @@ export function StudentAssignmentsPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: "Dashboard", to: '/student/dashboard' }, { label: "Assignments" }]}
-        title="Assignments"
-        description="All your practical assignments with deadlines, status, and grades."
+        breadcrumbs={[{ label: tr("Dashboard", "Վահանակ"), to: '/student/dashboard' }, { label: tr("Assignments", "Առաջադրանքներ") }]}
+        title={tr("Assignments", "Առաջադրանքներ")}
+        description={tr("All your practical assignments with deadlines, status, and grades.", "Բոլոր գործնական աշխատանքները՝ վերջնաժամկետներով, կարգավիճակով և գնահատականներով։")}
       />
       <div className="stack" style={{ ['--gap' as string]: '18px' }}>
         <Tabs
           value={filter}
           onChange={setFilter}
           items={[
-            { key: 'todo', label: "To Do", count: count('todo') },
-            { key: 'submitted', label: "Submitted", count: count('submitted') },
-            { key: 'graded', label: "Graded", count: count('graded') },
-            { key: 'overdue', label: "Overdue", count: count('overdue') },
-            { key: 'all', label: "All", count: all.length },
+            { key: 'todo', label: tr("To Do", "Կատարման ենթակա"), count: count('todo') },
+            { key: 'submitted', label: tr("Submitted", "Հանձնված"), count: count('submitted') },
+            { key: 'graded', label: tr("Graded", "Գնահատված"), count: count('graded') },
+            { key: 'overdue', label: tr("Overdue", "Ժամկետանց"), count: count('overdue') },
+            { key: 'all', label: tr("All", "Բոլորը"), count: all.length },
           ]}
         />
         <div className="filters-bar">
-          <SearchBar value={q} onChange={setQ} placeholder="Search by title" />
+          <SearchBar value={q} onChange={setQ} placeholder={tr("Search by title", "Որոնել ըստ անվանման")} />
           <Select
-            aria-label="Course"
+            aria-label={tr("Course", "Դասընթաց")}
             value={course}
             onChange={(e) => setCourse(e.target.value)}
-            options={[{ value: 'all', label: "All Courses" }, ...getEnrolledCourses().map((e) => ({ value: e.course.id, label: e.course.title }))]}
+            options={[{ value: 'all', label: tr("All Courses", "Բոլոր դասընթացները") }, ...getEnrolledCourses().map((e) => ({ value: e.course.id, label: e.course.title }))]}
           />
-          <div className="segmented" role="group" aria-label="View">
-            <button type="button" aria-pressed={view === 'cards'} onClick={() => setView('cards')} aria-label="Cards"><LayoutGrid size={16} /></button>
-            <button type="button" aria-pressed={view === 'table'} onClick={() => setView('table')} aria-label="Table"><List size={16} /></button>
+          <div className="segmented" role="group" aria-label={tr("View", "Ցուցադրման ձև")}>
+            <button type="button" aria-pressed={view === 'cards'} onClick={() => setView('cards')} aria-label={tr("Cards", "Քարտեր")}><LayoutGrid size={16} /></button>
+            <button type="button" aria-pressed={view === 'table'} onClick={() => setView('table')} aria-label={tr("Table", "Աղյուսակ")}><List size={16} /></button>
           </div>
         </div>
 
         {list.length === 0 ? (
           <div className="card">
-            <EmptyState icon={<ClipboardCheck size={24} />} title="No assignments" text={filter === 'todo' ? "All your current assignments are submitted. Well done!" : "No assignments match these filters."} />
+            <EmptyState icon={<ClipboardCheck size={24} />} title={tr("No assignments", "Առաջադրանքներ չկան")} text={filter === 'todo' ? tr("All your current assignments are submitted. Well done!", "Բոլոր ընթացիկ աշխատանքները հանձնված են։ Լավ աշխատանք։") : tr("No assignments match these filters.", "Այս զտիչներին համապատասխանող առաջադրանք չկա։")} />
           </div>
         ) : view === 'cards' ? (
           <div className="grid grid-2">
@@ -89,24 +90,24 @@ export function StudentAssignmentsPage() {
         ) : (
           <div className="card">
             <DataTable
-              caption="Assignment list"
+              caption={tr("Assignment list", "Առաջադրանքների ցուցակ")}
               rows={list}
               rowKey={(r) => r.assignment.id}
               onRowClick={(r) => navigate(`/student/assignments/${r.assignment.id}`)}
               initialSort={{ key: 'due', dir: 'asc' }}
               columns={[
-                { key: 'title', header: "Assignment", sortValue: (r) => r.assignment.title, render: (r) => <><div className="cell-title">{r.assignment.title}</div><div className="cell-sub">{r.course.title}</div></> },
+                { key: 'title', header: tr("Assignment", "Առաջադրանք"), sortValue: (r) => r.assignment.title, render: (r) => <><div className="cell-title">{r.assignment.title}</div><div className="cell-sub">{r.course.title}</div></> },
                 {
                   key: 'due',
-                  header: "Deadline",
+                  header: tr("Deadline", "Վերջնաժամկետ"),
                   sortValue: (r) => r.assignment.dueDate,
                   render: (r) => {
                     const d = daysUntil(r.assignment.dueDate);
                     return <><div className="nowrap">{formatDateTime(r.assignment.dueDate)}</div><div className={cx('cell-sub', d >= 0 && d <= 3 && r.status !== 'submitted' && r.status !== 'graded' && 'tag--urgent')}>{relativeDue(r.assignment.dueDate)}</div></>;
                   },
                 },
-                { key: 'status', header: "Status", sortValue: (r) => r.status, render: (r) => <StatusBadge status={r.status} /> },
-                { key: 'score', header: "Score", align: 'right', sortValue: (r) => r.submission?.score ?? -1, render: (r) => (r.submission?.score !== undefined ? <strong>{r.submission.score}/{r.assignment.maxScore}</strong> : <span className="muted">—/{r.assignment.maxScore}</span>) },
+                { key: 'status', header: tr("Status", "Կարգավիճակ"), sortValue: (r) => r.status, render: (r) => <StatusBadge status={r.status} /> },
+                { key: 'score', header: tr("Score", "Միավոր"), align: 'right', sortValue: (r) => r.submission?.score ?? -1, render: (r) => (r.submission?.score !== undefined ? <strong>{r.submission.score}/{r.assignment.maxScore}</strong> : <span className="muted">—/{r.assignment.maxScore}</span>) },
               ]}
             />
           </div>

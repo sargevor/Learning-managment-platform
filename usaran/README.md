@@ -1,6 +1,6 @@
-# Ուսուցարան — Online Learning Management Platform (frontend)
+# LearnSpace — Online Learning Management Platform (frontend)
 
-A complete, frontend-only interface for an online learning platform with separate **student** and **teacher** environments. The interface language is Armenian; code and identifiers are in English.
+A complete, frontend-only interface for an online learning platform with separate **student** and **teacher** environments. The whole interface is bilingual — **Armenian (default) and English** — and the language can be switched at any time; code and identifiers are in English.
 
 > This is a demonstration UI. There is no backend, database, API, or authentication. All data is mock data defined in `src/data`, and every change (submissions, grades, profile edits, course edits) lives only in component state and resets on page reload.
 
@@ -81,6 +81,15 @@ Unknown URLs show a not-found page inside the matching environment.
 - On `/login`, pick **Ուսանող** (student) or **Դասավանդող** (teacher); any well-formed email and a 6+ character password work, or use "Լրացնել օրինակային տվյալներով".
 - Inside the app, the switch in the top bar moves between the two environments at any time.
 - Demo student: Անի Հակոբյան. Demo teacher: Արմեն Սարգսյան (teaches React, JavaScript, Python, SQL, Algorithms).
+
+## Languages (Հայերեն / English)
+
+- Every visible string is written next to its translation with the `tr(english, armenian)` helper from `src/i18n/index.ts`, e.g. `tr("Save changes", "Պահել փոփոխությունները")`. When you add new text, always add both versions.
+- The **ՀԱՅ / ENG** switch is in the header of every page (public site, student/teacher app, lesson player) and in *Settings → Interface language*.
+- The choice is saved in `localStorage` (`learnspace.lang`). A link can force a language with `?lang=en` or `?lang=hy`.
+- Switching reloads the page so that all data (courses, quizzes, reports) is shown in the new language; demo changes made before the switch are reset.
+- Dates, numbers and plurals follow the chosen language (`src/lib/format.ts`): «15 հոկտեմբերի, 2026 թ.» / "October 15, 2026".
+- Armenian text follows standard orthography: «։» at sentence end, «․» as a colon in titles, «՞» on the stressed vowel (Ինչո՞ւ), article «ն» before a vowel, and Armenian terms instead of loanwords (միջերես, բաղադրիչ, դիտարկիչ).
 
 ## Notes
 

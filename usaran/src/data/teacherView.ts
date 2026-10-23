@@ -5,6 +5,7 @@ import { getAssignment, submissions, teacherAssignments, TEACHER_COURSE_IDS } fr
 import { quizzes } from './quizzes';
 import { getUser, DEMO_TEACHER_ID } from './users';
 import { studentRecords } from './analytics';
+import { tr } from '../i18n';
 
 export { TEACHER_COURSE_IDS };
 
@@ -34,7 +35,7 @@ export function studentsInCourse(courseId: string) {
   return studentRecords.filter((r) => r.courseIds.includes(courseId));
 }
 
-const SHORT_TITLES: Record<string, string> = { react: 'React', js: 'JavaScript', 'python-data': 'Python', sql: 'SQL', algorithms: 'Ալգորիթմներ' };
+const SHORT_TITLES: Record<string, string> = { react: 'React', js: 'JavaScript', 'python-data': 'Python', sql: 'SQL', algorithms: tr("Algorithms", "Ալգորիթմներ") };
 
 /** Compact course label for chart axes and legends. */
 export function shortTitle(courseId: string): string {

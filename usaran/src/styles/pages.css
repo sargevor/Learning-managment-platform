@@ -1715,3 +1715,17 @@
     grid-column: auto;
   }
 }
+
+/* Learn header on small phones: keep the language switch inside the viewport. */
+@media (max-width: 560px) {
+  .learn__top {
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .learn__lang .lang-switch__icon {
+    display: none;
+  }
+  .learn__lang button {
+    padding: 0 7px;
+  }
+}
