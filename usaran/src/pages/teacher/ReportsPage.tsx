@@ -1,47 +1,58 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { ArrowLeft, BookOpenCheck, CalendarRange, ChevronRight, ClipboardCheck, Download, FileBarChart, FileQuestion, FileSpreadsheet, FileText, Printer, Users, Activity } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, BookOpen, Calendar, CalendarRange, ChartColumn, ChevronRight, CircleAlert, CircleCheck, ClipboardList, Clock, Download, FileQuestionMark, FileSpreadsheet, FileText, Layers, Printer, Target, TrendingDown, TrendingUp, User, UserPlus, Users, X } from 'lucide-react';
 import type { StudentRecord } from '../../types';
-import { coursePerformance, enrollmentTrend, studentRecords, teacherWeeklyActivity, trendLabels } from '../../data/analytics';
+import { coursePerformance, enrollmentTrend, studentRecords, trendLabels } from '../../data/analytics';
 import { getCourse } from '../../data/courses';
 import { shortTitle, teacherCourses } from '../../data/teacherView';
 import { fullName, getUser } from '../../data/users';
 import { useToast } from '../../context/ToastContext';
-import { BarChart, CHART_COLORS, ChartCard, HBarChart, LineChart } from '../../components/charts/Charts';
-import { Button } from '../../components/ui/Button';
+import { ShellTitle } from '../../components/layout/AppShell';
+import { BarChart, CHART_COLORS } from '../../components/charts/Charts';
 import { DataTable } from '../../components/ui/DataTable';
-import { Input, Select } from '../../components/ui/Field';
-import { Card, DemoFlag, EmptyState, Notice, PageHeader, Person, Tabs } from '../../components/ui/Misc';
+import { Avatar, EmptyState } from '../../components/ui/Misc';
 import { Dropdown } from '../../components/ui/Overlay';
 import { StatusBadge } from '../../components/ui/Badge';
 import { StatCard } from '../../components/ui/StatCard';
-import { ProgressBar } from '../../components/ui/Progress';
-import { average, formatDate, formatNumber, relativeTime } from '../../lib/format';
+import { Meter } from '../../components/ui/Visual';
+import { average, cx, formatDate, formatNumber, formatShortDate } from '../../lib/format';
+import { CourseIcon, shortAgo } from './TeacherStudentsPage';
 
-type Tab = 'overview' | 'courses' | 'students' | 'saved';
 type Range = '30' | '90' | '365' | 'custom';
 
 const RANGE_MONTHS: Record<Range, number> = { '30': 2, '90': 3, '365': 12, custom: 6 };
-const RANGE_LABEL: Record<Range, string> = { '30': 'Վերջին 30 օր', '90': 'Վերջին 3 ամիս', '365': 'Վերջին 12 ամիս', custom: 'Ընտրված ժամանակահատված' };
+const RANGES: { key: Range; label: string; icon: typeof Clock; report: string; when: string }[] = [
+  { key: '30', label: 'Month', icon: Clock, report: 'Monthly report', when: 'in 30 days' },
+  { key: '90', label: 'Term', icon: Layers, report: 'Term report', when: 'this term' },
+  { key: '365', label: 'Year', icon: Calendar, report: 'Year report', when: 'this year' },
+  { key: 'custom', label: 'Custom', icon: CalendarRange, report: 'Custom report', when: 'this period' },
+];
 
 interface SavedReport {
   id: string;
   title: string;
-  description: string;
-  icon: typeof FileBarChart;
+  icon: typeof FileText;
   created: string;
   kind: 'monthly' | 'risk' | 'assignments' | 'quizzes';
 }
 
 const SAVED: SavedReport[] = [
-  { id: 'r1', kind: 'monthly', title: 'Ամսական ամփոփում, սեպտեմբեր 2026', description: 'Գրանցումներ, ավարտելիություն և միջին արդյունքներ բոլոր դասընթացներում', icon: FileBarChart, created: '2026-10-01' },
-  { id: 'r2', kind: 'risk', title: 'Ռիսկային ուսանողներ', description: 'Ցածր առաջընթացով կամ երկար ժամանակ ակտիվություն չունեցող ուսանողներ', icon: Users, created: '2026-10-14' },
-  { id: 'r3', kind: 'assignments', title: 'Առաջադրանքների կատարողականություն', description: 'Հանձնումների քանակը, ուշացումները և միջին միավորը ըստ առաջադրանքների', icon: ClipboardCheck, created: '2026-10-10' },
-  { id: 'r4', kind: 'quizzes', title: 'Թեստերի արդյունքներ', description: 'Միջին արդյունքներ և անցողիկ շեմը հաղթահարածների մասնաբաժինը', icon: FileQuestion, created: '2026-10-08' },
+  { id: 'r1', kind: 'monthly', title: 'September summary', icon: FileText, created: '2026-10-01' },
+  { id: 'r2', kind: 'risk', title: 'At-risk students', icon: CircleAlert, created: '2026-10-14' },
+  { id: 'r3', kind: 'assignments', title: 'Task results', icon: ClipboardList, created: '2026-10-10' },
+  { id: 'r4', kind: 'quizzes', title: 'Quiz results', icon: FileQuestionMark, created: '2026-10-08' },
 ];
+
+const sum = (v: number[]) => v.reduce((a, b) => a + b, 0);
+
+/** "Nice" tick step for an axis. */
+function niceStep(raw: number): number {
+  const pow = 10 ** Math.floor(Math.log10(Math.max(raw, 1)));
+  return ([1, 2, 2.5, 5, 10].map((m) => m * pow).find((s) => s >= raw) ?? 10 * pow);
+}
 
 export function ReportsPage() {
   const toast = useToast();
-  const [tab, setTab] = useState<Tab>('overview');
   const [range, setRange] = useState<Range>('90');
   const [from, setFrom] = useState('2026-07-01');
   const [to, setTo] = useState('2026-10-15');
@@ -51,51 +62,42 @@ export function ReportsPage() {
 
   const perf = coursePerformance.filter((p) => course === 'all' || p.courseId === course);
   const months = RANGE_MONTHS[range];
-  const labels = trendLabels.slice(-months);
-  const scale = months / 12;
+  const rangeInfo = RANGES.find((r) => r.key === range)!;
   const records: StudentRecord[] = useMemo(
     () => studentRecords.filter((r) => (course === 'all' || r.courseIds.includes(course)) && (student === 'all' || r.userId === student)),
     [course, student],
   );
 
-  const newEnrollments = Math.round(perf.reduce((n, p) => n + enrollmentTrend[p.courseId].slice(-months).reduce((a, b) => a + b, 0), 0));
-  const exportAs = (fmt: string) => toast.info(`Արտահանում ${fmt} ձևաչափով`, 'Ցուցադրական գործողություն. ֆայլ չի ստեղծվում և սերվեր չի կանչվում։');
+  // Monthly new enrolments over the selected courses (12 months, Nov to Oct).
+  const monthly = trendLabels.map((_, i) => sum(perf.map((p) => enrollmentTrend[p.courseId][i])));
+  const win = monthly.slice(-months);
+  const prev = months * 2 <= monthly.length ? monthly.slice(-2 * months, -months) : null;
+  const growth = prev ? Math.round((sum(win) / sum(prev) - 1) * 100) : Math.round((win[win.length - 1] / win[0] - 1) * 100);
+  const newEnrollments = sum(win);
+  const title = `Enrolments ${growth >= 0 ? 'up' : 'down'} ${Math.abs(growth)}% ${rangeInfo.when}`;
+  const period = range === 'custom' ? `${formatShortDate(from)} to ${formatShortDate(to)} ${to.slice(0, 4)}` : `${trendLabels[12 - months]} to ${trendLabels[11]} 2026`;
 
-  const filters = (
-    <div className="card card--pad mb-20 no-print">
-      <div className="filters-bar" style={{ alignItems: 'flex-end' }}>
-        <Select label="Ժամանակահատված" value={range} onChange={(e) => setRange(e.target.value as Range)} options={(Object.keys(RANGE_LABEL) as Range[]).map((r) => ({ value: r, label: RANGE_LABEL[r] }))} />
-        {range === 'custom' && (
-          <>
-            <Input label="Սկիզբ" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
-            <Input label="Ավարտ" type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
-          </>
-        )}
-        <Select label="Դասընթաց" value={course} onChange={(e) => setCourse(e.target.value)} options={[{ value: 'all', label: 'Բոլոր դասընթացները' }, ...teacherCourses.filter((c) => c.status === 'published').map((c) => ({ value: c.id, label: c.title }))]} />
-        <Select label="Ուսանող" value={student} onChange={(e) => setStudent(e.target.value)} options={[{ value: 'all', label: 'Բոլոր ուսանողները' }, ...studentRecords.map((r) => ({ value: r.userId, label: fullName(getUser(r.userId)) }))]} />
-        {(course !== 'all' || student !== 'all' || range !== '90') && (
-          <Button variant="ghost" onClick={() => { setCourse('all'); setStudent('all'); setRange('90'); }}>Մաքրել</Button>
-        )}
-      </div>
-    </div>
-  );
-
+  const exportAs = (fmt: string) => toast.info(`Export as ${fmt}`, 'Demo only: no file is created.');
   const actions = (
     <>
-      <Button variant="secondary" icon={<Printer />} onClick={() => window.print()}>Տպել</Button>
       <Dropdown
         trigger={({ toggle, open }) => (
-          <Button icon={<Download />} onClick={toggle} aria-expanded={open}>Արտահանել</Button>
+          <button type="button" className="tp-iconbtn tp-iconbtn--navy" aria-label="Export" aria-expanded={open} onClick={toggle}>
+            <Download aria-hidden="true" />
+          </button>
         )}
       >
         {(close) => (
           <>
-            <button type="button" className="dropdown__item" onClick={() => { exportAs('PDF'); close(); }}><FileText />PDF փաստաթուղթ</button>
-            <button type="button" className="dropdown__item" onClick={() => { exportAs('Excel'); close(); }}><FileSpreadsheet />Excel աղյուսակ</button>
-            <button type="button" className="dropdown__item" onClick={() => { exportAs('CSV'); close(); }}><FileText />CSV ֆայլ</button>
+            <button type="button" className="dropdown__item" onClick={() => { exportAs('PDF'); close(); }}><FileText />PDF</button>
+            <button type="button" className="dropdown__item" onClick={() => { exportAs('Excel'); close(); }}><FileSpreadsheet />Excel</button>
+            <button type="button" className="dropdown__item" onClick={() => { exportAs('CSV'); close(); }}><FileText />CSV</button>
           </>
         )}
       </Dropdown>
+      <button type="button" className="tp-iconbtn" aria-label="Print" onClick={() => window.print()}>
+        <Printer aria-hidden="true" />
+      </button>
     </>
   );
 
@@ -103,203 +105,366 @@ export function ReportsPage() {
     return <ReportDetail report={report} onBack={() => setReport(null)} actions={actions} />;
   }
 
+  /* Lead chart geometry */
+  const W = 1200;
+  const H = 260;
+  const step = niceStep((Math.max(...monthly) - Math.min(...monthly)) / 3 || 1);
+  const lo = Math.max(0, Math.floor(Math.min(...monthly) / step) * step - step);
+  const hi = Math.ceil(Math.max(...monthly) / step) * step;
+  const yOf = (v: number) => 250 - ((v - lo) / Math.max(1, hi - lo)) * 240;
+  const pts = monthly.map((v, i) => [(i * W) / (monthly.length - 1), yOf(v)] as const);
+  const line = 'M' + pts.map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' L');
+  const ticks: number[] = [];
+  for (let v = hi; v > lo; v -= step) ticks.push(v);
+  const shadeLeft = ((12 - months) / 11) * 100;
+  const marks = [0, monthly.length - 1];
+
+  /* Course comparison */
+  const perfRows = perf.map((p) => ({ ...p, avg: Math.round((p.avgAssignment + p.avgQuiz) / 2) }));
+  const lagging = [...perfRows].sort((a, b) => a.completionRate - b.completionRate)[0];
+  const compTitle = perfRows.length > 1 && lagging ? `${shortTitle(lagging.courseId)} completion lags` : lagging ? `${shortTitle(lagging.courseId)}: ${lagging.completionRate}% complete` : 'Courses';
+
+  /* Score distribution */
+  const buckets = [
+    { label: '<60', title: 'under 60', test: (s: number) => s < 60 },
+    { label: '60s', title: '60s', test: (s: number) => s >= 60 && s < 70 },
+    { label: '70s', title: '70s', test: (s: number) => s >= 70 && s < 80 },
+    { label: '80s', title: '80s', test: (s: number) => s >= 80 && s < 90 },
+    { label: '90+', title: '90+', test: (s: number) => s >= 90 },
+  ].map((b) => ({ ...b, n: records.filter((r) => b.test(r.avgScore)).length }));
+  const maxN = Math.max(1, ...buckets.map((b) => b.n));
+  const topBucket = buckets.reduce((a, b) => (b.n > a.n ? b : a), buckets[0]);
+
+  /* Top students */
+  const top = [...records].sort((a, b) => b.avgScore - a.avgScore).slice(0, 5);
+  const filtered = course !== 'all' || student !== 'all' || range !== '90';
+
   return (
     <>
-      <PageHeader
-        breadcrumbs={[{ label: 'Վահանակ', to: '/teacher/dashboard' }, { label: 'Հաշվետվություններ' }]}
-        title="Վերլուծություն և հաշվետվություններ"
-        description="Դասընթացների, ուսանողների և արդյունքների ցուցանիշներ ընտրված ժամանակահատվածի համար։"
-        actions={actions}
+      <ShellTitle
+        title={title}
+        meta={
+          <>
+            <ChartColumn aria-hidden="true" />
+            <b>{rangeInfo.report}</b>
+            <span className="tp-dot" aria-hidden="true" />
+            {period}
+          </>
+        }
       />
-      <Notice tone="warning" className="mb-20">
-        Այս էջի բոլոր թվերն ու գրաֆիկները ցուցադրական են և ստեղծված են օրինակային տվյալներից։ Դրանք չեն արտացոլում իրական վերլուծություն։
-      </Notice>
-      <div className="report-print-only small muted mb-20">Ուսարան, հաշվետվություն՝ {RANGE_LABEL[range]}, ձևավորված է {formatDate('2026-10-15')}</div>
-      {filters}
+      <div className="report-print-only small muted">Usaran report: {period}, created {formatDate('2026-10-15')}</div>
 
-      <Tabs
-        value={tab}
-        onChange={setTab}
-        items={[
-          { key: 'overview', label: 'Ամփոփում' },
-          { key: 'courses', label: 'Դասընթացներ', count: perf.length },
-          { key: 'students', label: 'Ուսանողներ', count: records.length },
-          { key: 'saved', label: 'Պահված հաշվետվություններ', count: SAVED.length },
-        ]}
-      />
-      <div style={{ paddingTop: 20 }}>
-        {tab === 'overview' && (
-          <div className="stack" style={{ ['--gap' as string]: '20px' }}>
-            <div className="grid grid-4">
-              <StatCard label="Նոր գրանցումներ" value={formatNumber(newEnrollments)} icon={<Users />} meta={RANGE_LABEL[range]} />
-              <StatCard label="Ավարտելիություն" value={average(perf.map((p) => p.completionRate))} unit="%" icon={<BookOpenCheck />} tone="success" meta="միջինը դասընթացներով" />
-              <StatCard label="Առաջադրանքների միջին" value={average(perf.map((p) => p.avgAssignment))} unit="%" icon={<ClipboardCheck />} tone="navy" />
-              <StatCard label="Թեստերի միջին" value={average(perf.map((p) => p.avgQuiz))} unit="%" icon={<FileQuestion />} tone="warning" />
+      <div className="tp-controls no-print">
+        <div role="group" aria-label="Period" className="tp-seg">
+          {RANGES.map((r) => (
+            <button key={r.key} type="button" aria-pressed={range === r.key} className={cx('tp-seg__btn', range === r.key && 'tp-seg__btn--on')} onClick={() => setRange(r.key)}>
+              <r.icon aria-hidden="true" />
+              {r.label}
+            </button>
+          ))}
+        </div>
+        {range === 'custom' && (
+          <>
+            <label className="tp-pick">
+              <span className="sr-only">From</span>
+              <Calendar aria-hidden="true" />
+              <input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
+            </label>
+            <label className="tp-pick">
+              <span className="sr-only">To</span>
+              <Calendar aria-hidden="true" />
+              <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
+            </label>
+          </>
+        )}
+        <label className="tp-pick">
+          <span className="sr-only">Course</span>
+          <Layers aria-hidden="true" />
+          <select value={course} onChange={(e) => setCourse(e.target.value)}>
+            <option value="all">{coursePerformance.length} courses</option>
+            {teacherCourses.filter((c) => c.status === 'published').map((c) => <option key={c.id} value={c.id}>{shortTitle(c.id)}</option>)}
+          </select>
+        </label>
+        <label className="tp-pick">
+          <span className="sr-only">Student</span>
+          <User aria-hidden="true" />
+          <select value={student} onChange={(e) => setStudent(e.target.value)}>
+            <option value="all">All students</option>
+            {studentRecords.map((r) => <option key={r.userId} value={r.userId}>{fullName(getUser(r.userId))}</option>)}
+          </select>
+        </label>
+        {filtered && (
+          <button type="button" className="tp-clear" onClick={() => { setCourse('all'); setStudent('all'); setRange('90'); }}>
+            <X aria-hidden="true" />Clear
+          </button>
+        )}
+        <div className="tp-grow" />
+        {actions}
+      </div>
+
+      <section aria-label="Key figures" className="tp-tiles">
+        <StatCard label="New enrolments" value={formatNumber(newEnrollments)} icon={growth >= 0 ? <UserPlus /> : <TrendingDown />} trend={growth > 0 ? `+${growth}%` : undefined} />
+        <StatCard label="Active, last 7 days" value={formatNumber(sum(perf.map((p) => p.activeLast7)))} icon={<Users />} />
+        <StatCard label="Completion" value={average(perf.map((p) => p.completionRate))} unit="%" icon={<CircleCheck />} />
+        <StatCard label="Average score" value={average(perfRows.map((p) => p.avg))} unit="%" icon={<Target />} />
+      </section>
+
+      <section className="tp-card tp-lead">
+        <div className="tp-head">
+          <h2 className="tp-h2">New enrolments by month</h2>
+          <div className="tp-legend">
+            <span><i className="tp-legend__line" />{perf.length === 1 ? shortTitle(perf[0].courseId) : 'All courses'}</span>
+            <span><i className="tp-legend__zone" />{rangeInfo.label}</span>
+          </div>
+        </div>
+        <div className="tp-chart">
+          <div className="tp-chart__y" aria-hidden="true">
+            {ticks.map((t) => (
+              <span key={t} style={{ top: `${(yOf(t) / H) * 100}%` }}>{t >= 1000 ? `${t / 1000}k` : t}</span>
+            ))}
+          </div>
+          <div className="tp-chart__main">
+            <div className="tp-chart__plot" role="img" aria-label={`New enrolments per month, from ${monthly[0]} in ${trendLabels[0]} to ${monthly[monthly.length - 1]} in ${trendLabels[trendLabels.length - 1]}`}>
+              <div className="tp-chart__zone" style={{ left: `${shadeLeft}%` }} />
+              {ticks.map((t) => <div key={t} className="tp-chart__grid" style={{ top: `${(yOf(t) / H) * 100}%` }} />)}
+              <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+                <path d={`${line} L${W} ${H} L0 ${H} Z`} fill="var(--blue-200)" fillOpacity="0.55" />
+                <path d={line} fill="none" stroke="var(--navy-900)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+              </svg>
+              {marks.map((i) => {
+                const x = (i / (monthly.length - 1)) * 100;
+                const y = (pts[i][1] / H) * 100;
+                return (
+                  <span key={i}>
+                    <span className="tp-chart__dot" style={{ left: `${x}%`, top: `${y}%` }} />
+                    <span className={cx('tp-chart__label', i === 0 && 'tp-chart__label--start', i > 0 && 'tp-chart__label--end')} style={{ left: `${x}%`, top: `${y}%` }}>{formatNumber(monthly[i])}</span>
+                  </span>
+                );
+              })}
             </div>
-            <div className="grid grid-2">
-              <ChartCard title="Գրանցումների դինամիկա" subtitle="Նոր ուսանողներ ըստ ամիսների" legend={perf.map((p, i) => ({ label: shortTitle(p.courseId), color: CHART_COLORS[i % CHART_COLORS.length] }))}>
-                <LineChart labels={labels} series={perf.map((p, i) => ({ name: shortTitle(p.courseId), values: enrollmentTrend[p.courseId].slice(-months), color: CHART_COLORS[i % CHART_COLORS.length] }))} area={perf.length === 1} ariaLabel="Գրանցումները ըստ ամիսների" />
-              </ChartCard>
-              <ChartCard title="Միջին արդյունքներ" subtitle="Առաջադրանքներ և թեստեր, %" legend={[{ label: 'Առաջադրանքներ', color: CHART_COLORS[0] }, { label: 'Թեստեր', color: CHART_COLORS[1] }]}>
-                <BarChart labels={perf.map((p) => shortTitle(p.courseId))} series={[{ name: 'Առաջադրանքներ', values: perf.map((p) => p.avgAssignment) }, { name: 'Թեստեր', values: perf.map((p) => p.avgQuiz) }]} max={100} suffix="%" ariaLabel="Միջին արդյունքները ըստ դասընթացների" />
-              </ChartCard>
-            </div>
-            <div className="grid grid-main-aside">
-              <Card title="Ավարտելիությունը ըստ դասընթացների" actions={<DemoFlag />}>
-                <HBarChart items={perf.map((p) => ({ label: getCourse(p.courseId)?.title ?? p.courseId, value: p.completionRate, sub: `${formatNumber(p.enrolled)} ուսանող, ${formatNumber(Math.round(p.activeLast7 * (scale > 0.5 ? 1 : 0.8)))} ակտիվ վերջին 7 օրում` }))} />
-              </Card>
-              <ChartCard title="Ուսանողների ակտիվությունը" subtitle="Ակտիվ ուսանողներ ըստ շաբաթվա օրերի">
-                <BarChart labels={teacherWeeklyActivity.map((p) => p.label)} series={[{ name: 'Ակտիվ', values: teacherWeeklyActivity.map((p) => Math.round(p.value * (perf.length / coursePerformance.length))) }]} height={200} ariaLabel="Ակտիվ ուսանողներ ըստ օրերի" />
-              </ChartCard>
+            <div className="tp-chart__x" aria-hidden="true">
+              {trendLabels.map((m, i) => (
+                <span key={m} style={{ left: `${(i / (trendLabels.length - 1)) * 100}%` }}>{m}</span>
+              ))}
             </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        {tab === 'courses' && (
-          <Card title="Դասընթացների համեմատություն" subtitle={RANGE_LABEL[range]} actions={<DemoFlag />} padded={false}>
-            <DataTable
-              caption="Դասընթացների համեմատություն"
-              rows={perf}
-              rowKey={(p) => p.courseId}
-              initialSort={{ key: 'e', dir: 'desc' }}
-              columns={[
-                { key: 'c', header: 'Դասընթաց', sortValue: (p) => getCourse(p.courseId)?.title ?? '', render: (p) => <span className="cell-title">{getCourse(p.courseId)?.title}</span> },
-                { key: 'e', header: 'Գրանցված', align: 'right', sortValue: (p) => p.enrolled, render: (p) => formatNumber(p.enrolled) },
-                { key: 'n', header: 'Նոր', align: 'right', sortValue: (p) => enrollmentTrend[p.courseId].slice(-months).reduce((a, b) => a + b, 0), render: (p) => `+${enrollmentTrend[p.courseId].slice(-months).reduce((a, b) => a + b, 0)}` },
-                { key: 'cr', header: 'Ավարտելիություն', sortValue: (p) => p.completionRate, render: (p) => <div style={{ minWidth: 130 }}><ProgressBar value={p.completionRate} /></div> },
-                { key: 'aa', header: 'Առաջադրանքներ', align: 'right', sortValue: (p) => p.avgAssignment, render: (p) => `${p.avgAssignment}%` },
-                { key: 'aq', header: 'Թեստեր', align: 'right', sortValue: (p) => p.avgQuiz, render: (p) => `${p.avgQuiz}%` },
-                { key: 'a7', header: 'Ակտիվ (7 օր)', align: 'right', sortValue: (p) => p.activeLast7, render: (p) => formatNumber(p.activeLast7) },
-              ]}
-            />
-          </Card>
-        )}
+      <section className="tp-split tp-split--stretch">
+        <div className="tp-card tp-span2">
+          <div className="tp-head">
+            <h2 className="tp-h2">{compTitle}</h2>
+            <div className="tp-legend">
+              <span><i className="tp-legend__sq" />Completion</span>
+              <span><i className="tp-legend__sq tp-legend__sq--light" />Average score</span>
+            </div>
+          </div>
+          <div className="tp-rows">
+            {perfRows.map((p) => (
+              <div key={p.courseId} className="tp-perf">
+                <div className="tp-perf__name">
+                  <span className="tp-box" aria-hidden="true"><CourseIcon id={p.courseId} /></span>
+                  <span className="tp-perf__text">
+                    <b className="tp-ellipsis" title={getCourse(p.courseId)?.title}>{shortTitle(p.courseId)}</b>
+                    <span><Users aria-hidden="true" />{formatNumber(p.enrolled)}</span>
+                  </span>
+                </div>
+                <div className="tp-perf__bars">
+                  <div className="tp-perf__bar">
+                    <Meter value={p.completionRate} height={12} color="var(--navy-900)" label={`${shortTitle(p.courseId)} completion`} />
+                    <b>{p.completionRate}%</b>
+                  </div>
+                  <div className="tp-perf__bar">
+                    <Meter value={p.avg} height={12} color="var(--periwinkle)" label={`${shortTitle(p.courseId)} average score`} />
+                    <b>{p.avg}%</b>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {tab === 'students' && (
-          <Card title="Անհատական առաջընթաց" subtitle="Խմբի նմուշ, դասավորված ըստ առաջընթացի" actions={<DemoFlag />} padded={false}>
-            <DataTable<StudentRecord>
-              caption="Ուսանողների առաջընթաց"
-              rows={records}
-              rowKey={(r) => r.userId}
-              initialSort={{ key: 'p', dir: 'desc' }}
-              empty={<EmptyState compact title="Ընտրված զտիչներով ուսանողներ չկան" />}
-              columns={[
-                { key: 'n', header: 'Ուսանող', sortValue: (r) => fullName(getUser(r.userId)), render: (r) => <Person name={fullName(getUser(r.userId))} size={30} /> },
-                { key: 'p', header: 'Առաջընթաց', sortValue: (r) => r.progress, render: (r) => <div style={{ minWidth: 130 }}><ProgressBar value={r.progress} /></div> },
-                { key: 'a', header: 'Առաջադրանքներ', align: 'right', sortValue: (r) => r.assignmentsDone / r.assignmentsTotal, render: (r) => `${r.assignmentsDone}/${r.assignmentsTotal}` },
-                { key: 'q', header: 'Թեստեր', align: 'right', sortValue: (r) => r.quizAvg, render: (r) => `${r.quizAvg}%` },
-                { key: 'g', header: 'Միջին', align: 'right', sortValue: (r) => r.avgScore, render: (r) => <strong>{r.avgScore}%</strong> },
-                { key: 'w', header: 'Րոպե / շաբաթ', align: 'right', sortValue: (r) => r.weeklyMinutes.reduce((a, b) => a + b, 0), render: (r) => <span className="row" style={{ ['--gap' as string]: '6px', justifyContent: 'flex-end' }}><Activity size={13} className="muted" />{r.weeklyMinutes.reduce((a, b) => a + b, 0)}</span> },
-                { key: 's', header: 'Կարգավիճակ', render: (r) => <StatusBadge status={r.status} /> },
-                { key: 'l', header: 'Վերջին մուտք', sortValue: (r) => r.lastActive, render: (r) => <span className="nowrap small">{relativeTime(r.lastActive)}</span> },
-              ]}
-            />
-          </Card>
-        )}
+        <div className="tp-card tp-dist">
+          <div className="tp-head">
+            <h2 className="tp-h2">{records.length ? `Most score ${topBucket.title}` : 'Scores'}</h2>
+            <span className="tp-count"><Users aria-hidden="true" />{records.length}</span>
+          </div>
+          {records.length === 0 ? (
+            <EmptyState compact title="No students" />
+          ) : (
+            <>
+              <div className="tp-dist__plot" role="img" aria-label={`Average score distribution: ${buckets.map((b) => `${b.label} ${b.n}`).join(', ')}`}>
+                {buckets.map((b) => (
+                  <div key={b.label} className="tp-dist__col">
+                    <span>{b.n}</span>
+                    <div className={cx('tp-dist__bar', b === topBucket && 'tp-dist__bar--top')} style={{ height: `${Math.max(2, Math.round((b.n / maxN) * 78))}%` }} />
+                  </div>
+                ))}
+              </div>
+              <div className="tp-dist__labels" aria-hidden="true">
+                {buckets.map((b) => <span key={b.label}>{b.label}</span>)}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
 
-        {tab === 'saved' && (
-          <div className="grid grid-2">
+      <section className="tp-split">
+        <div className="tp-card">
+          <div className="tp-head">
+            <h2 className="tp-h2">Top students</h2>
+            <Link to="/teacher/students" className="tp-more">All<ChevronRight aria-hidden="true" /></Link>
+          </div>
+          {top.length === 0 ? (
+            <EmptyState compact title="No students" />
+          ) : (
+            <div className="tp-top">
+              {top.map((r, i) => {
+                const name = fullName(getUser(r.userId));
+                return (
+                  <Link key={r.userId} to={`/teacher/students/${r.userId}`} className="tp-top__row">
+                    <span className={cx('tp-top__rank', i === 0 && 'tp-top__rank--first')}>{i + 1}</span>
+                    <Avatar name={name} size={42} />
+                    <span className="tp-top__main">
+                      <span className="tp-ellipsis tp-top__name">{name}</span>
+                      <span className="tp-top__sub">
+                        {r.courseIds.length === 1 ? <><CourseIcon id={r.courseIds[0]} />{shortTitle(r.courseIds[0])}</> : <><BookOpen aria-hidden="true" />{r.courseIds.length} courses</>}
+                      </span>
+                    </span>
+                    <span className="tp-chip tp-chip--lg tp-chip--blue">{r.avgScore}%</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="tp-card tp-span2">
+          <h2 className="tp-h2" style={{ marginBottom: 14 }}>Saved reports</h2>
+          <div className="tp-saved">
             {SAVED.map((r) => (
-              <button key={r.id} type="button" className="card card--pad report-tile" onClick={() => setReport(r)}>
-                <span className="list-row__icon"><r.icon /></span>
-                <span className="grow" style={{ textAlign: 'left' }}>
-                  <span className="strong" style={{ display: 'block', color: 'var(--navy-900)' }}>{r.title}</span>
-                  <span className="small secondary" style={{ display: 'block', margin: '4px 0 8px' }}>{r.description}</span>
-                  <span className="xs muted row" style={{ ['--gap' as string]: '6px' }}><CalendarRange size={13} />Ձևավորված է {formatDate(r.created)}</span>
+              <button key={r.id} type="button" className="tp-saved__tile v-lift" onClick={() => setReport(r)}>
+                <span className="tp-saved__top">
+                  <span className="tp-box tp-box--lg" aria-hidden="true"><r.icon /></span>
+                  <ChevronRight aria-hidden="true" className="tp-chev" />
                 </span>
-                <ChevronRight size={18} className="muted" />
+                <span className="tp-saved__title">{r.title}</span>
+                <span className="tp-chip tp-chip--soft"><Calendar aria-hidden="true" />{formatShortDate(r.created)}</span>
               </button>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      </section>
     </>
   );
 }
 
+const KIND_LABEL: Record<SavedReport['kind'], string> = { monthly: 'Monthly', risk: 'Students', assignments: 'Tasks', quizzes: 'Quizzes' };
+
 function ReportDetail({ report, onBack, actions }: { report: SavedReport; onBack: () => void; actions: ReactNode }) {
   const atRisk = studentRecords.filter((r) => r.status !== 'active');
+  const best = [...coursePerformance].sort((a, b) => b.completionRate - a.completionRate)[0];
+  const quiet = [...coursePerformance].sort((a, b) => a.activeLast7 / a.enrolled - b.activeLast7 / b.enrolled)[0];
+  const gap = average(coursePerformance.map((p) => p.avgAssignment)) - average(coursePerformance.map((p) => p.avgQuiz));
+  const values =
+    report.kind === 'monthly'
+      ? [{ name: 'Completion', values: coursePerformance.map((p) => p.completionRate) }, { name: 'Average', values: coursePerformance.map((p) => Math.round((p.avgAssignment + p.avgQuiz) / 2)) }]
+      : [{ name: 'Average', values: coursePerformance.map((p) => (report.kind === 'quizzes' ? p.avgQuiz : p.avgAssignment)) }];
+
   return (
     <>
-      <PageHeader
-        breadcrumbs={[{ label: 'Վահանակ', to: '/teacher/dashboard' }, { label: 'Հաշվետվություններ' }, { label: report.title }]}
+      <ShellTitle
         title={report.title}
-        description={report.description}
-        actions={
+        meta={
           <>
-            <Button variant="ghost" icon={<ArrowLeft />} onClick={onBack} className="no-print">Վերադառնալ</Button>
-            {actions}
+            <report.icon aria-hidden="true" />
+            <b>Saved report</b>
+            <span className="tp-dot" aria-hidden="true" />
+            {formatDate(report.created)}
           </>
         }
       />
-      <Notice tone="warning" className="mb-20">Ցուցադրական հաշվետվություն՝ ստեղծված օրինակային տվյալներից։</Notice>
-      <div className="grid grid-main-aside">
-        <div className="stack" style={{ ['--gap' as string]: '20px', minWidth: 0 }}>
+      <div className="tp-controls tp-controls--plain no-print">
+        <button type="button" className="tp-back" onClick={onBack}>
+          <span className="tp-back__icon"><ArrowLeft aria-hidden="true" /></span>
+          Reports
+        </button>
+        <div className="tp-grow" />
+        {actions}
+      </div>
+
+      <section className="tp-split">
+        <div className="tp-span2 tp-stack">
           {report.kind === 'risk' ? (
-            <Card title="Ուշադրության կարիք ունեցող ուսանողներ" subtitle={`${atRisk.length} ուսանող`} padded={false}>
-              <DataTable<StudentRecord>
-                caption="Ռիսկային ուսանողներ"
-                rows={atRisk}
-                rowKey={(r) => r.userId}
-                columns={[
-                  { key: 'n', header: 'Ուսանող', render: (r) => <Person name={fullName(getUser(r.userId))} sub={r.courseIds.map(shortTitle).join(', ')} size={30} /> },
-                  { key: 'p', header: 'Առաջընթաց', align: 'right', sortValue: (r) => r.progress, render: (r) => `${r.progress}%` },
-                  { key: 'g', header: 'Միջին', align: 'right', sortValue: (r) => r.avgScore, render: (r) => `${r.avgScore}%` },
-                  { key: 'l', header: 'Վերջին մուտք', sortValue: (r) => r.lastActive, render: (r) => relativeTime(r.lastActive) },
-                  { key: 's', header: 'Կարգավիճակ', render: (r) => <StatusBadge status={r.status} /> },
-                ]}
-              />
-            </Card>
+            <div className="tp-card">
+              <div className="tp-head">
+                <h2 className="tp-h2">Need attention</h2>
+                <span className="tp-count"><Users aria-hidden="true" />{atRisk.length}</span>
+              </div>
+              <div className="tp-top">
+                {atRisk.map((r) => {
+                  const name = fullName(getUser(r.userId));
+                  return (
+                    <Link key={r.userId} to={`/teacher/students/${r.userId}`} className="tp-top__row">
+                      <Avatar name={name} size={42} />
+                      <span className="tp-top__main">
+                        <span className="tp-ellipsis tp-top__name">{name}</span>
+                        <span className="tp-top__sub"><Clock aria-hidden="true" />{shortAgo(r.lastActive)} · {r.progress}% · {r.avgScore}%</span>
+                      </span>
+                      <StatusBadge status={r.status} />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           ) : (
             <>
-              <ChartCard title={report.kind === 'quizzes' ? 'Թեստերի միջին արդյունքը' : report.kind === 'assignments' ? 'Առաջադրանքների միջին միավորը' : 'Ավարտելիություն և արդյունքներ'} subtitle="Ըստ դասընթացների, %">
-                <BarChart
-                  labels={coursePerformance.map((p) => shortTitle(p.courseId))}
-                  series={
-                    report.kind === 'monthly'
-                      ? [{ name: 'Ավարտելիություն', values: coursePerformance.map((p) => p.completionRate) }, { name: 'Միջին', values: coursePerformance.map((p) => Math.round((p.avgAssignment + p.avgQuiz) / 2)) }]
-                      : [{ name: 'Միջին', values: coursePerformance.map((p) => (report.kind === 'quizzes' ? p.avgQuiz : p.avgAssignment)) }]
-                  }
-                  max={100}
-                  suffix="%"
-                  ariaLabel="Հաշվետվության գրաֆիկ"
-                />
-              </ChartCard>
-              <Card title="Մանրամասն աղյուսակ" padded={false}>
+              <div className="tp-card">
+                <div className="tp-head">
+                  <h2 className="tp-h2">{report.kind === 'quizzes' ? 'Quiz average' : report.kind === 'assignments' ? 'Task average' : 'Completion and scores'}</h2>
+                  {values.length > 1 && (
+                    <div className="tp-legend">
+                      {values.map((s, i) => <span key={s.name}><i className="tp-legend__sq" style={{ background: CHART_COLORS[i] }} />{s.name}</span>)}
+                    </div>
+                  )}
+                </div>
+                <BarChart labels={coursePerformance.map((p) => shortTitle(p.courseId))} series={values} max={100} suffix="%" ariaLabel="Report chart by course" />
+              </div>
+              <div className="tp-card tp-card--flush">
                 <DataTable
-                  caption="Հաշվետվության աղյուսակ"
+                  caption="Report table"
                   rows={coursePerformance}
                   rowKey={(p) => p.courseId}
                   columns={[
-                    { key: 'c', header: 'Դասընթաց', render: (p) => <span className="cell-title">{getCourse(p.courseId)?.title}</span> },
-                    { key: 'e', header: 'Ուսանողներ', align: 'right', render: (p) => formatNumber(p.enrolled) },
-                    { key: 'r', header: 'Ավարտելիություն', align: 'right', render: (p) => `${p.completionRate}%` },
-                    { key: 'a', header: 'Առաջադրանքներ', align: 'right', render: (p) => `${p.avgAssignment}%` },
-                    { key: 'q', header: 'Թեստեր', align: 'right', render: (p) => `${p.avgQuiz}%` },
+                    { key: 'c', header: 'Course', render: (p) => <span className="tp-person" style={{ fontSize: 14 }}><span className="tp-box tp-box--sm"><CourseIcon id={p.courseId} /></span>{shortTitle(p.courseId)}</span> },
+                    { key: 'e', header: 'Students', align: 'right', sortValue: (p) => p.enrolled, render: (p) => formatNumber(p.enrolled) },
+                    { key: 'r', header: 'Completion', align: 'right', sortValue: (p) => p.completionRate, render: (p) => `${p.completionRate}%` },
+                    { key: 'a', header: 'Tasks', align: 'right', sortValue: (p) => p.avgAssignment, render: (p) => `${p.avgAssignment}%` },
+                    { key: 'q', header: 'Quizzes', align: 'right', sortValue: (p) => p.avgQuiz, render: (p) => `${p.avgQuiz}%` },
                   ]}
                 />
-              </Card>
+              </div>
             </>
           )}
         </div>
-        <Card title="Հաշվետվության պարամետրեր">
-          <dl className="kv">
-            <dt>Տեսակ</dt><dd>{report.kind === 'monthly' ? 'Ամսական' : report.kind === 'risk' ? 'Ուսանողներ' : report.kind === 'assignments' ? 'Առաջադրանքներ' : 'Թեստեր'}</dd>
-            <dt>Ձևավորված է</dt><dd>{formatDate(report.created)}</dd>
-            <dt>Դասընթացներ</dt><dd>{coursePerformance.length}</dd>
-            <dt>Ուսանողներ</dt><dd>{studentRecords.length}</dd>
-            <dt>Աղբյուր</dt><dd>Ցուցադրական տվյալներ</dd>
-          </dl>
-          <div className="mt-20 stack" style={{ ['--gap' as string]: '8px' }}>
-            <div className="small strong" style={{ color: 'var(--navy-900)' }}>Հիմնական դիտարկումներ</div>
-            <ul className="small secondary" style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>JavaScript դասընթացն ունի ամենաբարձր ավարտելիությունը։</li>
-              <li>SQL դասընթացում ակտիվությունը ցածր է. խորհուրդ է տրվում հիշեցում ուղարկել։</li>
-              <li>Թեստերի միջինը մոտ 5 տոկոսային կետով զիջում է առաջադրանքներին։</li>
-            </ul>
+
+        <div className="tp-card">
+          <h2 className="tp-h2">Details</h2>
+          <div className="tp-facts">
+            <span><span className="tp-box tp-box--sm"><report.icon /></span>{KIND_LABEL[report.kind]}</span>
+            <span><span className="tp-box tp-box--sm"><Calendar /></span>{formatDate(report.created)}</span>
+            <span><span className="tp-box tp-box--sm"><Layers /></span>{coursePerformance.length} courses</span>
+            <span><span className="tp-box tp-box--sm"><Users /></span>{studentRecords.length} students</span>
           </div>
-        </Card>
-      </div>
+          <h3 className="tp-h3">Key points</h3>
+          <div className="tp-facts">
+            <span><span className="tp-box tp-box--sm"><TrendingUp /></span>{shortTitle(best.courseId)}: best completion</span>
+            <span><span className="tp-box tp-box--sm tp-box--red"><CircleAlert /></span>{shortTitle(quiet.courseId)}: low activity</span>
+            <span><span className="tp-box tp-box--sm"><FileQuestionMark /></span>Quizzes {Math.abs(gap)} pts {gap >= 0 ? 'below' : 'above'} tasks</span>
+          </div>
+        </div>
+      </section>
     </>
   );
 }

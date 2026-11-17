@@ -1,14 +1,13 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, CalendarClock, CheckCircle2, Clock, ClipboardList, FileText, HelpCircle, Lock, Paperclip, PlayCircle, Star, Timer, Users } from 'lucide-react';
-import type { Assignment, AssignmentStatus, Course, Lesson, LessonType, Quiz, QuizState } from '../../types';
+import { ArrowRight, BookOpen, CalendarClock, ChartColumn, CheckCircle2, Clock, ClipboardList, FileText, HelpCircle, Lock, Paperclip, PlayCircle, Star, Timer, Users } from 'lucide-react';
+import type { Assignment, AssignmentStatus, CategoryId, Course, Lesson, LessonType, Quiz, QuizState } from '../../types';
 import { categoryName, difficultyLabel } from '../../data/courses';
 import { fullName, getUser } from '../../data/users';
 import { cx, daysUntil, formatDate, formatNumber, relativeDue } from '../../lib/format';
-import { Badge, StatusBadge } from '../ui/Badge';
-import { Avatar, Thumb } from '../ui/Misc';
-import { CATEGORY_TINT, LESSON_TINT } from '../../lib/visual';
-import { ProgressBar } from '../ui/Progress';
+import { StatusBadge } from '../ui/Badge';
+import { CATEGORY_ICONS, LESSON_TINT, categoryImage, photoFor } from '../../lib/visual';
+import { Meter } from '../ui/Visual';
 
 export const LESSON_ICONS: Record<LessonType, typeof PlayCircle> = {
   video: PlayCircle,
@@ -28,43 +27,69 @@ export const LESSON_TYPE_LABEL: Record<LessonType, string> = {
 
 /* ---------- Course card ---------- */
 
-export function CourseCard({ course, to, progress, hideDescription }: { course: Course; to?: string; progress?: number; hideDescription?: boolean }) {
-  const teacher = getUser(course.teacherId);
+/** Short category labels for chips on photo cards. */
+export const CATEGORY_SHORT: Record<CategoryId, string> = {
+  programming: 'Programming',
+  design: 'Design',
+  math: 'Mathematics',
+  ai: 'AI',
+  data: 'Data',
+  languages: 'Languages',
+  science: 'Science',
+  business: 'Business',
+};
+
+/** Photo course card: photo with category + level chips, title, stat chips, teacher. Styles: `.cat-card` in styles/pages/catalog.css. */
+export function CourseCard({ course, to, progress }: { course: Course; to?: string; progress?: number; hideDescription?: boolean }) {
+  const name = fullName(getUser(course.teacherId));
+  const photo = photoFor(name);
+  const initials = name.split(/\s+/).map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase();
+  const CatIcon = CATEGORY_ICONS[course.category] ?? BookOpen;
+  const [img, setImg] = useState(course.image || categoryImage(course.category));
+  useEffect(() => setImg(course.image || categoryImage(course.category)), [course.image, course.category]);
+  const fallback = categoryImage(course.category);
   return (
-    <Link to={to ?? `/courses/${course.id}`} className={cx('course-card', CATEGORY_TINT[course.category])}>
-      <div className="course-card__media">
-        <Thumb src={course.image} alt="" />
-        <Badge className="course-card__level">
-          <BarChart3 size={12} aria-hidden="true" />
+    <Link to={to ?? `/courses/${course.id}`} className="cat-card v-lift">
+      <div className="cat-card__media">
+        <img src={img} alt="" loading="lazy" onError={() => img !== fallback && setImg(fallback)} />
+        <span className="cat-card__cat">
+          <CatIcon aria-hidden="true" />
+          {CATEGORY_SHORT[course.category] ?? categoryName(course.category)}
+        </span>
+        <span className="cat-card__level">
+          <ChartColumn aria-hidden="true" />
           {difficultyLabel[course.difficulty]}
-        </Badge>
+        </span>
       </div>
-      <div className="course-card__body">
-        <span className="course-card__cat">{categoryName(course.category)}</span>
-        <h3 className="course-card__title">{course.title}</h3>
-        {!hideDescription && <p className="course-card__desc">{course.shortDescription}</p>}
+      <div className="cat-card__body">
+        <h3 className="cat-card__title">{course.title}</h3>
         {progress !== undefined ? (
-          <ProgressBar value={progress} />
+          <div className="cat-card__progress">
+            <Meter value={progress} label="Progress" />
+            <b>{Math.round(progress)}%</b>
+          </div>
         ) : (
-          <div className="course-card__meta">
+          <div className="cat-card__stats">
             {course.rating > 0 && (
-              <span className="tag rate">
+              <span className="cat-stat cat-stat--blue" aria-label={`Rating ${course.rating.toFixed(1)}`}>
                 <Star aria-hidden="true" />
                 {course.rating.toFixed(1)}
               </span>
             )}
-            <span className="tag">
+            <span className="cat-stat" aria-label={`${course.durationHours} hours`}>
               <Clock aria-hidden="true" />
-              {course.durationHours} hours</span>
-            <span className="tag">
+              {course.durationHours} h
+            </span>
+            <span className="cat-stat" aria-label={`${formatNumber(course.enrolled)} students`}>
               <Users aria-hidden="true" />
               {formatNumber(course.enrolled)}
             </span>
           </div>
         )}
-        <div className="course-card__foot">
-          <Avatar name={fullName(teacher)} size={32} />
-          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName(teacher)}</span>
+        <div className="cat-card__foot">
+          {photo ? <img className="cat-card__avatar" src={photo} alt="" /> : <span className="cat-card__avatar" aria-hidden="true">{initials}</span>}
+          <span className="cat-card__teacher">{name}</span>
+          <span className="cat-card__go" aria-hidden="true"><ArrowRight /></span>
         </div>
       </div>
     </Link>

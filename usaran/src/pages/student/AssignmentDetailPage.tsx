@@ -1,18 +1,51 @@
 import { useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Bold, CheckCircle2, Code, FileText, Italic, Link2, List, ListOrdered, MessageSquareText, Paperclip, Send, Trash2, Undo2, UploadCloud } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import {
+  ArrowLeft, BarChart3, Calendar, Check, CircleAlert, Clock, CloudUpload, Database, Eye, FileText, Layers, Link2, ListChecks, MessageSquare,
+  Paperclip, Presentation, Save, Send, ShieldCheck, SlidersHorizontal, Sparkles, Trash2, Trophy, Undo2,
+} from 'lucide-react';
 import type { AssignmentStatus, Attachment } from '../../types';
 import { getAssignment, studentSubmission, assignmentStatusFor } from '../../data/assignments';
 import { getCourse } from '../../data/courses';
 import { fullName, getUser } from '../../data/users';
 import { isEnrolled } from '../../data/enrollments';
 import { useToast } from '../../context/ToastContext';
+import { ShellTitle } from '../../components/layout/AppShell';
 import { Button, ButtonLink } from '../../components/ui/Button';
-import { StatusBadge } from '../../components/ui/Badge';
-import { Card, EmptyState, Notice, PageHeader, Person } from '../../components/ui/Misc';
+import { Avatar, EmptyState } from '../../components/ui/Misc';
 import { ConfirmDialog } from '../../components/ui/Overlay';
-import { ProgressRing } from '../../components/ui/Progress';
-import { cx, daysUntil, formatDateTime, formatFileSize, relativeDue, TODAY } from '../../lib/format';
+import { Chip, Ring } from '../../components/ui/Visual';
+import { cx, daysUntil, formatDateTime, formatFileSize, formatShortDate, TODAY } from '../../lib/format';
+
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const pad = (n: number) => String(n).padStart(2, '0');
+const dueLabel = (v: string) => {
+  const d = new Date(v);
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const STATUS: Record<AssignmentStatus, { label: string; icon: typeof Check; tone: 'grey' | 'blue' | 'red' }> = {
+  'not-started': { label: 'New', icon: Sparkles, tone: 'blue' },
+  draft: { label: 'Draft', icon: FileText, tone: 'blue' },
+  submitted: { label: 'Submitted', icon: Send, tone: 'blue' },
+  graded: { label: 'Graded', icon: Check, tone: 'blue' },
+  overdue: { label: 'Overdue', icon: CircleAlert, tone: 'red' },
+};
+
+/** Picks an icon for an instruction step from its words. */
+function stepIcon(text: string): typeof Check {
+  const t = text.toLowerCase();
+  if (/link|repo|explain|decision/.test(t)) return Link2;
+  if (/readme|write|document|report|describe/.test(t)) return FileText;
+  if (/prop|variant|size|option|parameter/.test(t)) return SlidersHorizontal;
+  if (/test|valid|error|check/.test(t)) return ShieldCheck;
+  if (/chart|visual|plot|graph/.test(t)) return BarChart3;
+  if (/data|csv|table|query|sql|clean/.test(t)) return Database;
+  if (/create|build|component|page|form/.test(t)) return Layers;
+  return ListChecks;
+}
+
+const TYPES = ['PDF', 'ZIP', 'IPYNB', 'Image', 'Up to 20 MB'];
 
 export function AssignmentDetailPage() {
   const { id } = useParams();
@@ -20,7 +53,6 @@ export function AssignmentDetailPage() {
   const original = assignment ? studentSubmission(assignment.id) : undefined;
   const toast = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
-  const textRef = useRef<HTMLTextAreaElement>(null);
 
   const [answer, setAnswer] = useState(original?.answer ?? '');
   const [files, setFiles] = useState<Attachment[]>(original?.attachments ?? []);
@@ -31,42 +63,47 @@ export function AssignmentDetailPage() {
   const [dragOver, setDragOver] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
-  if (!assignment || !isEnrolled(assignment.courseId)) {
+  const back = (
+    <Link to="/student/assignments" className="sl-back">
+      <ArrowLeft aria-hidden="true" />
+      Assignments
+    </Link>
+  );
+
+  if (!assignment || !isEnrolled(assignment.courseId) || !status) {
     return (
-      <div className="card">
-        <EmptyState title="Assignment not found" text="It may have been removed, or you may not be enrolled in the course." action={<ButtonLink to="/student/assignments">All Assignments</ButtonLink>} />
-      </div>
+      <>
+        <ShellTitle title="Assignment" />
+        {back}
+        <div className="sl-card">
+          <EmptyState title="Assignment not found" action={<ButtonLink to="/student/assignments" icon={<ArrowLeft />}>Assignments</ButtonLink>} />
+        </div>
+      </>
     );
   }
 
   const course = getCourse(assignment.courseId)!;
   const teacher = getUser(course.teacherId);
+  const teacherName = fullName(teacher);
   const editable = status === 'not-started' || status === 'draft' || status === 'overdue';
   const graded = status === 'graded' && original?.score !== undefined;
   const words = answer.trim() ? answer.trim().split(/\s+/).length : 0;
   const days = daysUntil(assignment.dueDate);
+  const s = STATUS[status];
+  const hasDraft = Boolean(savedAt || original?.status === 'draft');
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
     const next = Array.from(list).map((f) => ({ name: f.name, sizeKb: Math.max(1, Math.round(f.size / 1024)) }));
     const tooBig = next.filter((f) => f.sizeKb > 20 * 1024);
-    if (tooBig.length) toast.error("File is too large", "The maximum file size is 20 MB.");
+    if (tooBig.length) toast.error('File too large', 'Max 20 MB per file.');
     setFiles((cur) => [...cur, ...next.filter((f) => f.sizeKb <= 20 * 1024)]);
     setError('');
   };
 
-  const wrap = (before: string, after = before) => {
-    const el = textRef.current;
-    if (!el) return;
-    const { selectionStart: s, selectionEnd: e } = el;
-    const selected = answer.slice(s, e) || "text";
-    setAnswer(answer.slice(0, s) + before + selected + after + answer.slice(e));
-    requestAnimationFrame(() => el.focus());
-  };
-
   const validate = () => {
     if (answer.trim().length < 20 && files.length === 0) {
-      setError("Write a response of at least 20 characters or attach a file.");
+      setError('Add a file or at least 20 characters.');
       return false;
     }
     return true;
@@ -75,69 +112,203 @@ export function AssignmentDetailPage() {
   const saveDraft = () => {
     setStatus(days < 0 ? 'overdue' : 'draft');
     const now = new Date(TODAY);
-    setSavedAt(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
-    toast.success("Draft saved", "Kept only on this page. No data has been sent to a server.");
+    setSavedAt(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
+    toast.success('Draft saved', 'Kept on this page only.');
   };
 
   const submit = () => {
     setStatus('submitted');
     setSubmittedAt(TODAY.toISOString().slice(0, 16));
-    toast.success("Assignment marked as submitted", "Demo: your work has not been sent to a server.");
+    toast.success('Submitted', 'Demo: nothing was sent.');
   };
+
+  /* Progress timeline */
+  type Step = { label: string; icon: typeof Check; when: string; state: 'done' | 'current' | 'todo' };
+  const draftWhen = savedAt ? `Saved ${savedAt}` : hasDraft ? 'In progress' : 'Not yet';
+  const timeline: Step[] = [
+    { label: 'Opened', icon: Eye, when: formatShortDate(assignment.createdAt), state: editable && !hasDraft ? 'current' : 'done' },
+    { label: 'Draft saved', icon: Save, when: editable ? draftWhen : 'Done', state: editable ? (hasDraft ? 'current' : 'todo') : 'done' },
+    { label: 'Submitted', icon: Send, when: submittedAt && !editable ? formatShortDate(submittedAt) : 'Next step', state: status === 'submitted' ? 'current' : status === 'graded' ? 'done' : 'todo' },
+    { label: 'Graded', icon: Trophy, when: original?.gradedAt && graded ? formatShortDate(original.gradedAt) : 'After review', state: graded ? 'done' : 'todo' },
+  ];
 
   return (
     <>
-      <PageHeader
-        breadcrumbs={[{ label: "Assignments", to: '/student/assignments' }, { label: course.title, to: `/student/courses/${course.id}/learn` }, { label: assignment.title }]}
+      <ShellTitle
         title={assignment.title}
-        description={assignment.summary}
-        actions={status && <StatusBadge status={status} />}
+        meta={
+          <span className="sl-ameta">
+            <Link to={`/student/courses/${course.id}/learn`} className="sl-ameta__course">
+              <img src={course.image} alt="" />
+              {course.title}
+            </Link>
+            <Chip icon={<Calendar />}>Due {dueLabel(assignment.dueDate)}</Chip>
+            {editable && <Chip tone={days < 0 || days <= 2 ? 'red' : 'grey'} icon={<Clock />}>{days < 0 ? `${-days} d late` : days === 0 ? 'Today' : `${days} d left`}</Chip>}
+            <Chip icon={<Trophy />}>{assignment.maxScore} pts</Chip>
+            <Chip tone={s.tone} icon={<s.icon />}>{s.label}</Chip>
+          </span>
+        }
       />
+      {back}
 
-      <div className="grid grid-main-aside">
-        <div className="stack" style={{ ['--gap' as string]: '20px', minWidth: 0 }}>
+      <section className="sl-detail">
+        <div className="sl-detail__main">
           {graded && (
-            <Card title="Grade and Feedback">
-              <div className="row row--top row--wrap" style={{ ['--gap' as string]: '24px' }}>
-                <ProgressRing value={(original!.score! / assignment.maxScore) * 100} size={104} color="var(--success-600)" label="result" />
-                <div className="stack grow" style={{ ['--gap' as string]: '10px', minWidth: 240 }}>
-                  <div className="row" style={{ ['--gap' as string]: '8px' }}>
-                    <span style={{ fontSize: 'var(--fs-2xl)', fontWeight: 700, color: 'var(--navy-900)' }}>{original!.score}</span>
-                    <span className="muted">/ {assignment.maxScore} points</span>
-                  </div>
-                  <div className="answer-box" style={{ background: 'var(--surface-muted)' }}>
-                    <div className="row xs muted" style={{ ['--gap' as string]: '6px', marginBottom: 6 }}>
-                      <MessageSquareText size={14} /> {fullName(teacher)}, {original!.gradedAt ? formatDateTime(original!.gradedAt) : ''}
-                    </div>
-                    {original!.feedback}
-                  </div>
+            <div className="sl-card sl-grade">
+              <Ring value={(original!.score! / assignment.maxScore) * 100} size={104} thickness={12} label="Score">
+                <span className="sl-grade__ring">
+                  <b>{original!.score}</b>
+                  <span>/ {assignment.maxScore}</span>
+                </span>
+              </Ring>
+              <div className="sl-grade__feedback">
+                <div className="sl-grade__who">
+                  <Avatar name={teacherName} size={28} />
+                  <b>{teacherName}</b>
+                  {original!.gradedAt && <span>{formatShortDate(original!.gradedAt)}</span>}
                 </div>
+                <p>{original!.feedback}</p>
               </div>
-            </Card>
+            </div>
           )}
 
-          <Card title="Instructions">
-            <ol className="instructions">
-              {assignment.instructions.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
+          {/* Brief */}
+          <div className="sl-card sl-brief">
+            <h2>Brief</h2>
+            <ol className="sl-steps">
+              {assignment.instructions.map((text, i) => {
+                const Icon = stepIcon(text);
+                return (
+                  <li key={text}>
+                    <span className="sl-steps__icon" aria-hidden="true">
+                      <Icon />
+                      <b>{i + 1}</b>
+                    </span>
+                    <span>{text}</span>
+                  </li>
+                );
+              })}
             </ol>
-            <h3 style={{ fontSize: 'var(--fs-sm)', margin: '20px 0 10px' }}>Requirements</h3>
-            <ul className="check-list">
+            <div className="sl-musts">
+              <span className="sl-musts__label">Must have</span>
               {assignment.requirements.map((r) => (
-                <li key={r}><CheckCircle2 aria-hidden="true" />{r}</li>
+                <Chip key={r} tone="blue" icon={<Check />}>{r}</Chip>
               ))}
-            </ul>
-          </Card>
+            </div>
+          </div>
 
-          <Card
-            title="Your Work"
-            subtitle={editable ? (savedAt ? `Draft saved at ${savedAt}` : "You can edit your response before submitting") : submittedAt ? `Submitted on ${formatDateTime(submittedAt)}` : undefined}
-            footer={
-              editable ? (
+          {/* Submission */}
+          <form
+            className="sl-card sl-work"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (editable && validate()) setConfirm(true);
+            }}
+          >
+            <div className="sl-work__head">
+              <h2>Your work</h2>
+              {editable && savedAt && <Chip icon={<Save />}>Saved {savedAt}</Chip>}
+              {!editable && submittedAt && <Chip icon={<Send />}>{formatDateTime(submittedAt)}</Chip>}
+            </div>
+
+            {status === 'overdue' && (
+              <p className="sl-alert" role="note">
+                <CircleAlert aria-hidden="true" />
+                Past due: late work may lose points
+              </p>
+            )}
+
+            {editable && assignment.allowFiles && (
+              <>
+                <input ref={fileInput} id="upload" type="file" multiple className="sr-only" tabIndex={-1} onChange={(e) => addFiles(e.target.files)} />
+                <div
+                  className={cx('sl-drop', dragOver && 'is-over')}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Upload files"
+                  onClick={() => fileInput.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      fileInput.current?.click();
+                    }
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    addFiles(e.dataTransfer.files);
+                  }}
+                >
+                  <span className="sl-drop__icon" aria-hidden="true"><CloudUpload /></span>
+                  <span className="sl-drop__title">Drop files or <span>browse</span></span>
+                  <span className="sl-drop__types">
+                    {TYPES.map((t) => (
+                      <span key={t}>{t}</span>
+                    ))}
+                  </span>
+                </div>
+              </>
+            )}
+
+            {files.length > 0 && (
+              <div className="sl-files">
+                {files.map((f, i) => (
+                  <div key={f.name + i} className="sl-file">
+                    <span className="sl-file__icon sl-file__icon--blue" aria-hidden="true"><Paperclip /></span>
+                    <span className="sl-file__name">{f.name}</span>
+                    <Chip>{formatFileSize(f.sizeKb)}</Chip>
+                    {editable && (
+                      <button type="button" className="sl-icon-btn" aria-label={`Remove ${f.name}`} onClick={() => setFiles((l) => l.filter((_, j) => j !== i))}>
+                        <Trash2 />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {editable ? (
+              <div className="sl-answer">
+                <label htmlFor="answer">
+                  <MessageSquare aria-hidden="true" />
+                  Comment
+                </label>
+                <textarea
+                  id="answer"
+                  className="textarea"
+                  rows={4}
+                  value={answer}
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? 'answer-error' : undefined}
+                  onChange={(e) => {
+                    setAnswer(e.target.value);
+                    setError('');
+                  }}
+                  placeholder="Your solution, choices and repo link"
+                />
+                <div className="sl-answer__foot">
+                  {error ? (
+                    <span id="answer-error" className="sl-answer__error" role="alert"><CircleAlert aria-hidden="true" />{error}</span>
+                  ) : (
+                    <span />
+                  )}
+                  <Chip>{words} words</Chip>
+                </div>
+              </div>
+            ) : (
+              <div className="sl-answer-view">{answer || <span>No comment</span>}</div>
+            )}
+
+            <div className="sl-work__actions">
+              {editable ? (
                 <>
-                  <Button variant="secondary" onClick={saveDraft}>Save Draft</Button>
-                  <Button variant="primary" icon={<Send />} onClick={() => validate() && setConfirm(true)}>Submit Assignment</Button>
+                  <Button variant="secondary" icon={<Save />} onClick={saveDraft}>Save draft</Button>
+                  <Button type="submit" variant="primary" icon={<Send />}>Submit</Button>
                 </>
               ) : status === 'submitted' ? (
                 <Button
@@ -145,138 +316,55 @@ export function AssignmentDetailPage() {
                   icon={<Undo2 />}
                   onClick={() => {
                     setStatus(days < 0 ? 'overdue' : 'draft');
-                    toast.info("Submission withdrawn", "You can edit your work and submit it again.");
+                    toast.info('Withdrawn', 'Edit and submit again.');
                   }}
-                >Withdraw and Edit</Button>
-              ) : undefined
-            }
-          >
-            {status === 'overdue' && <Notice tone="danger" className="mb-20">The deadline was {relativeDue(assignment.dueDate)}. Late submissions may receive a reduced score.</Notice>}
-            {status === 'submitted' && <Notice tone="warning" className="mb-20">Your work is awaiting review by your instructor.</Notice>}
-
-            {editable ? (
-              <div className="stack" style={{ ['--gap' as string]: '16px' }}>
-                <div className="field">
-                  <label className="field__label" htmlFor="answer">Written Response</label>
-                  <div className="editor">
-                    <div className="editor__toolbar" role="toolbar" aria-label="Formatting">
-                      <button type="button" onClick={() => wrap('**')} aria-label="Bold"><Bold /></button>
-                      <button type="button" onClick={() => wrap('_')} aria-label="Italic"><Italic /></button>
-                      <button type="button" onClick={() => wrap('\n- ', '')} aria-label="Bulleted List"><List /></button>
-                      <button type="button" onClick={() => wrap('\n1. ', '')} aria-label="Numbered List"><ListOrdered /></button>
-                      <button type="button" onClick={() => wrap('`')} aria-label="Code"><Code /></button>
-                      <button type="button" onClick={() => wrap('[', '](https://)')} aria-label="Link"><Link2 /></button>
-                    </div>
-                    <textarea
-                      id="answer"
-                      ref={textRef}
-                      className="textarea"
-                      value={answer}
-                      aria-invalid={error ? true : undefined}
-                      onChange={(e) => {
-                        setAnswer(e.target.value);
-                        setError('');
-                      }}
-                      placeholder="Describe your solution and decisions, and include a link to your project…"
-                    />
-                    <div className="editor__footer">
-                      <span>Markdown supported</span>
-                      <span>{words} words</span>
-                    </div>
-                  </div>
-                  {error && <span className="field__error" role="alert">{error}</span>}
-                </div>
-
-                {assignment.allowFiles && (
-                  <div className="field">
-                    <span className="field__label">Attachments</span>
-                    <div
-                      className={cx('dropzone', dragOver && 'is-over')}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => fileInput.current?.click()}
-                      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && fileInput.current?.click()}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setDragOver(true);
-                      }}
-                      onDragLeave={() => setDragOver(false)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setDragOver(false);
-                        addFiles(e.dataTransfer.files);
-                      }}
-                    >
-                      <UploadCloud size={26} aria-hidden="true" />
-                      <span><strong>Choose a File</strong> or drag it here</span>
-                      <span className="xs muted">Attach PDF, ZIP, IPYNB, or image files up to 20 MB each. Files are not uploaded; only their names are displayed.</span>
-                    </div>
-                    <input ref={fileInput} type="file" multiple hidden onChange={(e) => addFiles(e.target.files)} />
-                    {files.length > 0 && (
-                      <div className="stack" style={{ ['--gap' as string]: '8px', marginTop: 8 }}>
-                        {files.map((f, i) => (
-                          <div key={f.name + i} className="file-row">
-                            <span className="file-row__icon"><Paperclip /></span>
-                            <div className="grow">
-                              <div className="strong">{f.name}</div>
-                              <div className="xs muted">{formatFileSize(f.sizeKb)}</div>
-                            </div>
-                            <Button variant="ghost" size="sm" iconOnly aria-label={`Remove ${f.name}`} onClick={() => setFiles((l) => l.filter((_, j) => j !== i))} icon={<Trash2 />} />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="stack" style={{ ['--gap' as string]: '12px' }}>
-                <div className="answer-box">{answer || <span className="muted">No written answer</span>}</div>
-                {files.map((f) => (
-                  <div key={f.name} className="file-row">
-                    <span className="file-row__icon"><FileText /></span>
-                    <div className="grow">
-                      <div className="strong">{f.name}</div>
-                      <div className="xs muted">{formatFileSize(f.sizeKb)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+                >
+                  Withdraw
+                </Button>
+              ) : null}
+            </div>
+          </form>
         </div>
 
-        <div className="stack" style={{ ['--gap' as string]: '20px' }}>
-          <Card title="Details">
-            <dl className="kv">
-              <dt>Course</dt>
-              <dd>{course.title}</dd>
-              <dt>Deadline</dt>
-              <dd>{formatDateTime(assignment.dueDate)}</dd>
-              <dt>Time Remaining</dt>
-              <dd className={cx(days >= 0 && days <= 3 && editable && 'tag--urgent')}>{days < 0 ? "Overdue" : relativeDue(assignment.dueDate)}</dd>
-              <dt>Maximum Score</dt>
-              <dd>{assignment.maxScore}</dd>
-              <dt>Files</dt>
-              <dd>{assignment.allowFiles ? "Allowed" : "Not Required"}</dd>
-              <dt>Status</dt>
-              <dd>{status && <StatusBadge status={status} />}</dd>
-            </dl>
-          </Card>
-          <Card title="Teacher">
-            <Person name={fullName(teacher)} sub={teacher?.title} size={42} />
-            <Button variant="secondary" block style={{ marginTop: 16 }} onClick={() => toast.info("Message", "Messages are not sent in this demo.")}>Ask Your Instructor</Button>
-          </Card>
-        </div>
-      </div>
+        {/* Side column */}
+        <aside aria-label="Status" className="sl-detail__side">
+          <div className="sl-card sl-timeline">
+            <h2>Progress</h2>
+            <ol>
+              {timeline.map((t, i) => (
+                <li key={t.label} className={cx('sl-tl', `is-${t.state}`)} aria-current={t.state === 'current' ? 'step' : undefined}>
+                  <span className="sl-tl__rail">
+                    <span className="sl-tl__dot"><t.icon aria-hidden="true" /></span>
+                    {i < timeline.length - 1 && <span className="sl-tl__line" />}
+                  </span>
+                  <span className="sl-tl__text">
+                    <span className="sl-tl__label">{t.label}</span>
+                    <span className="sl-tl__when">{t.when}</span>
+                  </span>
+                  {t.state === 'current' && <span className="sl-tl__now">Now</span>}
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div className="sl-card sl-teacher">
+            <Avatar name={teacherName} size={52} />
+            <span className="sl-teacher__text">
+              <b>{teacherName}</b>
+              <span><Presentation aria-hidden="true" />Teacher</span>
+            </span>
+            <Button variant="secondary" icon={<MessageSquare />} onClick={() => toast.info('Message', 'Not sent in the demo.')}>Ask</Button>
+          </div>
+        </aside>
+      </section>
 
       <ConfirmDialog
         open={confirm}
         onClose={() => setConfirm(false)}
         onConfirm={submit}
         tone="warning"
-        title="Submit your assignment?"
-        text={`Your response will be marked as ready for review. Attached files: ${files.length}. Response length: ${words} words. Nothing is sent in this demo.`}
+        title="Submit your work?"
+        text={`${files.length} file(s), ${words} words. Nothing is sent in this demo.`}
         confirmLabel="Submit"
       />
     </>

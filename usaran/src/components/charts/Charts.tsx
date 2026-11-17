@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Card, DemoFlag } from '../ui/Misc';
 
-/* Chart palette — brand navy first, then hues far enough apart to tell series apart. */
-export const CHART_COLORS = ['#0f1e3d', '#e2742c', '#0e8754', '#6a4ee0', '#0f7aae', '#966900'];
+/* Chart palette: navy first, then blues only (calm palette). */
+export const CHART_COLORS = ['#0f1e3d', '#4a5bd0', '#aeb8ee', '#24365f', '#8c99ec', '#cdd3f3'];
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -75,7 +75,7 @@ export function BarChart({ labels, series, height = 220, max, suffix = '', highl
                   const x = gx + si * (barW + barGap);
                   const y = pad.t + innerH - h;
                   const base = s.color ?? CHART_COLORS[si % CHART_COLORS.length];
-                  const fill = highlightLast && series.length === 1 && i !== labels.length - 1 ? '#dce0f2' : base;
+                  const fill = highlightLast && series.length === 1 && i !== labels.length - 1 ? '#cdd3f3' : base;
                   return (
                     <rect
                       key={s.name}
@@ -85,7 +85,7 @@ export function BarChart({ labels, series, height = 220, max, suffix = '', highl
                       height={Math.max(h, v > 0 ? 2 : 0)}
                       rx={Math.min(8, barW / 2.5)}
                       fill={fill}
-                      onMouseEnter={() => setTip({ x: x + barW / 2, y, text: `${series.length > 1 ? s.name + '՝ ' : label + '՝ '}${v}${suffix}` })}
+                      onMouseEnter={() => setTip({ x: x + barW / 2, y, text: `${series.length > 1 ? s.name + ': ' : label + ': '}${v}${suffix}` })}
                       onMouseLeave={() => setTip(null)}
                     />
                   );
@@ -177,7 +177,7 @@ export function LineChart({ labels, series, height = 240, max, min = 0, suffix =
           <strong>{labels[hover]}</strong>
           {series.map((s) => (
             <div key={s.name}>
-              {series.length > 1 ? `${s.name}՝ ` : ''}
+              {series.length > 1 ? `${s.name}: ` : ''}
               {s.values[hover]}
               {suffix}
             </div>
@@ -222,8 +222,8 @@ export function DonutChart({ segments, size = 160, thickness = 22, center }: { s
   return (
     <div className="row" style={{ ['--gap' as string]: '24px', flexWrap: 'wrap' }}>
       <div className="ring" style={{ width: size, height: size }}>
-        <svg width={size} height={size} role="img" aria-label={segments.map((s) => `${s.label}՝ ${s.value}`).join(', ')}>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eceef3" strokeWidth={thickness} />
+        <svg width={size} height={size} role="img" aria-label={segments.map((s) => `${s.label}: ${s.value}`).join(', ')}>
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef0f4" strokeWidth={thickness} />
           {segments.map((s) => {
             const len = (s.value / total) * c;
             const el = <circle key={s.label} cx={size / 2} cy={size / 2} r={r} fill="none" stroke={s.color} strokeWidth={thickness} strokeDasharray={`${Math.max(0, len - 2)} ${c}`} strokeDashoffset={-offset} />;

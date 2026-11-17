@@ -1,101 +1,195 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { BookMarked, CheckSquare, ChevronDown, Compass, GraduationCap, HeartHandshake, LineChart, ShieldCheck, Users } from 'lucide-react';
-import { ButtonLink } from '../../components/ui/Button';
-import { Breadcrumbs } from '../../components/ui/Misc';
-import { cx } from '../../lib/format';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  ArrowLeft, ArrowRight, BookMarked, Check, ChartColumn, ChartLine, CirclePlay, ClipboardList, Clock, FileQuestionMark, Globe, GraduationCap, Heart,
+  Layers, LayoutDashboard, LibraryBig, ListChecks, MessageSquare, Paperclip, Play, Presentation, ShieldCheck, Sparkles, Timer, Users,
+} from 'lucide-react';
+import { categories, publishedCourses } from '../../data/courses';
+import { fullName, teachers } from '../../data/users';
+import { CATEGORY_ICONS, SCENES, photoFor } from '../../lib/visual';
+
+const HERO_CHIPS = [
+  { label: 'Lessons', icon: CirclePlay },
+  { label: 'Tasks', icon: ClipboardList },
+  { label: 'Quizzes', icon: FileQuestionMark },
+  { label: 'Grades', icon: GraduationCap },
+];
+
+const VALUES = [
+  { tag: 'Mission', title: 'Learn from anywhere', icon: Globe },
+  { tag: 'Transparency', title: 'Clear deadlines and grading', icon: ShieldCheck },
+  { tag: 'Support', title: 'Help right on time', icon: Heart },
+];
+
+const SIDES = [
+  {
+    id: 'students',
+    title: 'For students',
+    icon: GraduationCap,
+    img: SCENES.study,
+    items: [
+      { label: 'Modules and short lessons', icon: BookMarked },
+      { label: 'Tasks with files', icon: Paperclip },
+      { label: 'Grades and progress charts', icon: ChartLine },
+    ],
+    btn: 'Student demo',
+    to: '/student/dashboard',
+  },
+  {
+    id: 'teachers',
+    title: 'For teachers',
+    icon: Presentation,
+    img: SCENES.video,
+    items: [
+      { label: 'Course builder', icon: Layers },
+      { label: 'One grading center', icon: ListChecks },
+      { label: 'Reports by course and date', icon: ChartColumn },
+    ],
+    btn: 'Teacher demo',
+    to: '/teacher/dashboard',
+  },
+];
 
 const FAQ = [
-  ["Is this a live learning platform?", "This is a demo interface with sample data. Registrations, sign-ins, submissions, and grades are not saved or sent to a server."],
-  ["How can I explore the student and instructor areas?", "Choose Student or Instructor on the sign-in page, or use the Student / Instructor switch at the top of any dashboard page."],
-  ["How long does a course take?", "Courses range from 8 to 44 hours. You can learn at your own pace, although assignments have deadlines."],
-  ["How is work graded?", "Instructors grade practical assignments and provide feedback. Quizzes are graded automatically, with results available immediately."],
-  ["Can I learn on my phone?", "Yes. The interface adapts to screens of all sizes."],
+  { title: 'Demo with sample data', icon: Sparkles },
+  { title: 'Switch roles anytime', icon: Users },
+  { title: 'Quiz results instantly', icon: Timer },
+  { title: 'Teacher feedback on tasks', icon: MessageSquare },
+  { title: 'Works on any screen', icon: LayoutDashboard },
 ];
 
 export function AboutPage() {
   const { hash } = useLocation();
-  const [openFaq, setOpenFaq] = useState(0);
 
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' });
   }, [hash]);
 
+  const hours = publishedCourses.map((c) => c.durationHours);
+  const minH = hours.length ? Math.min(...hours) : 0;
+  const maxH = hours.length ? Math.max(...hours) : 0;
+  const stats = [
+    { value: String(publishedCourses.length), unit: '', label: 'Courses', icon: LibraryBig },
+    { value: String(categories.length), unit: '', label: 'Subjects', icon: Layers },
+    { value: String(teachers.length), unit: '', label: 'Teachers', icon: Presentation },
+    { value: minH === maxH ? String(minH) : `${minH}–${maxH}`, unit: ' h', label: 'Per course', icon: Clock },
+  ];
+
   return (
-    <>
-      <section className="page-band">
-        <div className="container">
-        <Breadcrumbs items={[{ label: "Home", to: '/' }, { label: "About" }]} />
-        <h1 style={{ maxWidth: 860 }}>One place to <span className="hl">learn and teach</span></h1>
-        <p className="page-band__lead" style={{ maxWidth: 680 }}>We bring course materials, assignments, quizzes, and grades together so students can focus on learning and instructors can focus on supporting them.</p>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container grid grid-3">
-          {[
-            [Compass, "Our Mission", "Make quality learning accessible, wherever you are and whatever your schedule.", 't-sky'],
-            [ShieldCheck, "Transparency", "Students always know what is expected, when work is due, and how it will be graded.", 't-mint'],
-            [HeartHandshake, "Support", "Instructors can spot students who need help and offer support in time.", 't-rose'],
-          ].map(([Icon, t, d, tint]) => {
-            const I = Icon as typeof Compass;
-            return (
-              <div key={t as string} className={`value-card ${tint as string}`}>
-                <span className="tint-box" style={{ ['--box' as string]: '52px' }}><I aria-hidden="true" /></span>
-                <h2 style={{ fontSize: 'var(--fs-md)', margin: '14px 0 6px' }}>{t as string}</h2>
-                <p className="small secondary">{d as string}</p>
+    <div className="pub-page">
+      <div className="pub-wrap pub-about">
+        {/* Photo hero */}
+        <section className="pub-ahero">
+          <img src={SCENES.teacher} alt="An instructor teaching in a lecture hall" />
+          <div className="pub-ahero__scrim" aria-hidden="true" />
+          <div className="pub-ahero__inner">
+            <Link to="/" className="pub-glass pub-glass--link"><ArrowLeft aria-hidden="true" />Home</Link>
+            <div className="pub-ahero__copy">
+              <h1>Learn and teach</h1>
+              <div className="pub-chips">
+                {HERO_CHIPS.map((h) => (
+                  <span key={h.label} className="pub-glass pub-glass--lg"><h.icon aria-hidden="true" />{h.label}</span>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="section" style={{ paddingTop: 0 }}>
-        <div className="container grid grid-2" style={{ ['--gap' as string]: '22px' }}>
-          <div className="card card--pad">
-            <div className="row" style={{ marginBottom: 14 }}>
-              <span className="tint-box t-sky"><GraduationCap /></span>
-              <h2>For Students</h2>
             </div>
-            <ul className="check-list">
-              <li><BookMarked aria-hidden="true" />Courses organized into modules and short lessons</li>
-              <li><CheckSquare aria-hidden="true" />Assignments with text responses and file attachments</li>
-              <li><LineChart aria-hidden="true" />Grades, quiz results, and progress charts</li>
-            </ul>
-            <ButtonLink to="/student/dashboard" variant="secondary" style={{ marginTop: 18 }}>Try the Student Experience</ButtonLink>
+            <Link to="/courses" className="pub-btn pub-btn--light pub-btn--md">Browse courses<ArrowRight aria-hidden="true" /></Link>
           </div>
-          <div className="card card--pad" id="teachers">
-            <div className="row" style={{ marginBottom: 14 }}>
-              <span className="tint-box t-lilac"><Users /></span>
-              <h2>For teachers</h2>
-            </div>
-            <ul className="check-list">
-              <li><BookMarked aria-hidden="true" />Manage course structure and content</li>
-              <li><CheckSquare aria-hidden="true" />Review all submissions in one grading center</li>
-              <li><LineChart aria-hidden="true" />View reports by course, student, and date range</li>
-            </ul>
-            <ButtonLink to="/teacher/dashboard" variant="secondary" style={{ marginTop: 18 }}>Try the Instructor Experience</ButtonLink>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="section section--muted" id="faq">
-        <div className="container" style={{ maxWidth: 820 }}>
-          <span className="kicker">Questions</span>
-          <h2 className="section-head__title" style={{ margin: '10px 0 24px' }}>Frequently Asked <span className="hl">Questions</span></h2>
-          <div className="card faq">
-            {FAQ.map(([q, a], i) => (
-              <div key={q} className="faq__item">
-                <button type="button" className="faq__q" aria-expanded={openFaq === i} onClick={() => setOpenFaq(openFaq === i ? -1 : i)}>
-                  {q}
-                  <ChevronDown className={cx('chev', openFaq === i && 'is-open')} aria-hidden="true" />
-                </button>
-                {openFaq === i && <p className="faq__a">{a}</p>}
+        {/* Big numbers */}
+        <section aria-label="LearnSpace in numbers" className="pub-grid pub-grid--230">
+          {stats.map((s) => (
+            <div key={s.label} className="pub-stat">
+              <span className="pub-ibox pub-ibox--56" aria-hidden="true"><s.icon /></span>
+              <span className="pub-stat__text">
+                <span className="pub-stat__value tabular">{s.value}{s.unit && <span>{s.unit}</span>}</span>
+                <span className="pub-stat__label">{s.label}</span>
+              </span>
+            </div>
+          ))}
+        </section>
+
+        {/* Values */}
+        <section aria-labelledby="values-h" className="pub-section">
+          <h2 id="values-h" className="pub-h2 pub-h2--sm">What we stand for</h2>
+          <div className="pub-grid pub-grid--300">
+            {VALUES.map((v) => (
+              <div key={v.tag} className="pub-value">
+                <span className="pub-ibox pub-ibox--72" aria-hidden="true"><v.icon /></span>
+                <span className="pub-value__text">
+                  <span className="pub-value__tag">{v.tag}</span>
+                  <b>{v.title}</b>
+                </span>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-    </>
+        </section>
+
+        {/* For students / For teachers */}
+        <section className="pub-grid pub-grid--420 pub-sides">
+          {SIDES.map((g) => (
+            <div key={g.id} id={g.id} className="pub-side">
+              <div className="pub-side__media">
+                <img src={g.img} alt="" loading="lazy" />
+                <span className="pub-tile__scrim" aria-hidden="true" />
+                <span className="pub-side__title">
+                  <span className="pub-ibox pub-ibox--white" aria-hidden="true"><g.icon /></span>
+                  <b>{g.title}</b>
+                </span>
+              </div>
+              <div className="pub-side__body">
+                {g.items.map((it) => (
+                  <div key={it.label} className="pub-side__item">
+                    <span className="pub-ibox pub-ibox--white pub-ibox--44" aria-hidden="true"><it.icon /></span>
+                    <b>{it.label}</b>
+                    <Check className="pub-side__check" aria-hidden="true" />
+                  </div>
+                ))}
+                <Link to={g.to} className="pub-btn pub-btn--dark pub-btn--sm"><Play aria-hidden="true" />{g.btn}</Link>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        {/* Team */}
+        <section aria-labelledby="team-h" className="pub-section">
+          <h2 id="team-h" className="pub-h2 pub-h2--sm">Our teachers</h2>
+          <div className="pub-grid pub-grid--190">
+            {teachers.map((t) => {
+              const name = fullName(t);
+              const photo = photoFor(name);
+              const first = publishedCourses.find((c) => c.teacherId === t.id);
+              const RoleIcon = first ? CATEGORY_ICONS[first.category] : GraduationCap;
+              return (
+                <div key={t.id} className="pub-member">
+                  {photo ? (
+                    <img src={photo} alt={name} loading="lazy" className="pub-member__photo" />
+                  ) : (
+                    <span className="pub-member__photo pub-initials" role="img" aria-label={name}>{t.firstName[0]}{t.lastName[0]}</span>
+                  )}
+                  <span className="pub-member__text">
+                    <b>{name}</b>
+                    <span className="pub-chip pub-chip--sm"><RoleIcon aria-hidden="true" />{(t.title ?? 'Teacher').split(',')[0]}</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Good to know */}
+        <section id="faq" aria-labelledby="faq-h" className="pub-section">
+          <h2 id="faq-h" className="pub-h2 pub-h2--sm">Good to know</h2>
+          <div className="pub-grid pub-grid--200 pub-faq">
+            {FAQ.map((f) => (
+              <div key={f.title} className="pub-fact">
+                <span className="pub-ibox pub-ibox--48" aria-hidden="true"><f.icon /></span>
+                <b>{f.title}</b>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }

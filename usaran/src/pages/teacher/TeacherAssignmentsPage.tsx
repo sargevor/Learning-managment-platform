@@ -1,26 +1,33 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ClipboardList, ClipboardPlus, Inbox, MoreHorizontal, Pencil, Trash2, Users } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Check, ChevronRight, ClipboardList, Clock, Ellipsis, FilePlus, Inbox, Layers, Lock, Pencil, Presentation, Search, SquareCheckBig, Trash2, Users } from 'lucide-react';
 import type { Assignment } from '../../types';
 import { submissionsFor, teacherAssignments } from '../../data/assignments';
 import { getCourse } from '../../data/courses';
-import { teacherCourses } from '../../data/teacherView';
+import { studentsInCourse, teacherCourses } from '../../data/teacherView';
+import { fullName, getUser } from '../../data/users';
 import { useToast } from '../../context/ToastContext';
+import { ShellTitle } from '../../components/layout/AppShell';
+import { CourseIcon, courseShort, todayLabel } from '../../components/course/GradingPanel';
 import { Button } from '../../components/ui/Button';
-import { DataTable } from '../../components/ui/DataTable';
 import { Checkbox, Input, Select, Textarea } from '../../components/ui/Field';
-import { EmptyState, PageHeader, Segmented } from '../../components/ui/Misc';
+import { Avatar, EmptyState } from '../../components/ui/Misc';
 import { ConfirmDialog, Dropdown, Modal } from '../../components/ui/Overlay';
-import { SearchBar } from '../../components/ui/SearchBar';
-import { Badge } from '../../components/ui/Badge';
-import { StatCard } from '../../components/ui/StatCard';
-import { daysUntil, formatDateTime, relativeDue } from '../../lib/format';
+import { DateBlock } from '../../components/ui/Visual';
+import { cx, daysUntil } from '../../lib/format';
 
 const empty = (): Assignment => ({ id: '', courseId: teacherCourses[0].id, title: '', summary: '', instructions: [], requirements: [], dueDate: '2026-10-30T23:59', maxScore: 100, allowFiles: true, createdAt: '2026-10-15' });
 
+/** Hand-in numbers for one assignment, from the class submissions. */
+function classStats(a: Assignment) {
+  const handed = submissionsFor(a.id).filter((s) => s.status !== 'draft');
+  const ids = new Set(handed.map((s) => s.studentId));
+  const missing = studentsInCourse(a.courseId).filter((s) => !ids.has(s.userId) && s.userId !== 's1').length;
+  return { handed, total: handed.length + missing, toGrade: handed.filter((s) => s.status === 'submitted').length };
+}
+
 export function TeacherAssignmentsPage() {
   const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
   const toast = useToast();
   const [list, setList] = useState<Assignment[]>(teacherAssignments);
   const [course, setCourse] = useState('all');
@@ -52,11 +59,11 @@ export function TeacherAssignmentsPage() {
   const save = () => {
     if (!form) return;
     const n: Record<string, string> = {};
-    if (form.a.title.trim().length < 4) n.title = "Enter an assignment title";
-    if (!form.instructions.trim()) n.instructions = "Add at least one instruction";
-    if (!form.a.dueDate) n.dueDate = "Select a deadline";
-    else if (daysUntil(form.a.dueDate) < 0) n.dueDate = "The deadline cannot be in the past";
-    if (!form.a.maxScore || form.a.maxScore < 1 || form.a.maxScore > 1000) n.maxScore = "Enter a score between 1 and 1000";
+    if (form.a.title.trim().length < 4) n.title = 'Enter a title';
+    if (!form.instructions.trim()) n.instructions = 'Add at least one step';
+    if (!form.a.dueDate) n.dueDate = 'Select a deadline';
+    else if (daysUntil(form.a.dueDate) < 0) n.dueDate = 'Deadline is in the past';
+    if (!form.a.maxScore || form.a.maxScore < 1 || form.a.maxScore > 1000) n.maxScore = 'Use 1–1000';
     setErrors(n);
     if (Object.keys(n).length) return;
     const a: Assignment = {
@@ -66,93 +73,150 @@ export function TeacherAssignmentsPage() {
       requirements: form.requirements.split('\n').map((s) => s.trim()).filter(Boolean),
     };
     setList((l) => (form.a.id ? l.map((x) => (x.id === a.id ? a : x)) : [a, ...l]));
-    toast.success(form.a.id ? "Assignment updated" : "Assignment created", "Demo: students will not receive a notification.");
+    toast.success(form.a.id ? 'Task updated' : 'Task created', 'Demo: students are not notified.');
     closeForm();
   };
 
-  const allSubs = list.flatMap((a) => submissionsFor(a.id));
+  const chipCourses = teacherCourses.filter((c) => c.id === course || list.some((a) => a.courseId === c.id));
+  const open = rows.filter((a) => daysUntil(a.dueDate) >= 0).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  const closed = rows.filter((a) => daysUntil(a.dueDate) < 0).sort((a, b) => b.dueDate.localeCompare(a.dueDate));
+  const groups = [
+    { key: 'open', title: 'Open', icon: <Clock aria-hidden="true" />, rows: open },
+    { key: 'closed', title: 'Closed', icon: <Lock aria-hidden="true" />, rows: closed },
+  ].filter((g) => g.rows.length > 0);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[{ label: "Dashboard", to: '/teacher/dashboard' }, { label: "Assignments" }]}
-        title="Manage Assignments"
-        description="Create and edit assignments, track submissions, and review student work."
-        actions={<Button icon={<ClipboardPlus />} onClick={() => openForm()}>New Assignment</Button>}
+    <div className="tw-page">
+      <ShellTitle
+        title="Tasks"
+        meta={
+          <>
+            <Presentation aria-hidden="true" />
+            <b>{teacherCourses.length} courses</b>
+            <span className="tw-dot" aria-hidden="true" />
+            {todayLabel()}
+          </>
+        }
       />
 
-      <div className="grid grid-4 mb-20">
-        <StatCard label="Assignments" value={list.length} icon={<ClipboardList />} />
-        <StatCard label="Active" value={list.filter((a) => daysUntil(a.dueDate) >= 0).length} icon={<ClipboardList />} tone="success" meta="deadline has not passed" />
-        <StatCard label="Total Submissions" value={allSubs.length} icon={<Inbox />} tone="navy" />
-        <StatCard label="Awaiting grading" value={allSubs.filter((s) => s.status === 'submitted').length} icon={<Users />} tone="warning" meta={<Link to="/teacher/grading">Grading center</Link>} />
-      </div>
-
-      <div className="card">
-        <div className="filters-bar" style={{ padding: 16 }}>
-          <SearchBar value={q} onChange={setQ} placeholder="Search assignments" />
-          <Select aria-label="Course" value={course} onChange={(e) => setCourse(e.target.value)} options={[{ value: 'all', label: "All Courses" }, ...teacherCourses.map((c) => ({ value: c.id, label: c.title }))]} />
-          <Segmented label="Status" value={state} onChange={setState} items={[{ key: 'all', label: "All" }, { key: 'open', label: "Active" }, { key: 'closed', label: "Closed" }]} />
+      <section className="tw-toolbar" aria-label="Filters">
+        <div className="tw-chipbar" role="group" aria-label="Course">
+          <button type="button" className="tw-fchip" aria-pressed={course === 'all'} onClick={() => setCourse('all')}>
+            <Layers aria-hidden="true" />All<span className="tw-fchip__n">{list.length}</span>
+          </button>
+          {chipCourses.map((c) => (
+            <button key={c.id} type="button" className="tw-fchip" aria-pressed={course === c.id} onClick={() => setCourse(c.id)} title={c.title}>
+              <CourseIcon id={c.id} size={17} />
+              {courseShort(c.id)}
+              <span className="tw-fchip__n">{list.filter((a) => a.courseId === c.id).length}</span>
+            </button>
+          ))}
         </div>
-        <DataTable<Assignment>
-          caption="Assignments"
-          rows={rows}
-          rowKey={(a) => a.id}
-          onRowClick={(a) => navigate(`/teacher/assignments/${a.id}/submissions`)}
-          initialSort={{ key: 'due', dir: 'desc' }}
-          empty={<EmptyState icon={<ClipboardList size={24} />} title="No assignments found" text="Change your filters or create a new assignment." action={<Button variant="secondary" onClick={() => openForm()}>New Assignment</Button>} />}
-          columns={[
-            { key: 'title', header: "Assignment", sortValue: (a) => a.title, render: (a) => <><div className="cell-title">{a.title}</div><div className="cell-sub">{getCourse(a.courseId)?.title}</div></> },
-            { key: 'due', header: "Deadline", sortValue: (a) => a.dueDate, render: (a) => <><div className="nowrap">{formatDateTime(a.dueDate)}</div><div className="cell-sub">{relativeDue(a.dueDate)}</div></> },
-            { key: 'state', header: "Status", render: (a) => (daysUntil(a.dueDate) >= 0 ? <Badge tone="success" dot>Active</Badge> : <Badge dot>Closed</Badge>) },
-            {
-              key: 'subs',
-              header: "Submitted Assignments",
-              sortValue: (a) => submissionsFor(a.id).length,
-              render: (a) => {
-                const s = submissionsFor(a.id);
-                const pending = s.filter((x) => x.status === 'submitted').length;
-                return (
-                  <div className="row" style={{ ['--gap' as string]: '8px' }}>
-                    <span className="tabular">{s.length}</span>
-                    {pending > 0 && <Badge tone="warning">{pending} ungraded</Badge>}
-                  </div>
-                );
-              },
-            },
-            { key: 'max', header: "Score", align: 'right', sortValue: (a) => a.maxScore, render: (a) => a.maxScore },
-            {
-              key: 'act',
-              header: '',
-              render: (a) => (
-                <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                  <Dropdown trigger={({ toggle, open }) => <button type="button" className="icon-btn" onClick={toggle} aria-expanded={open} aria-label={`Actions: ${a.title}`}><MoreHorizontal /></button>}>
-                    {(close) => (
-                      <>
-                        <Link className="dropdown__item" to={`/teacher/assignments/${a.id}/submissions`} onClick={close}><Inbox />Submitted Assignments</Link>
-                        <button type="button" className="dropdown__item" onClick={() => { openForm(a); close(); }}><Pencil />Edit</button>
-                        <div className="dropdown__sep" />
-                        <button type="button" className="dropdown__item dropdown__item--danger" onClick={() => { setToDelete(a); close(); }}><Trash2 />Delete</button>
-                      </>
+        <label className="tw-search">
+          <Search aria-hidden="true" />
+          <input type="search" aria-label="Search tasks" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
+        </label>
+        <div className="tw-seg" role="tablist" aria-label="Status">
+          {(['all', 'open', 'closed'] as const).map((k) => (
+            <button key={k} type="button" role="tab" aria-selected={state === k} onClick={() => setState(k)}>
+              {k === 'all' ? 'All' : k === 'open' ? 'Open' : 'Closed'}
+            </button>
+          ))}
+        </div>
+        <button type="button" className="tw-btn tw-btn--primary" onClick={() => openForm()}>
+          <FilePlus aria-hidden="true" />New task
+        </button>
+      </section>
+
+      {groups.length === 0 && (
+        <div className="tw-card">
+          <EmptyState icon={<ClipboardList size={24} />} title="No tasks found" action={<Button variant="secondary" icon={<FilePlus />} onClick={() => openForm()}>New task</Button>} />
+        </div>
+      )}
+
+      {groups.map((g) => (
+        <section key={g.key} className="tw-group" aria-label={`${g.title} tasks`}>
+          <h2 className="tw-h2">
+            <span className="tw-h2__icon">{g.icon}</span>
+            {g.title}
+            <span className="tw-h2__n">{g.rows.length}</span>
+          </h2>
+          <div className="tw-rows">
+            {g.rows.map((a) => {
+              const isClosed = g.key === 'closed';
+              const st = classStats(a);
+              const faces = st.handed.slice(0, 3).map((s) => fullName(getUser(s.studentId)));
+              const more = st.handed.length - faces.length;
+              const pct = st.total ? Math.round((st.handed.length / st.total) * 100) : 0;
+              return (
+                <div key={a.id} className="tw-arow v-lift">
+                  <span className="tw-arow__main">
+                    <span className="tw-ibox"><CourseIcon id={a.courseId} size={22} /></span>
+                    <span className="tw-arow__text">
+                      <Link to={`/teacher/assignments/${a.id}/submissions`} className="tw-arow__title tw-stretch" aria-label={`${a.title}, ${st.handed.length} of ${st.total} submitted`}>
+                        {a.title}
+                      </Link>
+                      <span className="tw-arow__sub">
+                        <span className="tw-ell">{getCourse(a.courseId)?.title}</span>
+                        <span className="tw-dot" aria-hidden="true" />
+                        <span className="tw-nowrap">{a.maxScore} pts</span>
+                      </span>
+                    </span>
+                  </span>
+                  <span className={cx('tw-arow__date', isClosed && 'is-closed')}>
+                    <DateBlock date={a.dueDate} />
+                  </span>
+                  <span className="tw-arow__sub-count">
+                    <span className="tw-arow__count"><b>{st.handed.length}/{st.total}</b><span>submitted</span></span>
+                    <span className="tw-bar" aria-hidden="true"><span style={{ width: `${pct}%` }} /></span>
+                  </span>
+                  <span className="tw-arow__state">
+                    {st.toGrade > 0 && (
+                      <span className="tw-pill tw-pill--blue"><SquareCheckBig aria-hidden="true" />{st.toGrade} to grade</span>
                     )}
-                  </Dropdown>
+                    {st.toGrade === 0 && isClosed && st.handed.length > 0 && (
+                      <span className="tw-pill tw-pill--soft"><Check aria-hidden="true" />Graded</span>
+                    )}
+                  </span>
+                  <span className="tw-arow__faces">
+                    {st.handed.length === 0 ? (
+                      <span className="tw-none"><Users aria-hidden="true" />None yet</span>
+                    ) : (
+                      <span className="tw-faces">
+                        {faces.map((n, i) => <Avatar key={`${n}-${i}`} name={n} size={34} />)}
+                        {more > 0 && <span className="tw-faces__more">+{more}</span>}
+                      </span>
+                    )}
+                  </span>
+                  <span className="tw-arow__end">
+                    <Dropdown trigger={({ toggle, open: isOpen }) => <button type="button" className="tw-iconbtn" onClick={toggle} aria-expanded={isOpen} aria-label={`Actions: ${a.title}`}><Ellipsis aria-hidden="true" /></button>}>
+                      {(close) => (
+                        <>
+                          <Link className="dropdown__item" to={`/teacher/assignments/${a.id}/submissions`} onClick={close}><Inbox />Submissions</Link>
+                          <button type="button" className="dropdown__item" onClick={() => { openForm(a); close(); }}><Pencil />Edit</button>
+                          <div className="dropdown__sep" />
+                          <button type="button" className="dropdown__item dropdown__item--danger" onClick={() => { setToDelete(a); close(); }}><Trash2 />Delete</button>
+                        </>
+                      )}
+                    </Dropdown>
+                    <ChevronRight className="tw-chev" aria-hidden="true" />
+                  </span>
                 </div>
-              ),
-            },
-          ]}
-        />
-      </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
 
       <Modal
         open={!!form}
         onClose={closeForm}
         size="lg"
-        title={form?.a.id ? "Edit Assignment" : "New Assignment"}
-        description="Students will see the instructions, requirements, and deadline."
+        title={form?.a.id ? 'Edit task' : 'New task'}
         footer={
           <>
             <Button variant="secondary" onClick={closeForm}>Cancel</Button>
-            <Button onClick={save}>{form?.a.id ? "Save Changes" : "Create Assignment"}</Button>
+            <Button icon={<Check />} onClick={save}>{form?.a.id ? 'Save' : 'Create'}</Button>
           </>
         }
       >
@@ -162,14 +226,14 @@ export function TeacherAssignmentsPage() {
               <Select label="Course" value={form.a.courseId} onChange={(e) => setA({ courseId: e.target.value })} options={teacherCourses.map((c) => ({ value: c.id, label: c.title }))} />
               <Input label="Title" required value={form.a.title} onChange={(e) => setA({ title: e.target.value })} error={errors.title} />
             </div>
-            <Textarea label="Short Description" rows={2} value={form.a.summary} onChange={(e) => setA({ summary: e.target.value })} style={{ minHeight: 64 }} />
-            <Textarea label="Instructions" required rows={4} value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} error={errors.instructions} hint="Put each step on a new line" />
-            <Textarea label="Requirements" rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} hint="Put each requirement on a new line" style={{ minHeight: 80 }} />
+            <Textarea label="Summary" rows={2} value={form.a.summary} onChange={(e) => setA({ summary: e.target.value })} style={{ minHeight: 64 }} />
+            <Textarea label="Steps" required rows={4} value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} error={errors.instructions} hint="One per line" />
+            <Textarea label="Requirements" rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} hint="One per line" style={{ minHeight: 80 }} />
             <div className="grid grid-2" style={{ ['--gap' as string]: '14px' }}>
               <Input label="Deadline" type="datetime-local" required value={form.a.dueDate} onChange={(e) => setA({ dueDate: e.target.value })} error={errors.dueDate} />
-              <Input label="Maximum Score" type="number" min={1} max={1000} required value={form.a.maxScore} onChange={(e) => setA({ maxScore: Number(e.target.value) })} error={errors.maxScore} />
+              <Input label="Max score" type="number" min={1} max={1000} required value={form.a.maxScore} onChange={(e) => setA({ maxScore: Number(e.target.value) })} error={errors.maxScore} />
             </div>
-            <Checkbox label="Allow File Attachments" checked={form.a.allowFiles} onChange={(e) => setA({ allowFiles: e.target.checked })} />
+            <Checkbox label="Allow files" checked={form.a.allowFiles} onChange={(e) => setA({ allowFiles: e.target.checked })} />
           </div>
         )}
       </Modal>
@@ -180,12 +244,12 @@ export function TeacherAssignmentsPage() {
         onConfirm={() => {
           if (!toDelete) return;
           setList((l) => l.filter((a) => a.id !== toDelete.id));
-          toast.success("Assignment deleted", "Changes are kept only on this page.");
+          toast.success('Task deleted', 'Changes are kept only on this page.');
         }}
-        title="Delete this assignment?"
-        text={toDelete ? `Delete ${toDelete.title} and its ${submissionsFor(toDelete.id).length} submissions?` : ''}
+        title="Delete this task?"
+        text={toDelete ? `${toDelete.title} and its ${submissionsFor(toDelete.id).length} submissions will be removed.` : ''}
         confirmLabel="Delete"
       />
-    </>
+    </div>
   );
 }

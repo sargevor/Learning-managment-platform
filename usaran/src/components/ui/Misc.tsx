@@ -65,6 +65,7 @@ export interface TabItem<K extends string = string> {
   key: K;
   label: string;
   count?: number;
+  icon?: ReactNode;
 }
 
 export function Tabs<K extends string>({ items, value, onChange, label = "Sections" }: { items: TabItem<K>[]; value: K; onChange: (k: K) => void; label?: string }) {
@@ -72,6 +73,7 @@ export function Tabs<K extends string>({ items, value, onChange, label = "Sectio
     <div className="tabs" role="tablist" aria-label={label}>
       {items.map((t) => (
         <button key={t.key} type="button" role="tab" className="tabs__tab" aria-selected={value === t.key} onClick={() => onChange(t.key)}>
+          {t.icon && <span className="tabs__icon" aria-hidden="true">{t.icon}</span>}
           {t.label}
           {t.count !== undefined && <span className="tabs__count">{t.count}</span>}
         </button>

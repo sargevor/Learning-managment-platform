@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ChevronLeft, ChevronRight, Clock, Flag, HelpCircle, ListChecks, Repeat, Timer } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Bookmark, Calendar, Check, ChevronLeft, ChevronRight, CircleCheck, Clock, Eye, ListChecks, Play, RotateCcw, Send, Star, Target, Timer, TriangleAlert } from 'lucide-react';
 import { getQuiz, quizMaxScore, scoreAnswers, attemptsFor } from '../../data/quizzes';
 import { getCourse } from '../../data/courses';
 import { isEnrolled } from '../../data/enrollments';
 import { useDemoSession } from '../../context/DemoSession';
 import { useToast } from '../../context/ToastContext';
+import { ShellTitle } from '../../components/layout/AppShell';
 import { Button, ButtonLink } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
-import { Card, EmptyState, Notice, PageHeader } from '../../components/ui/Misc';
+import { EmptyState } from '../../components/ui/Misc';
 import { ConfirmDialog } from '../../components/ui/Overlay';
-import { ProgressBar } from '../../components/ui/Progress';
-import { cx, formatDateTime, percent, TODAY } from '../../lib/format';
+import { CATEGORY_ICONS } from '../../lib/visual';
+import { cx, formatShortDate, TODAY } from '../../lib/format';
 
 type Phase = 'intro' | 'taking' | 'review';
-const LETTERS = ["A", "B", "C", "D", "E", "F"];
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 export function QuizPage() {
   const { id } = useParams();
@@ -38,7 +38,7 @@ export function QuizPage() {
 
   useEffect(() => {
     if (phase !== 'intro' && secondsLeft === 0 && quiz) {
-      toast.warning("Time is up", "Your quiz was submitted automatically.");
+      toast.warning('Time is up', 'Your quiz was submitted automatically.');
       finish();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,19 +46,26 @@ export function QuizPage() {
 
   if (!quiz || quiz.status !== 'published' || !isEnrolled(quiz.courseId)) {
     return (
-      <div className="card">
-        <EmptyState title="Quiz unavailable" text="This quiz does not exist or is not published yet." action={<ButtonLink to="/student/quizzes">All Quizzes</ButtonLink>} />
-      </div>
+      <>
+        <ShellTitle title="Quiz" />
+        <div className="card">
+          <EmptyState title="Quiz unavailable" action={<ButtonLink to="/student/quizzes" icon={<ArrowLeft />}>Quizzes</ButtonLink>} />
+        </div>
+      </>
     );
   }
 
   const course = getCourse(quiz.courseId)!;
+  const CatIcon = CATEGORY_ICONS[course.category];
   const prev = attemptsFor(quiz.id);
   const q = quiz.questions[current];
-  const answeredCount = quiz.questions.filter((x) => (answers[x.id] ?? []).length > 0).length;
+  const total = quiz.questions.length;
+  const isAnswered = (qid: string) => (answers[qid] ?? []).length > 0;
+  const answeredCount = quiz.questions.filter((x) => isAnswered(x.id)).length;
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
   const ss = String(secondsLeft % 60).padStart(2, '0');
   const attemptsLeft = quiz.attemptsAllowed - prev.length;
+  const attemptNo = Math.min(prev.length + 1, quiz.attemptsAllowed);
 
   function finish() {
     if (!quiz) return;
@@ -84,208 +91,241 @@ export function QuizPage() {
     });
   };
 
+  const toggleFlag = () =>
+    setFlagged((s) => {
+      const n = new Set(s);
+      if (n.has(q.id)) n.delete(q.id);
+      else n.add(q.id);
+      return n;
+    });
+
+  const title = (
+    <ShellTitle
+      title={quiz.title}
+      meta={
+        <>
+          <CatIcon aria-hidden="true" />
+          <b>{course.title}</b>
+          <span className="sr-dot" aria-hidden="true" />
+          Attempt {attemptNo} of {quiz.attemptsAllowed}
+        </>
+      }
+    />
+  );
+
+  const back = (
+    <Link to="/student/quizzes" className="sr-back">
+      <ArrowLeft aria-hidden="true" />
+      Quizzes
+    </Link>
+  );
+
+  /* ---------- Intro ---------- */
   if (phase === 'intro') {
+    const facts = [
+      { icon: <Timer />, label: `${quiz.timeLimitMin} min` },
+      { icon: <Star />, label: `${quizMaxScore(quiz)} points` },
+      { icon: <Target />, label: `Pass ${quiz.passPercent}%` },
+      { icon: <RotateCcw />, label: `${prev.length}/${quiz.attemptsAllowed} attempts` },
+      { icon: <Calendar />, label: `Due ${formatShortDate(quiz.dueDate)}` },
+    ];
     return (
       <>
-        <PageHeader breadcrumbs={[{ label: "Quizzes", to: '/student/quizzes' }, { label: quiz.title }]} title={quiz.title} description={`${course.title}. ${quiz.description}`} />
-        <div className="grid grid-main-aside">
-          <Card title="Instructions">
-            <ul className="check-list">
-              {quiz.instructions.map((i) => (
-                <li key={i}><ListChecks aria-hidden="true" />{i}</li>
+        {title}
+        <div className="sr-narrow">
+          {back}
+          <section className="sr-hero" aria-label="Quiz">
+            <img src={course.image} alt="" className="sr-hero__img" />
+            <div className="sr-hero__scrim" aria-hidden="true" />
+            <div className="sr-hero__inner">
+              <span className="sr-hero__badge" aria-hidden="true"><Play /></span>
+              <div className="sr-hero__text">
+                <h2 className="sr-hero__title">{total} questions</h2>
+                <div className="sr-hero__facts">
+                  {facts.map((f) => (
+                    <span key={f.label} className="sr-glass-chip">{f.icon}{f.label}</span>
+                  ))}
+                </div>
+                <div className="sr-hero__actions">
+                  <button
+                    type="button"
+                    className="sr-btn-white"
+                    disabled={attemptsLeft <= 0}
+                    onClick={() => {
+                      setPhase('taking');
+                      setStartedAt(Date.now());
+                    }}
+                  >
+                    {prev.length ? <RotateCcw aria-hidden="true" /> : <Play aria-hidden="true" />}
+                    {prev.length ? 'Retake' : 'Start'}
+                  </button>
+                  {prev.length > 0 && (
+                    <Link to={`/student/quizzes/${quiz.id}/results`} className="sr-btn-ghost">
+                      <Eye aria-hidden="true" />
+                      Last result
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="sr-card" aria-labelledby="rules-title">
+            <h2 id="rules-title" className="sr-h2">Rules</h2>
+            <ul className="sr-rules">
+              {quiz.instructions.map((i, n) => (
+                <li key={i}>
+                  <span className="sr-rules__n" aria-hidden="true">{n + 1}</span>
+                  <span>{i}</span>
+                </li>
               ))}
             </ul>
-            <Notice tone="neutral" className="mt-20">This quiz is graded entirely in your browser. Answers are not sent to a server and will be lost when you refresh the page.</Notice>
-            <div className="row row--wrap" style={{ marginTop: 22, ['--gap' as string]: '10px' }}>
-              <Button
-                variant="primary"
-                size="lg"
-                disabled={attemptsLeft <= 0}
-                onClick={() => {
-                  setPhase('taking');
-                  setStartedAt(Date.now());
-                }}
-              >
-                {prev.length ? "Start a New Attempt" : "Start Quiz"}
-              </Button>
-              {prev.length > 0 && <ButtonLink to={`/student/quizzes/${quiz.id}/results`} variant="secondary" size="lg">Previous Result</ButtonLink>}
-            </div>
-          </Card>
-          <Card title="About This Quiz">
-            <dl className="kv">
-              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><HelpCircle size={14} />Questions</span></dt>
-              <dd>{quiz.questions.length}</dd>
-              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><Timer size={14} />Time</span></dt>
-              <dd>{quiz.timeLimitMin} min</dd>
-              <dt>Maximum Score</dt>
-              <dd>{quizMaxScore(quiz)}</dd>
-              <dt>Passing Score</dt>
-              <dd>{quiz.passPercent}%</dd>
-              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><Repeat size={14} />Attempts</span></dt>
-              <dd>{prev.length} / {quiz.attemptsAllowed}</dd>
-              <dt><span className="row" style={{ ['--gap' as string]: '6px' }}><Clock size={14} />Available Until</span></dt>
-              <dd>{formatDateTime(quiz.dueDate)}</dd>
-            </dl>
-          </Card>
+          </section>
         </div>
       </>
     );
   }
 
-  const nav = (
-    <aside className="card card--pad stack" style={{ ['--gap' as string]: '16px', position: 'sticky', top: 88 }}>
-      <div className="row row--between">
-        <span className="small strong">Time Remaining</span>
-        <span className={cx('timer', secondsLeft < 60 && 'timer--low')} role="timer" aria-live="off">
-          <Timer size={16} aria-hidden="true" />
-          {mm}:{ss}
-        </span>
-      </div>
-      <div>
-        <div className="row row--between xs muted" style={{ marginBottom: 6 }}>
-          <span>Answered</span>
-          <span>{answeredCount} / {quiz.questions.length}</span>
-        </div>
-        <ProgressBar value={percent(answeredCount, quiz.questions.length)} showValue={false} label="Answered Questions" />
-      </div>
-      <div className="quiz-nav" role="navigation" aria-label="Question navigation">
-        {quiz.questions.map((x, i) => (
-          <button
-            key={x.id}
-            type="button"
-            className={cx((answers[x.id] ?? []).length > 0 && 'is-answered', phase === 'taking' && i === current && 'is-current', flagged.has(x.id) && 'is-flagged')}
-            onClick={() => {
-              setPhase('taking');
-              setCurrent(i);
-            }}
-            aria-label={`Question ${i + 1}${(answers[x.id] ?? []).length ? ", answered" : ''}${flagged.has(x.id) ? ", flagged" : ''}`}
-            aria-current={i === current ? 'step' : undefined}
-          >
-            {i + 1}
-          </button>
-        ))}
-      </div>
-      <div className="xs muted row row--wrap" style={{ ['--gap' as string]: '6px 14px' }}>
-        <span className="row" style={{ ['--gap' as string]: '6px' }}><i style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--accent-100)' }} />Answered</span>
-        <span className="row" style={{ ['--gap' as string]: '6px' }}><i style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--warning-600)' }} />Flagged</span>
-      </div>
-      {phase === 'taking' && <Button variant="secondary" block onClick={() => setPhase('review')}>Review and Submit</Button>}
-    </aside>
+  /* ---------- Navigator (taking + review) ---------- */
+  const navigator = (
+    <div className="sr-navbar">
+      <nav aria-label="Questions" className="sr-dots">
+        {quiz.questions.map((x, i) => {
+          const answered = isAnswered(x.id);
+          const isCurrent = phase === 'taking' && i === current;
+          return (
+            <button
+              key={x.id}
+              type="button"
+              className={cx('sr-qdot', answered && 'is-answered', isCurrent && 'is-current')}
+              onClick={() => {
+                setPhase('taking');
+                setCurrent(i);
+              }}
+              aria-label={`Question ${i + 1}${answered ? ', answered' : ''}${flagged.has(x.id) ? ', flagged' : ''}`}
+              aria-current={isCurrent ? 'step' : undefined}
+            >
+              {i + 1}
+              {flagged.has(x.id) && <span className="sr-qdot__flag" aria-hidden="true"><Bookmark /></span>}
+            </button>
+          );
+        })}
+        <span className="sr-dots__count">{answeredCount}/{total}</span>
+      </nav>
+      <span className={cx('sr-timer', secondsLeft < 60 && 'is-low')} role="timer" aria-live="off" aria-label={`Time left ${mm}:${ss}`}>
+        <Clock aria-hidden="true" />
+        {mm}:{ss}
+      </span>
+    </div>
   );
 
   return (
     <>
-      <PageHeader breadcrumbs={[{ label: "Quizzes", to: '/student/quizzes' }, { label: quiz.title }]} title={quiz.title} />
-      <div className="quiz-layout">
+      {title}
+      <div className="sr-narrow">
+        {back}
+        {navigator}
+
         {phase === 'taking' ? (
-          <section className="card" aria-labelledby="q-title">
-            <div className="card__header">
-              <div className="row" style={{ ['--gap' as string]: '10px' }}>
-                <strong className="small">Question {current + 1} / {quiz.questions.length}</strong>
-                <Badge tone={q.kind === 'single' ? 'info' : 'accent'}>{q.kind === 'single' ? "Single Answer" : "Multiple Answers"}</Badge>
-                <span className="xs muted">{q.points} points</span>
-              </div>
-              <Button
-                variant={flagged.has(q.id) ? 'secondary' : 'ghost'}
-                size="sm"
-                icon={<Flag />}
-                aria-pressed={flagged.has(q.id)}
-                onClick={() =>
-                  setFlagged((s) => {
-                    const n = new Set(s);
-                    if (n.has(q.id)) n.delete(q.id);
-                    else n.add(q.id);
-                    return n;
-                  })
-                }
-              >
-                {flagged.has(q.id) ? "Flagged" : "Flag for Review"}
+          <section className="sr-qcard-big" aria-labelledby="q-title">
+            <div className="sr-qhead">
+              <span className="sr-qnum">{current + 1}</span>
+              <span className="sr-qof">of {total}</span>
+              <span className="sr-chip sr-chip--lg">
+                {q.kind === 'single' ? <CircleCheck aria-hidden="true" /> : <ListChecks aria-hidden="true" />}
+                {q.kind === 'single' ? 'One answer' : 'Several answers'}
+              </span>
+              <span className="sr-chip sr-chip--lg"><Star aria-hidden="true" />{q.points} {q.points === 1 ? 'point' : 'points'}</span>
+              <span className="sr-grow" />
+              <Button variant={flagged.has(q.id) ? 'primary' : 'secondary'} icon={<Bookmark />} aria-pressed={flagged.has(q.id)} onClick={toggleFlag}>
+                {flagged.has(q.id) ? 'Flagged' : 'Flag'}
               </Button>
             </div>
-            <div className="card__body stack" style={{ ['--gap' as string]: '18px' }}>
-              <h2 id="q-title" style={{ fontSize: 'var(--fs-lg)', lineHeight: 1.45 }}>{q.text}</h2>
-              {q.kind === 'multiple' && <p className="small muted" style={{ marginTop: -8 }}>Select all correct answers.</p>}
-              <div className="stack" style={{ ['--gap' as string]: '10px' }} role={q.kind === 'single' ? 'radiogroup' : 'group'} aria-labelledby="q-title">
-                {q.options.map((o, i) => {
-                  const selected = (answers[q.id] ?? []).includes(o.id);
-                  return (
-                    <label key={o.id} className={cx('option', selected && 'is-selected')}>
-                      <input type={q.kind === 'single' ? 'radio' : 'checkbox'} name={q.id} checked={selected} onChange={() => select(o.id)} />
-                      <span className="option__key">{LETTERS[i]}</span>
-                      <span>{o.text}</span>
-                    </label>
-                  );
-                })}
-              </div>
+
+            <h2 id="q-title" className="sr-qtext">{q.text}</h2>
+
+            <div className="sr-options" role={q.kind === 'single' ? 'radiogroup' : 'group'} aria-labelledby="q-title">
+              {q.options.map((o, i) => {
+                const selected = (answers[q.id] ?? []).includes(o.id);
+                return (
+                  <label key={o.id} className={cx('sr-option', selected && 'is-selected')}>
+                    <input type={q.kind === 'single' ? 'radio' : 'checkbox'} name={q.id} checked={selected} onChange={() => select(o.id)} />
+                    <span className="sr-option__key">{LETTERS[i]}</span>
+                    <span className="sr-option__text">{o.text}</span>
+                    {selected && <span className="sr-option__check" aria-hidden="true"><Check /></span>}
+                  </label>
+                );
+              })}
             </div>
-            <div className="card__footer" style={{ justifyContent: 'space-between' }}>
+
+            <div className="sr-qfoot">
               <Button variant="secondary" icon={<ChevronLeft />} disabled={current === 0} onClick={() => setCurrent((c) => c - 1)}>Previous</Button>
-              {current < quiz.questions.length - 1 ? (
-                <Button variant="primary" iconRight={<ChevronRight />} onClick={() => setCurrent((c) => c + 1)}>Next</Button>
-              ) : (
-                <Button variant="primary" onClick={() => setPhase('review')}>Review Answers</Button>
-              )}
+              <div className="sr-qfoot__right">
+                {current < total - 1 ? (
+                  <>
+                    <Button variant="secondary" icon={<Send />} onClick={() => setPhase('review')}>Finish</Button>
+                    <Button variant="primary" iconRight={<ChevronRight />} onClick={() => setCurrent((c) => c + 1)}>Next</Button>
+                  </>
+                ) : (
+                  <Button variant="primary" icon={<Send />} onClick={() => setPhase('review')}>Finish</Button>
+                )}
+              </div>
             </div>
           </section>
         ) : (
-          <section className="card">
-            <div className="card__header">
-              <div>
-                <h2>Review Before Submitting</h2>
-                <div className="sub">Check your answers. Select a question to return to it and change your response.</div>
-              </div>
-            </div>
-            <div className="card__body stack" style={{ ['--gap' as string]: '14px' }}>
-              {answeredCount < quiz.questions.length && (
-                <Notice tone="warning">
-                  {quiz.questions.length - answeredCount} questions remain unanswered. Unanswered questions receive 0 points. </Notice>
+          <section className="sr-qcard-big" aria-labelledby="review-title">
+            <div className="sr-qhead">
+              <h2 id="review-title" className="sr-h2">Review</h2>
+              <span className="sr-grow" />
+              {answeredCount < total ? (
+                <span className="sr-chip sr-chip--lg sr-chip--red"><TriangleAlert aria-hidden="true" />{total - answeredCount} unanswered</span>
+              ) : (
+                <span className="sr-chip sr-chip--lg sr-chip--blue"><CircleCheck aria-hidden="true" />All answered</span>
               )}
-              <div className="list card" style={{ borderRadius: 'var(--r-md)' }}>
-                {quiz.questions.map((x, i) => {
-                  const given = answers[x.id] ?? [];
-                  return (
-                    <button
-                      key={x.id}
-                      type="button"
-                      className="list-row"
-                      style={{ border: 0, borderBottom: '1px solid var(--border)', background: 'transparent', textAlign: 'left', width: '100%' }}
-                      onClick={() => {
-                        setCurrent(i);
-                        setPhase('taking');
-                      }}
-                    >
-                      <span className="strong small" style={{ width: 24 }}>{i + 1}.</span>
-                      <span className="grow small" style={{ minWidth: 0 }}>
-                        <span style={{ display: 'block', color: 'var(--navy-900)' }}>{x.text}</span>
-                        <span className="xs muted">
-                          {given.length ? `Selected: ${given.map((g) => LETTERS[x.options.findIndex((o) => o.id === g)]).join(', ')}` : "No answer"}
-                        </span>
-                      </span>
-                      {flagged.has(x.id) && <Flag size={14} color="var(--warning-600)" aria-label="Flagged" />}
-                      {given.length ? <Badge tone="success">Answered</Badge> : <Badge tone="danger">Unanswered</Badge>}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
-            <div className="card__footer" style={{ justifyContent: 'space-between' }}>
-              <Button variant="secondary" icon={<ChevronLeft />} onClick={() => setPhase('taking')}>Back to Questions</Button>
-              <Button variant="primary" onClick={() => setConfirm(true)}>Submit Quiz</Button>
+            <div className="sr-review">
+              {quiz.questions.map((x, i) => {
+                const given = answers[x.id] ?? [];
+                return (
+                  <button
+                    key={x.id}
+                    type="button"
+                    className="sr-review__row"
+                    onClick={() => {
+                      setCurrent(i);
+                      setPhase('taking');
+                    }}
+                  >
+                    <span className={cx('sr-num', given.length ? 'sr-num--navy' : 'sr-num--red')}>{i + 1}</span>
+                    <span className="sr-review__q">{x.text}</span>
+                    {flagged.has(x.id) && <Bookmark className="sr-review__flag" aria-label="Flagged" />}
+                    {given.length ? (
+                      <span className="sr-letters">
+                        {given.map((g) => (
+                          <span key={g} className="sr-letter">{LETTERS[x.options.findIndex((o) => o.id === g)]}</span>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="sr-chip sr-chip--red">Empty</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="sr-qfoot">
+              <Button variant="secondary" icon={<ChevronLeft />} onClick={() => setPhase('taking')}>Questions</Button>
+              <Button variant="primary" icon={<Send />} onClick={() => setConfirm(true)}>Submit</Button>
             </div>
           </section>
         )}
-        {nav}
       </div>
       <ConfirmDialog
         open={confirm}
         onClose={() => setConfirm(false)}
         onConfirm={finish}
         tone="warning"
-        title="Submit your quiz?"
-        text={
-          <span className="row row--top" style={{ ['--gap' as string]: '8px' }}>
-            <AlertTriangle size={16} style={{ flex: 'none', marginTop: 2 }} />You have answered {answeredCount} out of {quiz.questions.length} questions. You will not be able to change your answers after submitting.</span>
-        }
+        title="Submit quiz?"
+        text={`${answeredCount} of ${total} answered. Answers can't be changed after submitting.`}
         confirmLabel="Submit"
       />
     </>

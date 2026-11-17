@@ -1,17 +1,30 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { CheckCircle2, Clock, Lightbulb, RotateCcw, Target, XCircle } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check, CircleCheck, CircleX, Lightbulb, List, Play, RotateCcw, Star, Target, Timer, X } from 'lucide-react';
 import { attemptsFor, getQuiz } from '../../data/quizzes';
 import { getCourse } from '../../data/courses';
 import { useDemoSession } from '../../context/DemoSession';
+import { ShellTitle } from '../../components/layout/AppShell';
 import { ButtonLink } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
-import { Card, EmptyState, Notice, PageHeader, Segmented } from '../../components/ui/Misc';
-import { ProgressRing } from '../../components/ui/Progress';
-import { StatCard } from '../../components/ui/StatCard';
-import { cx, formatDateTime, percent } from '../../lib/format';
+import { EmptyState } from '../../components/ui/Misc';
+import { CATEGORY_ICONS } from '../../lib/visual';
+import { cx, formatDate, percent } from '../../lib/format';
 
-const LETTERS = ["A", "B", "C", "D", "E", "F"];
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+type ChipKind = 'ok' | 'bad' | 'fix';
+
+function AnswerChip({ k, text, kind }: { k: string; text: string; kind: ChipKind }) {
+  return (
+    <span className={cx('sr-ans', `sr-ans--${kind}`)}>
+      <span className="sr-ans__key">{k}</span>
+      <span className="sr-ans__text">{text}</span>
+      <span className="sr-ans__mark" aria-label={kind === 'bad' ? 'Wrong' : kind === 'fix' ? 'Correct answer' : 'Correct'}>
+        {kind === 'bad' ? <X /> : <Check />}
+      </span>
+    </span>
+  );
+}
 
 export function QuizResultsPage() {
   const { id } = useParams();
@@ -24,109 +37,144 @@ export function QuizResultsPage() {
 
   if (!quiz || !attempt) {
     return (
-      <div className="card">
-        <EmptyState
-          icon={<Target size={24} />}
-          title="No result yet"
-          text="You have not taken this quiz yet."
-          action={quiz ? <ButtonLink to={`/student/quizzes/${quiz.id}`}>Take Quiz</ButtonLink> : <ButtonLink to="/student/quizzes">All Quizzes</ButtonLink>}
-        />
-      </div>
+      <>
+        <ShellTitle title="Quiz results" />
+        <div className="card">
+          <EmptyState
+            icon={<Target size={24} />}
+            title="No result yet"
+            action={quiz ? <ButtonLink to={`/student/quizzes/${quiz.id}`} icon={<Play />}>Start</ButtonLink> : <ButtonLink to="/student/quizzes" icon={<ArrowLeft />}>Quizzes</ButtonLink>}
+          />
+        </div>
+      </>
     );
   }
 
   const course = getCourse(quiz.courseId)!;
+  const CatIcon = CATEGORY_ICONS[course.category];
   const p = percent(attempt.score, attempt.maxScore);
   const passed = p >= quiz.passPercent;
   const isCorrect = (qid: string, correct: string[]) => [...(attempt.answers[qid] ?? [])].sort().join() === [...correct].sort().join();
   const correctCount = quiz.questions.filter((q) => isCorrect(q.id, q.correct)).length;
+  const wrongCount = quiz.questions.length - correctCount;
   const visible = quiz.questions.filter((q) => show === 'all' || !isCorrect(q.id, q.correct));
   const isLocal = attempt === lastAttempt;
   const attemptsUsed = stored.length + (isLocal ? 1 : 0);
+  const attemptNo = isLocal ? attemptsUsed : stored.indexOf(attempt) + 1;
+
+  const facts = [
+    { icon: <Timer />, label: `${attempt.durationMin} of ${quiz.timeLimitMin} min` },
+    { icon: <RotateCcw />, label: `Attempt ${attemptNo} of ${quiz.attemptsAllowed}` },
+    { icon: <Star />, label: `${attempt.score}/${attempt.maxScore} points` },
+  ];
 
   return (
     <>
-      <PageHeader
-        breadcrumbs={[{ label: "Quizzes", to: '/student/quizzes' }, { label: quiz.title, to: `/student/quizzes/${quiz.id}` }, { label: "Results" }]}
-        title="Quiz Results"
-        description={`${quiz.title}, ${course.title}`}
-        actions={
+      <ShellTitle
+        title="Quiz results"
+        meta={
           <>
-            <ButtonLink to="/student/quizzes" variant="secondary">All Quizzes</ButtonLink>
-            {attemptsUsed < quiz.attemptsAllowed && <ButtonLink to={`/student/quizzes/${quiz.id}`} variant="primary" icon={<RotateCcw />}>Try Again</ButtonLink>}
+            <CatIcon aria-hidden="true" />
+            <b>{course.title}</b>
+            <span className="sr-dot" aria-hidden="true" />
+            {formatDate(attempt.completedAt)}
           </>
         }
       />
 
-      {isLocal && <Notice tone="neutral" className="mb-20">Your result was calculated in your browser and has not been saved. It will be lost when you refresh the page.</Notice>}
+      <Link to="/student/quizzes" className="sr-back sr-back--tight">
+        <ArrowLeft aria-hidden="true" />
+        Quizzes
+      </Link>
 
-      <Card className="mb-20">
-        <div className="result-hero">
-          <ProgressRing value={p} size={132} stroke={11} color={passed ? 'var(--success-600)' : 'var(--danger-600)'} label="result" />
-          <div className="stack grow" style={{ ['--gap' as string]: '8px', minWidth: 240 }}>
-            <div>{passed ? <Badge tone="success" dot>Quiz Passed</Badge> : <Badge tone="danger" dot>Passing score not reached</Badge>}</div>
-            <h2 style={{ fontSize: 'var(--fs-xl)' }}>
-              {attempt.score} / {attempt.maxScore} points</h2>
-            <p className="secondary small">
-              {passed ? `Well done! You reached the passing score of ${quiz.passPercent}%.` : `The passing score is ${quiz.passPercent}%. Review your incorrect answers and try again.`}
-            </p>
-            <span className="xs muted">Completed on {formatDateTime(attempt.completedAt)}</span>
+      <section className="sr-hero sr-hero--result" aria-label="Result">
+        <img src={course.image} alt="" className="sr-hero__img" />
+        <div className="sr-hero__scrim" aria-hidden="true" />
+        <div className="sr-hero__inner">
+          <div className="sr-bigring" role="img" aria-label={`Score ${p}%`} style={{ background: `conic-gradient(var(--surface) 0 ${p}%, rgba(255,255,255,.16) 0)` }}>
+            <div className="sr-bigring__inner">
+              <b>{p}<span>%</span></b>
+              <span>Pass {quiz.passPercent}%</span>
+            </div>
+          </div>
+          <div className="sr-hero__text">
+            <div className="sr-hero__status">
+              {passed ? (
+                <span className="sr-status sr-status--pass"><CircleCheck aria-hidden="true" />Passed</span>
+              ) : (
+                <span className="sr-status sr-status--fail"><CircleX aria-hidden="true" />Not passed</span>
+              )}
+              <span className="sr-hero__quiz">{quiz.title}</span>
+            </div>
+            <div className="sr-hero__big">{correctCount} of {quiz.questions.length} correct</div>
+            <div className="sr-hero__facts">
+              {facts.map((f) => (
+                <span key={f.label} className="sr-glass-chip">{f.icon}{f.label}</span>
+              ))}
+            </div>
+            <div className="sr-hero__actions">
+              {attemptsUsed < quiz.attemptsAllowed && (
+                <Link to={`/student/quizzes/${quiz.id}`} className="sr-btn-white"><RotateCcw aria-hidden="true" />Retake</Link>
+              )}
+              <Link to="/student/quizzes" className="sr-btn-ghost"><ArrowLeft aria-hidden="true" />Back</Link>
+            </div>
           </div>
         </div>
-      </Card>
+      </section>
 
-      <div className="grid grid-4" style={{ marginBottom: 24 }}>
-        <StatCard label="Correct Answers" value={correctCount} unit={`/${quiz.questions.length}`} icon={<CheckCircle2 />} tone="success" />
-        <StatCard label="Incorrect or Unanswered" value={quiz.questions.length - correctCount} icon={<XCircle />} tone="danger" />
-        <StatCard label="Percentage" value={p} unit="%" icon={<Target />} />
-        <StatCard label="Duration" value={attempt.durationMin} unit=" min" icon={<Clock />} tone="navy" meta={`time limit: ${quiz.timeLimitMin} min`} />
-      </div>
+      <section className="sr-card" aria-labelledby="review-title">
+        <div className="sr-card__head">
+          <h2 id="review-title" className="sr-h2">Answer review</h2>
+          <div className="sr-seg" role="group" aria-label="Show">
+            <button type="button" aria-pressed={show === 'all'} onClick={() => setShow('all')}>
+              <List aria-hidden="true" />All <span className="sr-seg__n">{quiz.questions.length}</span>
+            </button>
+            <button type="button" aria-pressed={show === 'wrong'} onClick={() => setShow('wrong')}>
+              <CircleX aria-hidden="true" />Wrong <span className="sr-seg__n">{wrongCount}</span>
+            </button>
+          </div>
+        </div>
 
-      <Card
-        title="Answer Review"
-        actions={<Segmented label="Show" value={show} onChange={setShow} items={[{ key: 'all', label: "All" }, { key: 'wrong', label: "Incorrect Answers Only" }]} />}
-      >
         {visible.length === 0 ? (
-          <EmptyState compact icon={<CheckCircle2 size={22} />} title="No incorrect answers" text="You answered every question correctly." />
+          <EmptyState compact icon={<CircleCheck size={22} />} title="All correct" />
         ) : (
-          <div className="stack" style={{ ['--gap' as string]: '22px' }}>
+          <div className="sr-arows">
             {visible.map((q) => {
               const i = quiz.questions.indexOf(q);
               const ok = isCorrect(q.id, q.correct);
               const given = attempt.answers[q.id] ?? [];
+              const chosen = q.options.map((o, oi) => ({ o, k: LETTERS[oi] })).filter((x) => given.includes(x.o.id));
+              const missed = q.options.map((o, oi) => ({ o, k: LETTERS[oi] })).filter((x) => q.correct.includes(x.o.id) && !given.includes(x.o.id));
               return (
-                <article key={q.id} className="stack" style={{ ['--gap' as string]: '10px', paddingBottom: 20, borderBottom: '1px solid var(--border)' }}>
-                  <div className="row row--between row--top">
-                    <h3 style={{ fontSize: 'var(--fs-base)' }}>
-                      {i + 1}. {q.text}
-                    </h3>
-                    {ok ? <Badge tone="success">+{q.points} points</Badge> : <Badge tone="danger">0 / {q.points}</Badge>}
-                  </div>
-                  {q.options.map((o, oi) => {
-                    const chosen = given.includes(o.id);
-                    const correct = q.correct.includes(o.id);
-                    return (
-                      <div key={o.id} className={cx('option', correct && 'is-correct', chosen && !correct && 'is-wrong')} style={{ cursor: 'default' }}>
-                        <span className="option__key">{LETTERS[oi]}</span>
-                        <span className="grow">{o.text}</span>
-                        {chosen && <span className="xs strong">Your Selection</span>}
-                        {correct ? <CheckCircle2 size={18} color="var(--success-600)" aria-label="Correct Answer" /> : chosen ? <XCircle size={18} color="var(--danger-600)" aria-label="Incorrect Selection" /> : null}
-                      </div>
-                    );
-                  })}
-                  {given.length === 0 && <span className="small" style={{ color: 'var(--danger-700)' }}>This question was not answered</span>}
-                  {q.explanation && (
-                    <div className="notice notice--neutral">
-                      <Lightbulb aria-hidden="true" />
-                      <span>{q.explanation}</span>
+                <article key={q.id} className="sr-arow">
+                  <span className={cx('sr-num', ok ? 'sr-num--blue' : 'sr-num--red')}>{i + 1}</span>
+                  <div className="sr-arow__main">
+                    <h3>{q.text}</h3>
+                    <div className="sr-arow__answers">
+                      {chosen.length === 0 && <span className="sr-chip sr-chip--lg sr-chip--red">No answer</span>}
+                      {chosen.map(({ o, k }) => (
+                        <AnswerChip key={o.id} k={k} text={o.text} kind={q.correct.includes(o.id) ? 'ok' : 'bad'} />
+                      ))}
+                      {!ok && missed.length > 0 && (
+                        <>
+                          <ArrowRight className="sr-arow__arrow" aria-hidden="true" />
+                          {missed.map(({ o, k }) => (
+                            <AnswerChip key={o.id} k={k} text={o.text} kind="fix" />
+                          ))}
+                        </>
+                      )}
                     </div>
-                  )}
+                    {!ok && q.explanation && (
+                      <p className="sr-arow__tip"><Lightbulb aria-hidden="true" />{q.explanation}</p>
+                    )}
+                  </div>
+                  <span className={cx('sr-pts', !ok && 'sr-pts--red')}>{ok ? `+${q.points} pt` : `0/${q.points} pt`}</span>
                 </article>
               );
             })}
           </div>
         )}
-      </Card>
+      </section>
     </>
   );
 }

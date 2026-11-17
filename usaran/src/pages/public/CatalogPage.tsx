@@ -1,31 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Layers, Search, SearchX } from 'lucide-react';
+import { ChartColumn, ChevronDown, ChevronLeft, ChevronRight, Layers, LibraryBig, RotateCcw, Search, SearchX, TrendingUp } from 'lucide-react';
 import type { CategoryId, Difficulty } from '../../types';
 import { categories, categoryName, difficultyLabel, publishedCourses } from '../../data/courses';
 import { fullName, getUser } from '../../data/users';
-import { CourseCard } from '../../components/course/CourseBits';
-import { Select } from '../../components/ui/Field';
+import { CATEGORY_SHORT, CourseCard } from '../../components/course/CourseBits';
 import { Button } from '../../components/ui/Button';
-import { Breadcrumbs, CardSkeleton, EmptyState, Pagination } from '../../components/ui/Misc';
+import { EmptyState, Skeleton } from '../../components/ui/Misc';
 import { cx } from '../../lib/format';
-import { CATEGORY_ICONS, CATEGORY_TINT } from '../../lib/visual';
+import { CATEGORY_ICONS } from '../../lib/visual';
 
 const PAGE_SIZE = 9;
 
 const SORTS = [
-  { value: 'popular', label: "Most Popular" },
-  { value: 'rating', label: "Highest Rated" },
-  { value: 'newest', label: "Recently Updated" },
-  { value: 'short', label: "Shortest Duration" },
-  { value: 'title', label: "Alphabetical" },
+  { value: 'popular', label: 'Most popular' },
+  { value: 'rating', label: 'Top rated' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'short', label: 'Shortest' },
+  { value: 'title', label: 'A to Z' },
 ];
 
 export function CatalogPage() {
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState(params.get('q') ?? '');
   const [cats, setCats] = useState<CategoryId[]>(() => (params.get('category') ? [params.get('category') as CategoryId] : []));
-  const [levels, setLevels] = useState<Difficulty[]>([]);
+  const [level, setLevel] = useState<Difficulty | ''>('');
   const [sort, setSort] = useState('popular');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -48,14 +47,14 @@ export function CatalogPage() {
     if (query) next.set('q', query);
     if (cats.length === 1) next.set('category', cats[0]);
     setParams(next, { replace: true });
-  }, [query, cats, levels, sort, setParams]);
+  }, [query, cats, level, sort, setParams]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = publishedCourses.filter((c) => {
       const teacher = fullName(getUser(c.teacherId)).toLowerCase();
       const matchesQ = !q || c.title.toLowerCase().includes(q) || c.shortDescription.toLowerCase().includes(q) || teacher.includes(q) || categoryName(c.category).toLowerCase().includes(q);
-      return matchesQ && (cats.length === 0 || cats.includes(c.category)) && (levels.length === 0 || levels.includes(c.difficulty));
+      return matchesQ && (cats.length === 0 || cats.includes(c.category)) && (!level || c.difficulty === level);
     });
     const sorters: Record<string, (a: (typeof list)[0], b: (typeof list)[0]) => number> = {
       popular: (a, b) => b.enrolled - a.enrolled,
@@ -65,94 +64,134 @@ export function CatalogPage() {
       title: (a, b) => a.title.localeCompare(b.title, 'en'),
     };
     return [...list].sort(sorters[sort]);
-  }, [query, cats, levels, sort]);
+  }, [query, cats, level, sort]);
 
   const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const visible = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+  const goTo = (p: number) => {
+    setPage(p);
+    window.scrollTo({ top: 0 });
+  };
   const reset = () => {
     setQuery('');
     setCats([]);
-    setLevels([]);
+    setLevel('');
     setSort('popular');
   };
 
   return (
-    <>
-      <section className="page-band">
-        <div className="container">
-          <Breadcrumbs items={[{ label: "Home", to: '/' }, { label: "Courses" }]} />
-          <h1>Find a course that <span className="hl">inspires you</span></h1>
-          <p className="page-band__lead">Explore {publishedCourses.length} courses in programming, mathematics, artificial intelligence, and more.</p>
-          <form className="bigsearch" role="search" onSubmit={(e) => e.preventDefault()}>
-            <Search aria-hidden="true" />
-            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Try React, Python, or design" aria-label="Search by title, topic, or instructor" />
-            <Button type="submit" variant="primary" icon={<Search />}>
-              <span className="bigsearch__label">Search</span>
+    <div className="cat-page">
+      <div className="cat-wrap">
+        <section className="cat-hero">
+          <h1 className="cat-h1">Find a course</h1>
+          <form className="cat-search" role="search" onSubmit={(e) => e.preventDefault()}>
+            <label htmlFor="catalog-q" className="cat-search__icon">
+              <Search aria-hidden="true" />
+              <span className="sr-only">Search courses</span>
+            </label>
+            <input id="catalog-q" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Try React, Python or design" />
+            <Button type="submit" variant="primary" icon={<Search />} className="cat-search__btn">
+              <span className="cat-search__label">Search</span>
             </Button>
           </form>
-        </div>
-      </section>
+        </section>
 
-      <div className="container page-pad" style={{ paddingTop: 28 }}>
-        <div className="fchips" role="group" aria-label="Category">
-          <button type="button" className="fchip" aria-pressed={cats.length === 0} onClick={() => setCats([])}>
-            <span className="tint-box t-accent"><Layers /></span>All</button>
+        <div className="cat-chips" role="group" aria-label="Category">
+          <button type="button" className="cat-chip" aria-pressed={cats.length === 0} onClick={() => setCats([])}>
+            <span className="cat-chip__box"><Layers aria-hidden="true" /></span>
+            All
+            <span className="cat-chip__count">{publishedCourses.length}</span>
+          </button>
           {categories.map((c) => {
             const Icon = CATEGORY_ICONS[c.id];
             const n = publishedCourses.filter((x) => x.category === c.id).length;
             return (
-              <button key={c.id} type="button" className={cx('fchip', CATEGORY_TINT[c.id])} aria-pressed={cats.includes(c.id)} onClick={() => setCats((l) => toggle(l, c.id))}>
-                <span className="tint-box"><Icon /></span>
-                {c.name}
-                <span className="fchip__count">{n}</span>
+              <button key={c.id} type="button" className="cat-chip" aria-pressed={cats.includes(c.id)} onClick={() => setCats((l) => toggle(l, c.id))} title={c.name}>
+                <span className="cat-chip__box"><Icon aria-hidden="true" /></span>
+                {CATEGORY_SHORT[c.id] ?? c.name}
+                <span className="cat-chip__count">{n}</span>
               </button>
             );
           })}
         </div>
 
-        <div className="catalog-toolbar">
-          <span className="catalog-toolbar__count" aria-live="polite">
-            {results.length} courses {cats.length > 0 && <span> · {cats.map(categoryName).join(', ')}</span>}
-            {query && <span> · “{query}”</span>}
-          </span>
-          <div className="catalog-toolbar__right">
-            <div className="segmented" role="group" aria-label="Level">
-              <button type="button" aria-pressed={levels.length === 0} onClick={() => setLevels([])}>All Levels</button>
-              {(Object.keys(difficultyLabel) as Difficulty[]).map((d) => (
-                <button key={d} type="button" aria-pressed={levels.includes(d)} onClick={() => setLevels((l) => toggle(l, d))}>
-                  {difficultyLabel[d]}
-                </button>
-              ))}
-            </div>
-            <Select aria-label="Sort By" options={SORTS} value={sort} onChange={(e) => setSort(e.target.value)} fieldClassName="catalog__sort" className="select--pill" />
+        <div className="cat-toolbar">
+          <div className="cat-count" aria-live="polite">
+            <span className="cat-count__box"><LibraryBig aria-hidden="true" /></span>
+            <span><b>{results.length}</b> courses</span>
+          </div>
+          <div className="cat-toolbar__right">
+            <label className="cat-select">
+              <ChartColumn aria-hidden="true" />
+              <span className="sr-only">Level</span>
+              <select value={level} onChange={(e) => setLevel(e.target.value as Difficulty | '')}>
+                <option value="">All levels</option>
+                {(Object.keys(difficultyLabel) as Difficulty[]).map((d) => (
+                  <option key={d} value={d}>{difficultyLabel[d]}</option>
+                ))}
+              </select>
+              <ChevronDown aria-hidden="true" className="cat-select__chev" />
+            </label>
+            <label className="cat-select">
+              <TrendingUp aria-hidden="true" />
+              <span className="sr-only">Sort by</span>
+              <select value={sort} onChange={(e) => setSort(e.target.value)}>
+                {SORTS.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+              <ChevronDown aria-hidden="true" className="cat-select__chev" />
+            </label>
           </div>
         </div>
 
         {loading ? (
-          <div className="grid grid-3 course-grid">
-            {Array.from({ length: 6 }, (_, i) => <CardSkeleton key={i} />)}
+          <div className="cat-grid" aria-hidden="true">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="cat-skel">
+                <Skeleton height={176} radius={0} />
+                <div className="cat-skel__body">
+                  <Skeleton width="80%" height={18} />
+                  <Skeleton width="55%" height={14} />
+                  <Skeleton width="40%" height={14} />
+                </div>
+              </div>
+            ))}
           </div>
         ) : results.length === 0 ? (
-          <div className="empty-panel">
+          <div className="cat-empty">
             <EmptyState
               icon={<SearchX size={26} />}
-              title="No matching courses"
-              text="Try a different search term or remove some filters."
-              action={<Button variant="primary" onClick={reset}>Clear All Filters</Button>}
+              title="No courses found"
+              action={<Button variant="primary" icon={<RotateCcw />} onClick={reset}>Clear filters</Button>}
             />
           </div>
         ) : (
-          <div className="stack" style={{ ['--gap' as string]: '28px' }}>
-            <div className="grid grid-3 course-grid">
+          <>
+            <section className="cat-grid" aria-label="Courses">
               {visible.map((c) => (
                 <CourseCard key={c.id} course={c} />
               ))}
-            </div>
-            <Pagination page={page} pageCount={pageCount} onChange={(p) => { setPage(p); window.scrollTo({ top: 0 }); }} total={results.length} pageSize={PAGE_SIZE} />
-          </div>
+            </section>
+            {pageCount > 1 && (
+              <nav className="cat-pages" aria-label="Pages">
+                <button type="button" className="cat-page-btn" aria-label="Previous page" disabled={page === 1} onClick={() => goTo(page - 1)}>
+                  <ChevronLeft aria-hidden="true" />
+                </button>
+                {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
+                  <button key={p} type="button" className={cx('cat-page-btn', p === page && 'is-current')} aria-label={`Page ${p}`} aria-current={p === page ? 'page' : undefined} onClick={() => goTo(p)}>
+                    {p}
+                  </button>
+                ))}
+                <button type="button" className="cat-page-btn" aria-label="Next page" disabled={page === pageCount} onClick={() => goTo(page + 1)}>
+                  <ChevronRight aria-hidden="true" />
+                </button>
+              </nav>
+            )}
+          </>
         )}
       </div>
-    </>
+    </div>
   );
 }

@@ -1,22 +1,29 @@
 import { Link } from 'react-router-dom';
 import { cx } from '../../lib/format';
 
-/** Arch mark: a stone arch in brand navy with the periwinkle keystone line. */
-export function BrandMark({ light }: { light?: boolean }) {
+/**
+ * "Online cap" mark: a graduation cap whose tassel ends in a mouse pointer.
+ * `light` is the reversed version for navy backgrounds.
+ */
+export function BrandMark({ light, size, className }: { light?: boolean; size?: number; className?: string }) {
+  const ink = light ? '#ffffff' : '#0F1E3D';
+  const accent = light ? '#AEB8EE' : '#4A5BD0';
   return (
-    <svg className="brand__mark" viewBox="0 0 40 40" aria-hidden="true">
-      <path d="M4 36V18C4 10.3 11.2 4 20 4s16 6.3 16 14v18z" fill={light ? '#ffffff' : '#0F1E3D'} />
-      <path d="M12 36V20c0-4.4 3.6-8 8-8s8 3.6 8 8v16" fill="none" stroke={light ? '#0F1E3D' : '#ffffff'} strokeWidth="3.2" />
-      <path d="M20 12v24" stroke="#8C99EC" strokeWidth="3.2" />
+    <svg className={cx('brand__mark', className)} viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" overflow="visible">
+      <path d="M18 30v11c0 5 7 8 14 8s14-3 14-8V30L32 36z" fill={ink} />
+      <path d="M32 8l28 12-28 12L4 20z" fill={ink} />
+      <path d="M32 20l20 4v14" fill="none" stroke={accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M47 40v20l5-5 4 8 4-2-4-8h7z" fill={accent} />
     </svg>
   );
 }
 
+/** Logo lockup: mark + lowercase "learnspace" wordmark in Outfit. */
 export function Brand({ light, to = '/', compactText }: { light?: boolean; to?: string; compactText?: boolean }) {
   return (
-    <Link to={to} className={cx('brand', light && 'brand--light')} aria-label="LearnSpace — Home">
+    <Link to={to} className={cx('brand', light && 'brand--light')} aria-label="LearnSpace home">
       <BrandMark light={light} />
-      <span className={cx('brand__text', compactText && 'label')}>LearnSpace</span>
+      <span className={cx('brand__text', compactText && 'label')}>learnspace</span>
     </Link>
   );
 }

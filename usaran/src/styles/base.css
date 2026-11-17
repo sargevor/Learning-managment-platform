@@ -1,64 +1,69 @@
 /*
-  LearnSpace design tokens.
-  Light, airy surfaces; navy is the brand color (buttons, logo, active states),
-  indigo marks small highlights, and pastel tints color categories and icons.
-  Photos are framed as arches, after Armenian stone architecture.
+  LearnSpace design tokens: the calm palette.
+  Four colours only: navy (text, buttons, active items), one blue (progress,
+  rings, links), greys (icon boxes, chips, borders) and red (urgent/overdue only).
+  Photos carry the colour. The old pastel tint names are kept as aliases so
+  existing class names keep working, but they all resolve to neutral greys.
 */
 :root {
   /* Brand */
   --navy-950: #0b1630;
   --navy-900: #0f1e3d;
   --navy-800: #1b2c52;
-  --navy-700: #2a3c66;
+  --navy-700: #24365f;
   --accent-700: #3a47b0;
   --accent-600: #4a5bd0;
-  --accent-500: #6574e0;
+  --accent-500: #4a5bd0;
   --accent-100: #e8ebfb;
-  --accent-50: #f3f4fd;
+  --accent-50: #eef0fc;
   --periwinkle: #8c99ec;
+  --blue-300: #aeb8ee;
+  --blue-200: #cdd3f3;
 
   /* Neutrals */
-  --bg: #f4f5f8;
+  --bg: #f6f7f9;
   --surface: #ffffff;
-  --surface-muted: #f4f5f8;
-  --surface-sunken: #eceef3;
-  --border: #e2e5ec;
+  --surface-muted: #f6f7f9;
+  --surface-sunken: #f1f2f6;
+  --track: #eef0f4;
+  --border: #e6e8ee;
   --border-strong: #cdd2dc;
 
   --text: #0f1e3d;
   --text-secondary: #3a4560;
-  --text-muted: #6f788c;
+  --text-muted: #6b7385;
 
-  /* Category tints (background / ink) */
-  --sky: #e2f3fa;
-  --sky-ink: #0f7aae;
-  --mint: #e3f6ec;
-  --mint-ink: #0e8754;
-  --lilac: #f0ecff;
-  --lilac-ink: #6a4ee0;
-  --sun: #fff4d4;
-  --sun-ink: #966900;
-  --rose: #ffe9ef;
-  --rose-ink: #d0355a;
-  --peach: #fff1e9;
-  --peach-ink: #c2470f;
-  --star: #ffb21e;
+  /* Former category tints: now one neutral icon-box style */
+  --sky: #f1f2f6;
+  --sky-ink: #0f1e3d;
+  --mint: #f1f2f6;
+  --mint-ink: #0f1e3d;
+  --lilac: #f1f2f6;
+  --lilac-ink: #0f1e3d;
+  --sun: #f1f2f6;
+  --sun-ink: #0f1e3d;
+  --rose: #f1f2f6;
+  --rose-ink: #0f1e3d;
+  --peach: #f1f2f6;
+  --peach-ink: #0f1e3d;
+  --star: #0f1e3d;
 
-  /* Semantic */
-  --success-700: #0e7a4c;
-  --success-600: #0e8754;
-  --success-100: #e3f6ec;
-  --warning-700: #8a5a00;
-  --warning-600: #b4730f;
-  --warning-100: #fff4d4;
-  --danger-700: #b42d4d;
-  --danger-600: #d0355a;
-  --danger-100: #ffe9ef;
-  --info-100: #e2f3fa;
-  --info-700: #0f6a98;
+  /* Semantic: success and info are blue, warning is navy on grey, danger is the only red */
+  --success-700: #3a47b0;
+  --success-600: #4a5bd0;
+  --success-100: #eef0fc;
+  --warning-700: #0f1e3d;
+  --warning-600: #3a4560;
+  --warning-100: #f1f2f6;
+  --danger-700: #c42b4e;
+  --danger-600: #c42b4e;
+  --danger-100: #fdecef;
+  --info-100: #eef0fc;
+  --info-700: #3a47b0;
 
   /* Type */
-  --font-sans: 'Noto Sans Armenian', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Noto Sans Armenian', 'Noto Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-logo: 'Outfit', 'Noto Sans Armenian', system-ui, sans-serif;
   --font-serif: 'Noto Serif Armenian', Georgia, 'Times New Roman', serif;
   --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 

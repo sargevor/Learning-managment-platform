@@ -1,33 +1,45 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Eye, FolderPlus, GripVertical, Layers, Pencil, Plus, Trash2, UploadCloud } from 'lucide-react';
+import { useState, type DragEvent, type KeyboardEvent } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import {
+  ArrowLeft, ChevronDown, CirclePlay, ClipboardList, Clock, Eye, FileQuestionMark, FileText, GripVertical, Layers, Paperclip,
+  Pencil, Plus, Save, Trash2, UploadCloud, Video,
+} from 'lucide-react';
 import type { Lesson, LessonType, Module } from '../../types';
 import { getCourse } from '../../data/courses';
 import { assignments } from '../../data/assignments';
 import { quizzes } from '../../data/quizzes';
 import { DEMO_TEACHER_ID } from '../../data/users';
 import { useToast } from '../../context/ToastContext';
-import { LESSON_ICONS, LESSON_TYPE_LABEL } from '../../components/course/CourseBits';
+import { ShellTitle } from '../../components/layout/AppShell';
 import { Button, ButtonLink } from '../../components/ui/Button';
 import { Input, Select, Textarea, Checkbox } from '../../components/ui/Field';
-import { Card, EmptyState, Notice, PageHeader } from '../../components/ui/Misc';
+import { EmptyState } from '../../components/ui/Misc';
 import { ConfirmDialog, Modal } from '../../components/ui/Overlay';
-import { Badge, type Tone } from '../../components/ui/Badge';
-import { cx } from '../../lib/format';
+import { cx, formatMinutes } from '../../lib/format';
 
 type ContentItem = Lesson & { url?: string; body?: string; fileName?: string; refId?: string };
 type EditableModule = Omit<Module, 'lessons'> & { lessons: ContentItem[] };
+type Drag = { kind: 'module'; index: number } | { kind: 'lesson'; moduleId: string; index: number };
 
-const TYPE_TONE: Record<LessonType, Tone> = { video: 'accent', text: 'info', resource: 'neutral', assignment: 'warning', quiz: 'success' };
-const TYPES: LessonType[] = ['video', 'text', 'resource', 'assignment', 'quiz'];
+const TYPE: Record<LessonType, { name: string; icon: typeof Video }> = {
+  video: { name: 'Video', icon: Video },
+  text: { name: 'Reading', icon: FileText },
+  assignment: { name: 'Task', icon: ClipboardList },
+  quiz: { name: 'Quiz', icon: FileQuestionMark },
+  resource: { name: 'Resource', icon: Paperclip },
+};
+const TYPES: LessonType[] = ['video', 'text', 'assignment', 'quiz', 'resource'];
 
 function move<T>(list: T[], from: number, to: number): T[] {
-  if (to < 0 || to >= list.length) return list;
+  if (to < 0 || to >= list.length || from === to) return list;
   const copy = [...list];
   const [x] = copy.splice(from, 1);
   copy.splice(to, 0, x);
   return copy;
 }
+
+/** Keep keyboard focus on a grip after its row moves. */
+const refocus = (key: string) => requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-grip="${key}"]`)?.focus());
 
 export function CourseContentPage() {
   const { id } = useParams();
@@ -39,9 +51,12 @@ export function CourseContentPage() {
   const [confirm, setConfirm] = useState<{ title: string; text: string; run: () => void } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [drag, setDrag] = useState<Drag | null>(null);
+  const [over, setOver] = useState<string | null>(null);
 
   if (!course || course.teacherId !== DEMO_TEACHER_ID) {
-    return <div className="card"><EmptyState title="Course not found" action={<ButtonLink to="/teacher/courses">My courses</ButtonLink>} /></div>;
+    return <div className="tc-card"><EmptyState title="Course not found" action={<ButtonLink to="/teacher/courses">My courses</ButtonLink>} /></div>;
   }
 
   const update = (fn: (m: EditableModule[]) => EditableModule[]) => {
@@ -49,207 +64,307 @@ export function CourseContentPage() {
     setDirty(true);
   };
   const all = modules.flatMap((m) => m.lessons);
+  const totalMin = all.reduce((n, l) => n + l.durationMin, 0);
+  const count = (t: LessonType) => all.filter((l) => l.type === t).length;
   const courseAssignments = assignments.filter((a) => a.courseId === course.id);
   const courseQuizzes = quizzes.filter((q) => q.courseId === course.id);
 
-  const openNew = (moduleId: string) => setEditor({ moduleId, isNew: true, item: { id: `new-${Date.now()}`, title: '', type: 'video', durationMin: 15 } });
+  const openNew = (moduleId: string, type: LessonType = 'video') => {
+    setErrors({});
+    setEditor({ moduleId, isNew: true, item: { id: `new-${Date.now()}`, title: '', type, durationMin: 15 } });
+  };
+  /** Side panel tiles add to the last module (or ask for a module first). */
+  const addOfType = (type: LessonType) => {
+    const target = modules[modules.length - 1];
+    if (target) openNew(target.id, type);
+    else setModuleEditor({ title: '' });
+  };
+
+  const moveLesson = (moduleId: string, from: number, to: number) =>
+    update((ms) => ms.map((x) => (x.id === moduleId ? { ...x, lessons: move(x.lessons, from, to) } : x)));
+
+  /** Drop a dragged lesson onto (module, index); works across modules. */
+  const dropLesson = (toModule: string, toIndex: number) => {
+    if (!drag || drag.kind !== 'lesson') return;
+    const from = drag;
+    update((ms) => {
+      const item = ms.find((m) => m.id === from.moduleId)?.lessons[from.index];
+      if (!item) return ms;
+      const removed = ms.map((m) => (m.id === from.moduleId ? { ...m, lessons: m.lessons.filter((_, i) => i !== from.index) } : m));
+      return removed.map((m) => {
+        if (m.id !== toModule) return m;
+        const lessons = [...m.lessons];
+        lessons.splice(Math.min(toIndex, lessons.length), 0, item);
+        return { ...m, lessons };
+      });
+    });
+  };
+
+  const endDrag = () => {
+    setDrag(null);
+    setOver(null);
+  };
+  const allowDrop = (key: string) => (e: DragEvent) => {
+    e.preventDefault();
+    if (over !== key) setOver(key);
+  };
+
+  const gripKeys = (e: KeyboardEvent, from: number, length: number, run: (to: number) => void, key: string) => {
+    const to = e.key === 'ArrowUp' ? from - 1 : e.key === 'ArrowDown' ? from + 1 : null;
+    if (to === null) return;
+    e.preventDefault();
+    if (to < 0 || to >= length) return;
+    run(to);
+    refocus(key);
+  };
 
   const saveItem = () => {
     if (!editor) return;
     const it = editor.item;
     const n: Record<string, string> = {};
-    if (it.title.trim().length < 3) n.title = "The title must contain at least 3 characters";
-    if (it.type === 'video' && it.url && !/^https?:\/\//.test(it.url)) n.url = "The link must start with http:// or https://";
-    if (it.type === 'resource' && !it.url && !it.fileName) n.url = "Enter a link or attach a file";
-    if ((it.type === 'assignment' || it.type === 'quiz') && !it.refId) n.refId = "Select a linked item";
-    if (!it.durationMin || it.durationMin < 1) n.duration = "Enter a duration";
+    if (it.title.trim().length < 3) n.title = 'At least 3 characters';
+    if (it.type === 'video' && it.url && !/^https?:\/\//.test(it.url)) n.url = 'Must start with http:// or https://';
+    if (it.type === 'resource' && !it.url && !it.fileName) n.url = 'Add a link or a file';
+    if ((it.type === 'assignment' || it.type === 'quiz') && !it.refId) n.refId = 'Pick one';
+    if (!it.durationMin || it.durationMin < 1) n.duration = 'Enter minutes';
     setErrors(n);
     if (Object.keys(n).length) return;
-    update((ms) =>
-      ms.map((m) =>
-        m.id !== editor.moduleId ? m : { ...m, lessons: editor.isNew ? [...m.lessons, it] : m.lessons.map((l) => (l.id === it.id ? it : l)) },
-      ),
-    );
-    toast.success(editor.isNew ? "Content added" : "Changes applied");
+    update((ms) => ms.map((m) => (m.id !== editor.moduleId ? m : { ...m, lessons: editor.isNew ? [...m.lessons, it] : m.lessons.map((l) => (l.id === it.id ? it : l)) })));
+    toast.success(editor.isNew ? 'Content added' : 'Changes applied');
     setEditor(null);
   };
 
   const setItem = (patch: Partial<ContentItem>) => setEditor((e) => (e ? { ...e, item: { ...e.item, ...patch } } : e));
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[{ label: "Courses", to: '/teacher/courses' }, { label: course.title, to: `/teacher/courses/${course.id}` }, { label: "Content" }]}
-        title="Course Content"
-        description="Organize modules and lessons, and add videos, materials, resources, assignments, and quizzes."
-        actions={
-          <>
-            <ButtonLink to={`/courses/${course.id}`} variant="secondary" icon={<Eye />}>Preview</ButtonLink>
-            <Button variant="primary" disabled={!dirty} onClick={() => { setDirty(false); toast.success("Structure saved", "Demo: changes are kept only on this page."); }}>Save Changes</Button>
-          </>
-        }
+    <div className="tc-page">
+      <ShellTitle
+        title="Course content"
+        meta={<><Layers aria-hidden="true" /><b>{modules.length} modules, {all.length} lessons</b><span className="tc-dot" aria-hidden="true" /><Clock aria-hidden="true" className="tc-meta-muted" />{formatMinutes(totalMin)}</>}
       />
 
-      <div className="grid grid-main-aside">
-        <div className="stack" style={{ ['--gap' as string]: '16px', minWidth: 0 }}>
-          {dirty && <Notice tone="warning">You have unsaved changes.</Notice>}
-          {modules.length === 0 && (
-            <div className="card">
-              <EmptyState icon={<Layers size={24} />} title="This course has no modules yet" text="Create your first module, then add lessons and assignments." action={<Button icon={<FolderPlus />} onClick={() => setModuleEditor({ title: '' })}>Add Module</Button>} />
-            </div>
-          )}
-          {modules.map((m, mi) => (
-            <section key={m.id} className="module-block" aria-label={`Module ${mi + 1}`}>
-              <div className="module-block__head">
-                <div className="order-btns">
-                  <button type="button" aria-label="Move up" disabled={mi === 0} onClick={() => update((ms) => move(ms, mi, mi - 1))}><ChevronUp /></button>
-                  <button type="button" aria-label="Move down" disabled={mi === modules.length - 1} onClick={() => update((ms) => move(ms, mi, mi + 1))}><ChevronDown /></button>
+      <div className="tc-backrow">
+        <Link to={`/teacher/courses/${course.id}`} className="tc-back tc-back--course">
+          <ArrowLeft aria-hidden="true" />
+          <img src={course.image} alt="" />
+          <span className="tc-ellipsis">{course.title}</span>
+        </Link>
+        <span className="tc-grow" />
+        {dirty && <span className="tc-tag tc-tag--grey">Unsaved</span>}
+        <ButtonLink to={`/courses/${course.id}`} variant="secondary" icon={<Eye />}>Preview</ButtonLink>
+        <Button variant="primary" icon={<Save />} disabled={!dirty} onClick={() => { setDirty(false); toast.success('Structure saved', 'Demo: kept only on this page.'); }}>Save</Button>
+      </div>
+
+      <section className="tc-split">
+        <div className="tc-split__main tc-builder">
+          {modules.map((m, mi) => {
+            const open = !collapsed[m.id];
+            const mKey = `m-${m.id}`;
+            return (
+              <section
+                key={m.id}
+                aria-label={`Module ${mi + 1}`}
+                className={cx('tc-card tc-module', over === mKey && drag?.kind === 'module' && 'is-over', drag?.kind === 'module' && drag.index === mi && 'is-dragging')}
+                onDragOver={drag?.kind === 'module' ? allowDrop(mKey) : drag?.kind === 'lesson' && m.lessons.length === 0 ? allowDrop(mKey) : undefined}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (drag?.kind === 'module') update((ms) => move(ms, drag.index, mi));
+                  else if (drag?.kind === 'lesson' && m.lessons.length === 0) dropLesson(m.id, 0);
+                  endDrag();
+                }}
+              >
+                <div className="tc-module__head">
+                  <button
+                    type="button"
+                    className="tc-grip"
+                    data-grip={mKey}
+                    draggable
+                    onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDrag({ kind: 'module', index: mi }); }}
+                    onDragEnd={endDrag}
+                    onKeyDown={(e) => gripKeys(e, mi, modules.length, (to) => update((ms) => move(ms, mi, to)), mKey)}
+                    aria-label={`Move module ${mi + 1}: drag or use arrow keys`}
+                    title="Drag or use arrow keys"
+                  >
+                    <GripVertical />
+                  </button>
+                  <span className="tc-module__n">{mi + 1}</span>
+                  <h2 className="tc-module__title">{m.title}</h2>
+                  <span className="tc-fact"><Layers aria-hidden="true" />{m.lessons.length}</span>
+                  <span className="tc-fact"><Clock aria-hidden="true" />{formatMinutes(m.lessons.reduce((n, l) => n + l.durationMin, 0))}</span>
+                  <span className="tc-module__tools">
+                    <button type="button" className="tc-iconbtn" aria-label={`Rename ${m.title}`} onClick={() => setModuleEditor({ id: m.id, title: m.title })}><Pencil /></button>
+                    <button
+                      type="button"
+                      className="tc-iconbtn"
+                      aria-label={`Delete ${m.title}`}
+                      onClick={() => setConfirm({ title: 'Delete this module?', text: `${m.title} and its ${m.lessons.length} items will be removed.`, run: () => update((ms) => ms.filter((x) => x.id !== m.id)) })}
+                    >
+                      <Trash2 />
+                    </button>
+                    <button type="button" className={cx('tc-iconbtn', !open && 'is-closed')} aria-label={`${open ? 'Collapse' : 'Expand'} ${m.title}`} aria-expanded={open} onClick={() => setCollapsed((c) => ({ ...c, [m.id]: open }))}><ChevronDown /></button>
+                  </span>
                 </div>
-                <div className="grow">
-                  <div className="xs muted">Module {mi + 1}, {m.lessons.length} items</div>
-                  <div className="strong" style={{ color: 'var(--navy-900)' }}>{m.title}</div>
-                </div>
-                <Button variant="ghost" size="sm" iconOnly icon={<Pencil />} aria-label="Rename Module" onClick={() => setModuleEditor({ id: m.id, title: m.title })} />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  icon={<Trash2 />}
-                  aria-label="Delete Module"
-                  onClick={() => setConfirm({ title: "Delete this module?", text: `Delete ${m.title} and its ${m.lessons.length} items?`, run: () => update((ms) => ms.filter((x) => x.id !== m.id)) })}
-                />
-              </div>
-              {m.lessons.length === 0 ? (
-                <EmptyState compact title="This module is empty" text="Add your first lesson or resource." />
-              ) : (
-                m.lessons.map((l, li) => {
-                  const Icon = LESSON_ICONS[l.type];
-                  return (
-                    <div key={l.id} className="content-row">
-                      <GripVertical size={16} className="muted" aria-hidden="true" />
-                      <div className="order-btns">
-                        <button type="button" aria-label="Move up" disabled={li === 0} onClick={() => update((ms) => ms.map((x) => (x.id === m.id ? { ...x, lessons: move(x.lessons, li, li - 1) } : x)))}><ChevronUp /></button>
-                        <button type="button" aria-label="Move down" disabled={li === m.lessons.length - 1} onClick={() => update((ms) => ms.map((x) => (x.id === m.id ? { ...x, lessons: move(x.lessons, li, li + 1) } : x)))}><ChevronDown /></button>
-                      </div>
-                      <span className="lesson-item__icon"><Icon /></span>
-                      <div className="grow" style={{ minWidth: 0 }}>
-                        <div className="strong" style={{ color: 'var(--navy-900)' }}>{l.title}</div>
-                        <div className="xs muted">{l.durationMin} min{l.preview ? ", available for preview" : ''}</div>
-                      </div>
-                      <Badge tone={TYPE_TONE[l.type]}>{LESSON_TYPE_LABEL[l.type]}</Badge>
-                      <Button variant="ghost" size="sm" iconOnly icon={<Pencil />} aria-label={`Edit ${l.title}`} onClick={() => { setErrors({}); setEditor({ moduleId: m.id, item: l, isNew: false }); }} />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        iconOnly
-                        icon={<Trash2 />}
-                        aria-label={`Delete ${l.title}`}
-                        onClick={() => setConfirm({ title: "Delete this item?", text: `${l.title} will be removed from the module.`, run: () => update((ms) => ms.map((x) => (x.id === m.id ? { ...x, lessons: x.lessons.filter((y) => y.id !== l.id) } : x))) })}
-                      />
-                    </div>
-                  );
-                })
-              )}
-              <div style={{ padding: 10, borderTop: '1px solid var(--border)' }}>
-                <Button variant="ghost" size="sm" icon={<Plus />} onClick={() => { setErrors({}); openNew(m.id); }}>Add Content</Button>
-              </div>
-            </section>
-          ))}
-          {modules.length > 0 && (
-            <Button variant="secondary" icon={<FolderPlus />} onClick={() => setModuleEditor({ title: '' })} style={{ alignSelf: 'flex-start' }}>Add Module</Button>
-          )}
+
+                {open && (
+                  <div className="tc-lessons">
+                    {m.lessons.map((l, li) => {
+                      const T = TYPE[l.type];
+                      const lKey = `l-${l.id}`;
+                      return (
+                        <div
+                          key={l.id}
+                          className={cx('tc-lesson', over === lKey && drag?.kind === 'lesson' && 'is-over', drag?.kind === 'lesson' && drag.moduleId === m.id && drag.index === li && 'is-dragging')}
+                          onDragOver={drag?.kind === 'lesson' ? allowDrop(lKey) : undefined}
+                          onDrop={(e) => {
+                            if (drag?.kind !== 'lesson') return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            dropLesson(m.id, li);
+                            endDrag();
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className="tc-grip tc-grip--sm"
+                            data-grip={lKey}
+                            draggable
+                            onDragStart={(e) => { e.stopPropagation(); e.dataTransfer.effectAllowed = 'move'; setDrag({ kind: 'lesson', moduleId: m.id, index: li }); }}
+                            onDragEnd={endDrag}
+                            onKeyDown={(e) => gripKeys(e, li, m.lessons.length, (to) => moveLesson(m.id, li, to), lKey)}
+                            aria-label={`Move ${l.title}: drag or use arrow keys`}
+                            title="Drag or use arrow keys"
+                          >
+                            <GripVertical />
+                          </button>
+                          <span className="tc-lesson__icon" title={T.name}><T.icon aria-hidden="true" /></span>
+                          <span className="tc-lesson__title">
+                            <span className="tc-ellipsis">{l.title}</span>
+                            {l.preview && <span className="tc-tag tc-tag--blue tc-tag--sm"><CirclePlay aria-hidden="true" />Preview</span>}
+                          </span>
+                          <span className="tc-tag tc-tag--white"><Clock aria-hidden="true" />{formatMinutes(l.durationMin)}</span>
+                          <span className="tc-lesson__tools">
+                            <button
+                              type="button"
+                              className={cx('tc-iconbtn', l.preview && 'is-on')}
+                              aria-label={`Free preview: ${l.title}`}
+                              aria-pressed={!!l.preview}
+                              onClick={() => update((ms) => ms.map((x) => (x.id === m.id ? { ...x, lessons: x.lessons.map((y) => (y.id === l.id ? { ...y, preview: !y.preview } : y)) } : x)))}
+                            >
+                              <Eye />
+                            </button>
+                            <button type="button" className="tc-iconbtn" aria-label={`Edit ${l.title}`} onClick={() => { setErrors({}); setEditor({ moduleId: m.id, item: l, isNew: false }); }}><Pencil /></button>
+                            <button
+                              type="button"
+                              className="tc-iconbtn"
+                              aria-label={`Delete ${l.title}`}
+                              onClick={() => setConfirm({ title: 'Delete this item?', text: `${l.title} will be removed from the module.`, run: () => update((ms) => ms.map((x) => (x.id === m.id ? { ...x, lessons: x.lessons.filter((y) => y.id !== l.id) } : x))) })}
+                            >
+                              <Trash2 />
+                            </button>
+                          </span>
+                        </div>
+                      );
+                    })}
+                    <button type="button" className="tc-dashed-btn tc-dashed-btn--tall" onClick={() => openNew(m.id)}><Plus aria-hidden="true" />Add lesson</button>
+                  </div>
+                )}
+              </section>
+            );
+          })}
+          <button type="button" className="tc-addmodule" onClick={() => setModuleEditor({ title: '' })}>
+            <span className="tc-newtile__icon tc-newtile__icon--sq"><Plus aria-hidden="true" /></span>
+            Add module
+          </button>
         </div>
 
-        <aside className="stack" style={{ ['--gap' as string]: '20px', position: 'sticky', top: 88 }}>
-          <Card title="Summary">
-            <dl className="kv">
-              <dt>Modules</dt>
-              <dd>{modules.length}</dd>
-              {TYPES.map((t) => (
-                <div key={t} style={{ display: 'contents' }}>
-                  <dt>{LESSON_TYPE_LABEL[t]}</dt>
-                  <dd>{all.filter((l) => l.type === t).length}</dd>
-                </div>
-              ))}
-              <dt>Total Duration</dt>
-              <dd>{Math.round(all.reduce((n, l) => n + l.durationMin, 0) / 60)} hr</dd>
-            </dl>
-          </Card>
-          <Card title="Content Types">
-            <div className="stack" style={{ ['--gap' as string]: '10px' }}>
-              {TYPES.map((t) => {
-                const Icon = LESSON_ICONS[t];
-                return (
-                  <div key={t} className="row small">
-                    <span className="lesson-item__icon"><Icon /></span>
-                    <span className="grow">{LESSON_TYPE_LABEL[t]}</span>
-                    <Badge tone={TYPE_TONE[t]}>{all.filter((l) => l.type === t).length}</Badge>
-                  </div>
-                );
-              })}
+        <aside aria-labelledby="add-title" className="tc-card tc-addpanel">
+          <h2 id="add-title">Add content</h2>
+          <div className="tc-addgrid">
+            {(['video', 'text', 'assignment', 'quiz'] as LessonType[]).map((t) => {
+              const T = TYPE[t];
+              return (
+                <button key={t} type="button" className="tc-addtile v-lift" aria-label={`Add ${T.name.toLowerCase()}, ${count(t)} in course`} onClick={() => addOfType(t)}>
+                  <span className="tc-addtile__icon"><T.icon aria-hidden="true" /></span>
+                  <span className="tc-addtile__name">{T.name}</span>
+                  <span className="tc-addtile__n">{count(t)}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="tc-resrow">
+            <span className="tc-resrow__icon"><Paperclip aria-hidden="true" /></span>
+            <b className="tc-grow">Resource</b>
+            <span className="tc-addtile__n tc-addtile__n--static">{count('resource')}</span>
+            <button type="button" className="tc-iconbtn" aria-label="Add resource" onClick={() => addOfType('resource')}><Plus /></button>
+          </div>
+          {all.length > 0 && (
+            <div className="tc-mix" aria-label="Lesson mix">
+              <div className="tc-mix__bar" role="img" aria-label={TYPES.map((t) => `${TYPE[t].name} ${count(t)}`).join(', ')}>
+                {TYPES.filter((t) => count(t) > 0).map((t) => <span key={t} className={`tc-mix--${t}`} style={{ flexGrow: count(t) }} />)}
+              </div>
+              <div className="tc-mix__legend">
+                {TYPES.map((t) => <span key={t}><i className={`tc-sw tc-mix--${t}`} />{TYPE[t].name}</span>)}
+              </div>
             </div>
-          </Card>
+          )}
         </aside>
-      </div>
+      </section>
 
       <Modal
         open={!!editor}
         onClose={() => setEditor(null)}
         size="lg"
-        title={editor?.isNew ? "New Content" : "Edit Content"}
+        title={editor?.isNew ? 'New content' : 'Edit content'}
         description={modules.find((m) => m.id === editor?.moduleId)?.title}
         footer={
           <>
             <Button variant="secondary" onClick={() => setEditor(null)}>Cancel</Button>
-            <Button onClick={saveItem}>{editor?.isNew ? "Add" : "Save"}</Button>
+            <Button icon={editor?.isNew ? <Plus /> : <Save />} onClick={saveItem}>{editor?.isNew ? 'Add' : 'Save'}</Button>
           </>
         }
       >
         {editor && (
-          <div className="stack" style={{ ['--gap' as string]: '16px' }}>
-            <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-              <legend className="field__label" style={{ marginBottom: 8 }}>Type</legend>
-              <div className="type-picker">
+          <div className="tc-modal-stack">
+            <fieldset className="tc-fieldset">
+              <legend className="field__label">Type</legend>
+              <div className="tc-typepicker">
                 {TYPES.map((t) => {
-                  const Icon = LESSON_ICONS[t];
+                  const T = TYPE[t];
+                  const on = editor.item.type === t;
                   return (
-                    <label key={t} className={cx(editor.item.type === t && 'is-selected')}>
-                      <input type="radio" className="sr-only" name="ctype" checked={editor.item.type === t} onChange={() => { setItem({ type: t }); setErrors({}); }} />
-                      <Icon size={20} aria-hidden="true" />
-                      {LESSON_TYPE_LABEL[t]}
+                    <label key={t} className={cx('tc-typeopt', on && 'is-on')}>
+                      <input type="radio" className="sr-only" name="ctype" checked={on} onChange={() => { setItem({ type: t }); setErrors({}); }} />
+                      <T.icon aria-hidden="true" />
+                      {T.name}
                     </label>
                   );
                 })}
               </div>
             </fieldset>
-            <div className="grid grid-main-aside" style={{ gridTemplateColumns: 'minmax(0,1fr) 160px', ['--gap' as string]: '14px' }}>
+            <div className="tc-modal-row">
               <Input label="Title" required value={editor.item.title} onChange={(e) => setItem({ title: e.target.value })} error={errors.title} />
-              <Input label="Duration (min)" type="number" min={1} value={editor.item.durationMin} onChange={(e) => setItem({ durationMin: Number(e.target.value) })} error={errors.duration} />
+              <Input label="Minutes" type="number" min={1} value={editor.item.durationMin} onChange={(e) => setItem({ durationMin: Number(e.target.value) })} error={errors.duration} />
             </div>
 
-            {editor.item.type === 'video' && <Input label="Video URL" placeholder="https://video.example.am/lesson-1" value={editor.item.url ?? ''} onChange={(e) => setItem({ url: e.target.value })} error={errors.url} hint="Videos are hosted externally. Enter a link to your video." />}
-            {editor.item.type === 'text' && <Textarea label="Lesson Text" rows={7} value={editor.item.body ?? ''} onChange={(e) => setItem({ body: e.target.value })} hint="Markdown supported" />}
+            {editor.item.type === 'video' && <Input label="Video link" placeholder="https://video.example.am/lesson-1" value={editor.item.url ?? ''} onChange={(e) => setItem({ url: e.target.value })} error={errors.url} />}
+            {editor.item.type === 'text' && <Textarea label="Text" rows={7} value={editor.item.body ?? ''} onChange={(e) => setItem({ body: e.target.value })} hint="Markdown" />}
             {editor.item.type === 'resource' && (
               <>
-                <Input label="External Resource URL" placeholder="https://" value={editor.item.url ?? ''} onChange={(e) => setItem({ url: e.target.value })} error={errors.url} />
-                <div className="field">
-                  <span className="field__label">Or Attach a File</span>
-                  <label className="dropzone">
-                    <UploadCloud size={24} aria-hidden="true" />
-                    <span>{editor.item.fileName ? <strong>{editor.item.fileName}</strong> : <><strong>Choose a File</strong> from your computer</>}</span>
-                    <span className="xs muted">The file is not uploaded; only its name is kept</span>
-                    <input type="file" hidden onChange={(e) => setItem({ fileName: e.target.files?.[0]?.name })} />
-                  </label>
-                </div>
+                <Input label="Link" placeholder="https://" value={editor.item.url ?? ''} onChange={(e) => setItem({ url: e.target.value })} error={errors.url} />
+                <label className="tc-filedrop">
+                  <UploadCloud aria-hidden="true" />
+                  <b>{editor.item.fileName ?? 'Attach a file'}</b>
+                  <input type="file" className="sr-only" onChange={(e) => setItem({ fileName: e.target.files?.[0]?.name })} />
+                </label>
               </>
             )}
             {editor.item.type === 'assignment' && (
-              <Select label="Linked Assignment" value={editor.item.refId ?? ''} onChange={(e) => setItem({ refId: e.target.value })} error={errors.refId} options={[{ value: '', label: "Select an assignment" }, ...courseAssignments.map((a) => ({ value: a.id, label: a.title }))]} hint={courseAssignments.length ? undefined : "There are no assignments in this course yet"} />
+              <Select label="Linked task" value={editor.item.refId ?? ''} onChange={(e) => setItem({ refId: e.target.value })} error={errors.refId} options={[{ value: '', label: 'Select a task' }, ...courseAssignments.map((a) => ({ value: a.id, label: a.title }))]} hint={courseAssignments.length ? undefined : 'No tasks in this course yet'} />
             )}
             {editor.item.type === 'quiz' && (
-              <Select label="Linked Quiz" value={editor.item.refId ?? ''} onChange={(e) => setItem({ refId: e.target.value })} error={errors.refId} options={[{ value: '', label: "Select a quiz" }, ...courseQuizzes.map((q) => ({ value: q.id, label: q.title }))]} hint={courseQuizzes.length ? undefined : "Create a quiz in the Quizzes section first"} />
+              <Select label="Linked quiz" value={editor.item.refId ?? ''} onChange={(e) => setItem({ refId: e.target.value })} error={errors.refId} options={[{ value: '', label: 'Select a quiz' }, ...courseQuizzes.map((q) => ({ value: q.id, label: q.title }))]} hint={courseQuizzes.length ? undefined : 'Create a quiz first'} />
             )}
-            <Checkbox label="Allow preview without enrollment" checked={!!editor.item.preview} onChange={(e) => setItem({ preview: e.target.checked })} />
+            <Checkbox label="Free preview" checked={!!editor.item.preview} onChange={(e) => setItem({ preview: e.target.checked })} />
           </div>
         )}
       </Modal>
@@ -257,11 +372,12 @@ export function CourseContentPage() {
       <Modal
         open={!!moduleEditor}
         onClose={() => setModuleEditor(null)}
-        title={moduleEditor?.id ? "Rename Module" : "New Module"}
+        title={moduleEditor?.id ? 'Rename module' : 'New module'}
         footer={
           <>
             <Button variant="secondary" onClick={() => setModuleEditor(null)}>Cancel</Button>
             <Button
+              icon={<Save />}
               disabled={!moduleEditor?.title.trim()}
               onClick={() => {
                 if (!moduleEditor) return;
@@ -273,10 +389,10 @@ export function CourseContentPage() {
           </>
         }
       >
-        <Input label="Module Title" value={moduleEditor?.title ?? ''} onChange={(e) => setModuleEditor((m) => (m ? { ...m, title: e.target.value } : m))} placeholder="e.g., Introduction" />
+        <Input label="Module title" value={moduleEditor?.title ?? ''} onChange={(e) => setModuleEditor((m) => (m ? { ...m, title: e.target.value } : m))} placeholder="e.g. Introduction" />
       </Modal>
 
       <ConfirmDialog open={!!confirm} onClose={() => setConfirm(null)} onConfirm={() => confirm?.run()} title={confirm?.title ?? ''} text={confirm?.text ?? ''} confirmLabel="Delete" />
-    </>
+    </div>
   );
 }

@@ -1,165 +1,227 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookMarked, CheckSquare, ClipboardPlus, FilePlus2, FileQuestion, GraduationCap, LogIn, PlusCircle, Send, Target, Users } from 'lucide-react';
-import { shortTitle, teacherCourses, teacherQuizzes, teacherSubmissionRows } from '../../data/teacherView';
-import { teacherAssignments } from '../../data/assignments';
-import { coursePerformance, enrollmentTrend, recentActivity, studentRecords, trendLabels } from '../../data/analytics';
+import {
+  ArrowRight, BookOpen, Check, ChevronRight, CircleAlert, ClipboardList, FileQuestionMark, Plus, Presentation, Send,
+  SquareCheckBig, Star, Target, Users, Video,
+} from 'lucide-react';
+import type { Assignment, Course } from '../../types';
+import { shortTitle, teacherCourses, teacherSubmissionRows } from '../../data/teacherView';
+import { coursePerformance, recentActivity, studentRecords } from '../../data/analytics';
 import { getCourse } from '../../data/courses';
 import { fullName, getUser } from '../../data/users';
 import { useDemoSession } from '../../context/DemoSession';
-import { BarChart, CHART_COLORS, ChartCard, LineChart } from '../../components/charts/Charts';
-import { ButtonLink } from '../../components/ui/Button';
-import { Avatar, Card, EmptyState, Segmented } from '../../components/ui/Misc';
+import { ShellTitle } from '../../components/layout/AppShell';
 import { StatCard } from '../../components/ui/StatCard';
-import { Badge } from '../../components/ui/Badge';
-import { average, cx, daysUntil, formatNumber, formatShortDate, relativeDue, relativeTime } from '../../lib/format';
-import { SCENES } from '../../lib/visual';
+import { IconBox } from '../../components/ui/Visual';
+import { CATEGORY_ICONS, photoFor } from '../../lib/visual';
+import { average, cx, formatNumber, TODAY } from '../../lib/format';
 
-const ACTIVITY_ICON = { submission: Send, quiz: FileQuestion, lesson: GraduationCap, enroll: LogIn };
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const todayLabel = () => `${WEEKDAYS[TODAY.getDay()]}, ${TODAY.getDate()} ${MONTHS[TODAY.getMonth()]}`;
+
+/** Short "ago" chip text: 40 min, 2 h, 1 d. */
+function ago(v: string) {
+  const min = Math.max(1, Math.round((TODAY.getTime() - new Date(v).getTime()) / 60000));
+  if (min < 60) return `${min} min`;
+  const h = Math.round(min / 60);
+  return h < 24 ? `${h} h` : `${Math.round(h / 24)} d`;
+}
+
+function initials(name: string) {
+  const p = name.trim().split(/\s+/);
+  return ((p[0]?.[0] ?? '') + (p[1]?.[0] ?? '')).toUpperCase();
+}
+
+/** Round portrait (or initials) used in the hero, chips and feed. */
+function Face({ name, size = 40, className }: { name: string; size?: number; className?: string }) {
+  const photo = photoFor(name);
+  return (
+    <span className={cx('tc-face', className)} style={{ width: size, height: size, fontSize: Math.round(size * 0.34) }} aria-hidden="true">
+      {photo ? <img src={photo} alt="" loading="lazy" /> : initials(name)}
+    </span>
+  );
+}
+
+const ACTIVITY_ICON = { submission: Send, quiz: FileQuestionMark, lesson: Check, enroll: Plus };
+
+/** English labels for the sample activity texts in data/analytics.ts (stored in Armenian there). */
+const ACTIVITY_WHAT: Record<string, string> = {
+  e1: 'Component Library',
+  e2: 'Lists and keys',
+  e3: 'pandas Fundamentals',
+  e5: 'Query Collection',
+  e6: 'React Core Concepts',
+};
 
 export function TeacherDashboard() {
   const { teacher } = useDemoSession();
-  const [chart, setChart] = useState<'scores' | 'enroll'>('scores');
-  const rows = teacherSubmissionRows();
-  const pending = rows.filter((r) => r.submission.status === 'submitted');
+  const pending = teacherSubmissionRows().filter((r) => r.submission.status === 'submitted');
   const published = teacherCourses.filter((c) => c.status === 'published');
   const totalStudents = published.reduce((n, c) => n + c.enrolled, 0);
-  const perf = coursePerformance;
+  const rated = teacherCourses.filter((c) => c.rating > 0);
+  const rating = rated.length ? rated.reduce((n, c) => n + c.rating, 0) / rated.length : 0;
 
-  const deadlines = [
-    ...teacherAssignments.map((a) => ({ id: a.id, title: a.title, due: a.dueDate, kind: 'Առաջադրանք', courseId: a.courseId, to: `/teacher/assignments/${a.id}/submissions` })),
-    ...teacherQuizzes.map((q) => ({ id: q.id, title: q.title, due: q.dueDate, kind: 'Թեստ', courseId: q.courseId, to: `/teacher/quizzes/${q.id}/edit` })),
-  ]
-    .filter((d) => daysUntil(d.due) >= 0)
-    .sort((a, b) => a.due.localeCompare(b.due))
-    .slice(0, 5);
+  // Grading hero: unique students waiting + per-task queue.
+  const waiting = [...new Map(pending.map((r) => [r.student.id, r.student])).values()];
+  const faces = waiting.slice(0, 4);
+  const byTask = new Map<string, { a: Assignment; course: Course; n: number }>();
+  pending.forEach((r) => byTask.set(r.assignment.id, { a: r.assignment, course: r.course, n: (byTask.get(r.assignment.id)?.n ?? 0) + 1 }));
+  const queue = [...byTask.values()].sort((x, y) => y.n - x.n).slice(0, 3);
+
+  const perf = coursePerformance.map((p) => ({ ...p, course: getCourse(p.courseId) }));
+  const lead = [...perf].sort((a, b) => b.avgAssignment + b.avgQuiz - (a.avgAssignment + a.avgQuiz))[0];
+  const lag = [...perf].sort((a, b) => a.completionRate - b.completionRate)[0];
+  const atRisk = studentRecords.filter((s) => s.status === 'at-risk');
+
+  const create = [
+    { label: 'New course', icon: BookOpen, to: '/teacher/courses/create' },
+    { label: 'New task', icon: ClipboardList, to: '/teacher/assignments?new=1' },
+    { label: 'New quiz', icon: FileQuestionMark, to: '/teacher/quizzes/new/edit' },
+    { label: 'New lesson', icon: Video, to: `/teacher/courses/${teacherCourses[0]?.id}/content` },
+  ];
 
   return (
-    <>
-      <section className="welcome welcome--teacher">
-        <div className="welcome__text">
-          <h1>Բարի օր, <span className="hl">{teacher.firstName}</span></h1>
-          <p>Այսօր գնահատման է սպասում {pending.length} աշխատանք, իսկ {studentRecords.filter((s) => s.status === 'at-risk').length} ուսանող կարիք ունի ուշադրության։</p>
-          <div className="welcome__actions">
-            <ButtonLink to="/teacher/grading" variant="primary" icon={<CheckSquare />}>Բացել գնահատման կենտրոնը</ButtonLink>
-            <ButtonLink to="/teacher/courses/create" variant="secondary" icon={<PlusCircle />}>Ստեղծել դասընթաց</ButtonLink>
+    <div className="tc-page">
+      <ShellTitle
+        title={`Good morning, ${teacher.firstName}`}
+        meta={<><Presentation aria-hidden="true" /><b>{teacherCourses.length} courses</b><span className="tc-dot" aria-hidden="true" />{todayLabel()}</>}
+      />
+
+      <section className="tc-hero-row">
+        <div className="tc-queue">
+          <div className="tc-queue__main">
+            <div className="tc-queue__kicker"><SquareCheckBig aria-hidden="true" />Grading queue</div>
+            <div className="tc-queue__count"><b>{pending.length}</b><span>to grade</span></div>
+            {faces.length > 0 && (
+              <div className="tc-faces">
+                {faces.map((s) => <Face key={s.id} name={fullName(s)} />)}
+                {waiting.length > faces.length && <span className="tc-face tc-face--more">+{waiting.length - faces.length}</span>}
+              </div>
+            )}
+            <Link to="/teacher/grading" className="tc-pill tc-pill--white">Start grading<ArrowRight aria-hidden="true" /></Link>
+          </div>
+          <div className="tc-queue__list">
+            {queue.map(({ a, course, n }) => {
+              const Icon = CATEGORY_ICONS[course.category];
+              return (
+                <Link key={a.id} to={`/teacher/assignments/${a.id}/submissions`} className="tc-queue__item">
+                  <span className="tc-queue__icon" aria-hidden="true"><Icon /></span>
+                  <span className="tc-grow">
+                    <span className="tc-ellipsis tc-queue__title">{a.title}</span>
+                    <span className="tc-ellipsis tc-queue__course">{course.title}</span>
+                  </span>
+                  <b className="tc-queue__n">{n}</b>
+                </Link>
+              );
+            })}
           </div>
         </div>
-        <div className="welcome__art" aria-hidden="true">
-          <div className="welcome__arch"><img src={SCENES.teacher} alt="" /></div>
+
+        <div className="tc-create">
+          {create.map(({ label, icon: Icon, to }) => (
+            <Link key={label} to={to} className="tc-create__tile v-lift">
+              <IconBox icon={<Icon />} size="lg" />
+              <span>{label}</span>
+            </Link>
+          ))}
         </div>
       </section>
 
-      <div className="grid grid-4 mb-20">
-        <StatCard label="Դասընթացներ" value={teacherCourses.length} icon={<BookMarked />} meta={`${published.length} հրապարակված, ${teacherCourses.length - published.length} սևագիր`} />
-        <StatCard label="Գրանցված ուսանողներ" value={formatNumber(totalStudents)} icon={<Users />} tone="navy" meta={<><span className="up">+214</span> այս ամիս</>} />
-        <StatCard label="Սպասող հանձնումներ" value={pending.length} icon={<CheckSquare />} tone="warning" meta={<Link to="/teacher/grading">Բացել գնահատման կենտրոնը</Link>} />
-        <StatCard label="Միջին արդյունք" value={average(perf.map((p) => p.avgAssignment))} unit="%" icon={<Target />} tone="success" meta={<><span className="up">+3%</span> նախորդ ամսվա համեմատ</>} />
-      </div>
+      <section aria-label="Summary" className="tc-stats">
+        <StatCard label="Courses" value={teacherCourses.length} icon={<BookOpen />} to="/teacher/courses" />
+        <StatCard label="Students" value={formatNumber(totalStudents)} icon={<Users />} trend="+214" to="/teacher/students" />
+        <StatCard label="Average result" value={average(perf.map((p) => p.avgAssignment))} unit="%" icon={<Target />} trend="+3%" to="/teacher/reports" />
+        <StatCard label="Course rating" value={rating.toFixed(1)} icon={<Star />} to="/teacher/reports" />
+      </section>
 
-      <div className="grid grid-main-aside">
-        <div className="stack" style={{ ['--gap' as string]: '20px', minWidth: 0 }}>
-          <ChartCard
-            title="Դասընթացների արդյունավետություն"
-            subtitle={chart === 'scores' ? 'Առաջադրանքների և թեստերի միջին միավորը, %' : 'Նոր գրանցումներ ըստ ամիսների'}
-            legend={
-              chart === 'scores'
-                ? [
-                    { label: 'Առաջադրանքներ', color: CHART_COLORS[0] },
-                    { label: 'Թեստեր', color: CHART_COLORS[1] },
-                    { label: 'Ավարտելիություն', color: CHART_COLORS[2] },
-                  ]
-                : perf.map((p, i) => ({ label: shortTitle(p.courseId), color: CHART_COLORS[i] }))
-            }
-            actions={<Segmented label="Գրաֆիկի տեսակ" value={chart} onChange={setChart} items={[{ key: 'scores', label: 'Արդյունքներ' }, { key: 'enroll', label: 'Գրանցումներ' }]} />}
-          >
-            {chart === 'scores' ? (
-              <BarChart
-                labels={perf.map((p) => shortTitle(p.courseId))}
-                series={[
-                  { name: 'Առաջադրանքներ', values: perf.map((p) => p.avgAssignment) },
-                  { name: 'Թեստեր', values: perf.map((p) => p.avgQuiz) },
-                  { name: 'Ավարտելիություն', values: perf.map((p) => p.completionRate) },
-                ]}
-                max={100}
-                suffix="%"
-                height={240}
-                ariaLabel="Դասընթացների միջին արդյունքները"
-              />
-            ) : (
-              <LineChart labels={trendLabels} series={perf.map((p, i) => ({ name: shortTitle(p.courseId), values: enrollmentTrend[p.courseId], color: CHART_COLORS[i] }))} height={240} ariaLabel="Գրանցումների դինամիկան" />
-            )}
-          </ChartCard>
-
-          <Card title="Գնահատման սպասող աշխատանքներ" subtitle={`${pending.length} աշխատանք`} actions={<ButtonLink to="/teacher/grading" variant="ghost" size="sm">Գնահատման կենտրոն</ButtonLink>} padded={false}>
-            {pending.length === 0 ? (
-              <EmptyState compact title="Բոլոր աշխատանքները գնահատված են" />
-            ) : (
-              <div className="list">
-                {pending.slice(0, 5).map((r) => (
-                  <Link key={r.submission.id} to={`/teacher/grading?submission=${r.submission.id}`} className="list-row">
-                    <Avatar name={fullName(r.student)} size={36} />
-                    <div className="grow" style={{ minWidth: 0 }}>
-                      <div className="list-row__title">{fullName(r.student)}</div>
-                      <div className="list-row__sub">{r.assignment.title}, {r.course.title}</div>
-                    </div>
-                    {r.submission.late && <Badge tone="danger">Ուշացած</Badge>}
-                    <span className="xs muted nowrap">{relativeTime(r.submission.submittedAt!)}</span>
-                  </Link>
-                ))}
+      <section className="tc-split">
+        <div className="tc-split__main">
+          <div className="tc-card">
+            <div className="tc-card__head">
+              <h2>{lead && lag ? `${shortTitle(lead.courseId)} leads, ${shortTitle(lag.courseId)} completion lags` : 'Course performance'}</h2>
+              <div className="tc-legend">
+                <span><i className="tc-sw tc-sw--navy" />Tasks</span>
+                <span><i className="tc-sw tc-sw--blue" />Quizzes</span>
+                <span><i className="tc-sw tc-sw--light" />Completion</span>
               </div>
-            )}
-          </Card>
-        </div>
-
-        <div className="stack" style={{ ['--gap' as string]: '20px' }}>
-          <Card title="Արագ գործողություններ">
-            <div className="stack" style={{ ['--gap' as string]: '8px' }}>
-              <ButtonLink to="/teacher/courses/create" variant="secondary" block icon={<PlusCircle />} style={{ justifyContent: 'flex-start' }}>Ստեղծել դասընթաց</ButtonLink>
-              <ButtonLink to="/teacher/assignments?new=1" variant="secondary" block icon={<ClipboardPlus />} style={{ justifyContent: 'flex-start' }}>Ավելացնել առաջադրանք</ButtonLink>
-              <ButtonLink to="/teacher/quizzes/new/edit" variant="secondary" block icon={<FilePlus2 />} style={{ justifyContent: 'flex-start' }}>Ստեղծել թեստ</ButtonLink>
             </div>
-          </Card>
-
-          <Card title="Մոտակա վերջնաժամկետներ" padded={false}>
-            <div className="list">
-              {deadlines.map((d) => {
-                const [day, mon] = formatShortDate(d.due).split(' ');
+            <div className="tc-perf">
+              {perf.map((p) => {
+                const Icon = p.course ? CATEGORY_ICONS[p.course.category] : BookOpen;
                 return (
-                  <Link key={d.id} to={d.to} className="list-row" style={{ padding: '12px 18px' }}>
-                    <div className={cx('deadline-date', daysUntil(d.due) <= 2 && 'deadline-date--urgent')}>
-                      <b>{day}</b>
-                      <span>{mon}</span>
-                    </div>
-                    <div className="grow" style={{ minWidth: 0 }}>
-                      <div className="list-row__title">{d.title}</div>
-                      <div className="list-row__sub">{d.kind}, {relativeDue(d.due)}</div>
-                    </div>
+                  <Link key={p.courseId} to={`/teacher/courses/${p.courseId}`} className="tc-perf__row">
+                    <span className="tc-perf__name">
+                      <IconBox icon={<Icon />} size="md" />
+                      <span className="tc-grow">
+                        <b>{shortTitle(p.courseId)}</b>
+                        <span className="tc-mini"><Users aria-hidden="true" />{formatNumber(p.enrolled)}</span>
+                      </span>
+                    </span>
+                    <span className="tc-perf__bars">
+                      {([['Tasks', p.avgAssignment, 'navy'], ['Quizzes', p.avgQuiz, 'blue'], ['Completion', p.completionRate, 'light']] as const).map(([label, v, tone]) => (
+                        <span key={label} className="tc-bar" role="img" aria-label={`${label}: ${v}%`}>
+                          <span className="tc-bar__track"><span className={`tc-bar__fill tc-sw--${tone}`} style={{ width: `${v}%` }} /></span>
+                          <span className="tc-bar__v">{v}%</span>
+                        </span>
+                      ))}
+                    </span>
                   </Link>
                 );
               })}
             </div>
-          </Card>
+          </div>
 
-          <Card title="Ուսանողների վերջին ակտիվությունը" padded={false}>
-            <div className="list">
-              {recentActivity.map((e) => {
-                const Icon = ACTIVITY_ICON[e.kind];
-                const s = getUser(e.studentId);
-                return (
-                  <Link key={e.id} to={`/teacher/students/${e.studentId}`} className="list-row" style={{ padding: '12px 18px', alignItems: 'flex-start' }}>
-                    <span className="list-row__icon" style={{ width: 32, height: 32 }}><Icon size={16} /></span>
-                    <div className="grow small" style={{ minWidth: 0 }}>
-                      <span className="strong" style={{ color: 'var(--navy-900)' }}>{fullName(s)}</span> {e.text}
-                      <div className="xs muted">{getCourse(e.courseId)?.title}, {relativeTime(e.time)}</div>
-                    </div>
-                  </Link>
-                );
-              })}
+          {atRisk.length > 0 && (
+            <div className="tc-card tc-alert">
+              <IconBox icon={<CircleAlert />} size="lg" tone="red" />
+              <div className="tc-alert__text">
+                <b>{atRisk.length} {atRisk.length === 1 ? 'student is' : 'students are'} falling behind</b>
+                <span>Low score or progress</span>
+              </div>
+              <div className="tc-alert__people">
+                {atRisk.map((r) => {
+                  const u = getUser(r.userId);
+                  return (
+                    <Link key={r.userId} to={`/teacher/students/${r.userId}`} className="tc-person-chip">
+                      <Face name={fullName(u)} size={32} />
+                      {u?.firstName}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </Card>
+          )}
         </div>
-      </div>
-    </>
+
+        <div className="tc-card tc-feed">
+          <div className="tc-card__head">
+            <h2>Activity</h2>
+            <Link to="/teacher/students" className="v-more">All<ChevronRight aria-hidden="true" /></Link>
+          </div>
+          <div className="tc-feed__list">
+            {recentActivity.map((e) => {
+              const Icon = ACTIVITY_ICON[e.kind];
+              const name = fullName(getUser(e.studentId));
+              const course = getCourse(e.courseId);
+              const score = e.kind === 'quiz' ? e.text.match(/(\d+)%/)?.[1] : undefined;
+              const what = e.kind === 'enroll' ? `Joined ${course?.title ?? ''}` : ACTIVITY_WHAT[e.id] ?? course?.title ?? '';
+              return (
+                <Link key={e.id} to={`/teacher/students/${e.studentId}`} className="tc-feed__row">
+                  <span className="tc-feed__av">
+                    <Face name={name} size={44} className="tc-face--soft" />
+                    <span className="tc-feed__badge" aria-hidden="true"><Icon /></span>
+                  </span>
+                  <span className="tc-grow">
+                    <b className="tc-ellipsis">{name}</b>
+                    <span className="tc-ellipsis tc-sub">{what}</span>
+                  </span>
+                  <span className={cx('tc-tag', score && 'tc-tag--blue')}>{score ? `${score}%` : ago(e.time)}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

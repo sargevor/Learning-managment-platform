@@ -1,18 +1,23 @@
-import { useRef, useState, type FormEvent } from 'react';
-import { BookOpen, Calendar, Camera, Mail, MapPin, Pencil, Phone, X } from 'lucide-react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { BookOpen, Briefcase, Calendar, Check, ChevronRight, Eye, FileText, GraduationCap, Image, LibraryBig, Mail, MapPin, Pencil, Phone, Save, Settings, Star, Target, Trophy, User as UserIcon, Users, X } from 'lucide-react';
 import type { Role, User } from '../../types';
 import { useDemoSession } from '../../context/DemoSession';
 import { useToast } from '../../context/ToastContext';
 import { getEnrolledCourses } from '../../data/enrollments';
 import { courses } from '../../data/courses';
 import { studentRecords } from '../../data/analytics';
-import { Button, ButtonLink } from '../../components/ui/Button';
-import { Input, Textarea } from '../../components/ui/Field';
-import { Avatar, Card, PageHeader } from '../../components/ui/Misc';
-import { Badge } from '../../components/ui/Badge';
-import { formatDate } from '../../lib/format';
+import { getGradeRows } from '../../data/studentView';
+import { ShellTitle } from '../../components/layout/AppShell';
+import { Avatar } from '../../components/ui/Misc';
+import { StatCard } from '../../components/ui/StatCard';
+import { SCENES } from '../../lib/visual';
+import { average, cx } from '../../lib/format';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+type FieldKey = 'firstName' | 'lastName' | 'email' | 'phone' | 'city' | 'institution' | 'program' | 'year' | 'title';
 
 export function ProfilePage({ role }: { role: Role }) {
   const session = useDemoSession();
@@ -23,131 +28,224 @@ export function ProfilePage({ role }: { role: Role }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [avatar, setAvatar] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const name = `${user.firstName} ${user.lastName}`;
   const set = (k: keyof User, v: string) => setDraft((d) => ({ ...d, [k]: v }));
+  const shown = editing ? draft : user;
+
+  const startEdit = () => {
+    setDraft(user);
+    setEditing(true);
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      formRef.current?.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
+    });
+  };
 
   const save = (e: FormEvent) => {
     e.preventDefault();
     const n: Record<string, string> = {};
-    if (!draft.firstName.trim()) n.firstName = 'Անունը պարտադիր է';
-    if (!draft.lastName.trim()) n.lastName = 'Ազգանունը պարտադիր է';
-    if (!EMAIL_RE.test(draft.email)) n.email = 'Էլ. հասցեի ձևաչափը սխալ է';
-    if (draft.phone && !/^[+\d\s()-]{6,}$/.test(draft.phone)) n.phone = 'Հեռախոսահամարը սխալ է';
+    if (!draft.firstName.trim()) n.firstName = 'First name is required';
+    if (!draft.lastName.trim()) n.lastName = 'Last name is required';
+    if (!EMAIL_RE.test(draft.email)) n.email = 'Invalid email';
+    if (draft.phone && !/^[+\d\s()-]{6,}$/.test(draft.phone)) n.phone = 'Invalid phone number';
     setErrors(n);
     if (Object.keys(n).length) return;
     session.updateUser(role, draft);
     setEditing(false);
-    toast.success('Պրոֆիլը թարմացվեց', 'Փոփոխությունները պահվել են միայն այս էջում և չեն ուղարկվել սերվեր։');
+    toast.success('Profile updated', 'Saved on this page only.');
   };
 
-  const stats =
+  const enrolled = role === 'student' ? getEnrolledCourses() : [];
+  const own = courses.filter((c) => c.teacherId === user.id);
+  const rated = own.filter((c) => c.rating > 0);
+  const gradeRows = role === 'student' ? getGradeRows().filter((r) => r.percent >= 0) : [];
+
+  const stats: { label: string; value: ReactNode; unit?: string; icon: ReactNode; to: string }[] =
     role === 'student'
       ? [
-          ['Դասընթացներ', getEnrolledCourses().length],
-          ['Ավարտված', getEnrolledCourses().filter((e) => e.state === 'completed').length],
-          ['Միջին արդյունք', '89%'],
+          { label: 'Courses', value: enrolled.length, icon: <BookOpen />, to: '/student/courses' },
+          { label: 'Completed', value: enrolled.filter((e) => e.state === 'completed').length, icon: <Trophy />, to: '/student/courses' },
+          { label: 'Average result', value: average(gradeRows.map((r) => r.percent)), unit: '%', icon: <Target />, to: '/student/grades' },
         ]
       : [
-          ['Դասընթացներ', courses.filter((c) => c.teacherId === user.id).length],
-          ['Ուսանողներ', studentRecords.length],
-          ['Վարկանիշ', '4.8'],
+          { label: 'Courses', value: own.length, icon: <BookOpen />, to: '/teacher/courses' },
+          { label: 'Students', value: studentRecords.length, icon: <Users />, to: '/teacher/students' },
+          { label: 'Rating', value: rated.length ? (rated.reduce((a, c) => a + c.rating, 0) / rated.length).toFixed(1) : '—', icon: <Star />, to: '/teacher/courses' },
         ];
+
+  const fields: { key: FieldKey; label: string; icon: ReactNode; type?: string; auto?: string; required?: boolean; placeholder?: string; wide?: boolean }[] = [
+    { key: 'firstName', label: 'First name', icon: <UserIcon />, auto: 'given-name', required: true },
+    { key: 'lastName', label: 'Last name', icon: <UserIcon />, auto: 'family-name', required: true },
+    { key: 'email', label: 'Email', icon: <Mail />, type: 'email', auto: 'email', required: true },
+    { key: 'phone', label: 'Phone', icon: <Phone />, type: 'tel', auto: 'tel', placeholder: '+374 XX XXX XXX' },
+    { key: 'city', label: 'City', icon: <MapPin />, auto: 'address-level2' },
+    { key: 'institution', label: role === 'student' ? 'Institution' : 'Organisation', icon: <LibraryBig />, auto: 'organization' },
+    ...(role === 'student'
+      ? [
+          { key: 'program' as const, label: 'Programme', icon: <GraduationCap /> },
+          { key: 'year' as const, label: 'Year', icon: <Calendar /> },
+        ]
+      : [{ key: 'title' as const, label: 'Title', icon: <Briefcase />, wide: true }]),
+  ];
+
+  const joined = new Date(user.joinedAt);
+  const sub = role === 'student' ? [user.program, user.year && user.year !== '—' ? user.year : ''].filter(Boolean).join(', ') : user.title;
 
   return (
     <>
-      <PageHeader breadcrumbs={[{ label: 'Վահանակ', to: `/${role}/dashboard` }, { label: 'Պրոֆիլ' }]} title="Իմ պրոֆիլը" description="Անձնական և ուսումնական տվյալներ, որոնք տեսանելի են դասավանդողներին և խմբի անդամներին։" actions={<ButtonLink to={`/${role}/settings`} variant="secondary">Կարգավորումներ</ButtonLink>} />
+      <ShellTitle
+        title="My profile"
+        meta={
+          <>
+            {role === 'student' ? <GraduationCap aria-hidden="true" /> : <Briefcase aria-hidden="true" />}
+            {sub && <b>{sub}</b>}
+            {sub && user.institution && <span className="tp-dot" aria-hidden="true" />}
+            {user.institution}
+          </>
+        }
+      />
 
-      <div className="grid grid-aside-main">
-        <div className="stack" style={{ ['--gap' as string]: '20px' }}>
-          <Card>
-            <div className="stack" style={{ alignItems: 'center', textAlign: 'center', ['--gap' as string]: '12px' }}>
-              <div style={{ position: 'relative' }}>
-                {avatar ? <img src={avatar} alt="Պրոֆիլի նկար" style={{ width: 104, height: 104, borderRadius: '50%', objectFit: 'cover' }} /> : <Avatar name={name} size={104} />}
-                <button type="button" className="icon-btn" onClick={() => fileRef.current?.click()} aria-label="Փոխել նկարը" style={{ position: 'absolute', right: -2, bottom: -2, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '50%', width: 34, height: 34 }}>
-                  <Camera size={16} />
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      setAvatar(URL.createObjectURL(f));
-                      toast.info('Նկարը թարմացվեց', 'Նկարը ցուցադրվում է միայն այս բրաուզերում և չի վերբեռնվում։');
-                    }
-                  }}
-                />
-              </div>
-              <div>
-                <h2 style={{ fontSize: 'var(--fs-lg)' }}>{name}</h2>
-                <div className="small muted">{role === 'student' ? user.program : user.title}</div>
-              </div>
-              <Badge tone="accent">{role === 'student' ? 'Ուսանող' : 'Դասավանդող'}</Badge>
-            </div>
-            <div className="grid grid-3" style={{ ['--gap' as string]: '8px', marginTop: 20, textAlign: 'center' }}>
-              {stats.map(([l, v]) => (
-                <div key={l as string} style={{ padding: '10px 4px', background: 'var(--surface-muted)', borderRadius: 'var(--r-md)' }}>
-                  <div className="strong" style={{ color: 'var(--navy-900)' }}>{v}</div>
-                  <div className="xs muted">{l}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-          <Card title="Կոնտակտներ">
-            <ul className="check-list">
-              <li><Mail aria-hidden="true" />{user.email}</li>
-              <li><Phone aria-hidden="true" />{user.phone || 'Նշված չէ'}</li>
-              <li><MapPin aria-hidden="true" />{user.city || 'Նշված չէ'}</li>
-              <li><BookOpen aria-hidden="true" />{user.institution || 'Նշված չէ'}</li>
-              <li><Calendar aria-hidden="true" />Հարթակում է {formatDate(user.joinedAt)}-ից</li>
-            </ul>
-          </Card>
+      <section aria-label={name} className="tp-cover">
+        <div className="tp-cover__banner">
+          <img src={(role === 'student' ? enrolled[0]?.course.image : own[0]?.image) ?? SCENES.study} alt="" />
         </div>
-
-        <form onSubmit={save} noValidate>
-          <Card
-            title="Անձնական տվյալներ"
-            subtitle={editing ? 'Խմբագրման ռեժիմ' : 'Տվյալները խմբագրելու համար սեղմեք «Խմբագրել»'}
-            actions={
-              !editing && (
-                <Button variant="secondary" size="sm" icon={<Pencil />} onClick={() => { setDraft(user); setEditing(true); }}>
-                  Խմբագրել
-                </Button>
-              )
-            }
-            footer={
-              editing && (
-                <>
-                  <Button variant="secondary" icon={<X />} onClick={() => { setEditing(false); setErrors({}); }}>Չեղարկել</Button>
-                  <Button type="submit" variant="primary">Պահել փոփոխությունները</Button>
-                </>
-              )
-            }
-          >
-            <div className="stack" style={{ ['--gap' as string]: '16px' }}>
-              <div className="grid grid-2" style={{ ['--gap' as string]: '16px' }}>
-                <Input label="Անուն" required value={editing ? draft.firstName : user.firstName} disabled={!editing} onChange={(e) => set('firstName', e.target.value)} error={errors.firstName} />
-                <Input label="Ազգանուն" required value={editing ? draft.lastName : user.lastName} disabled={!editing} onChange={(e) => set('lastName', e.target.value)} error={errors.lastName} />
-                <Input label="Էլ. հասցե" type="email" required value={editing ? draft.email : user.email} disabled={!editing} onChange={(e) => set('email', e.target.value)} error={errors.email} />
-                <Input label="Հեռախոս" value={(editing ? draft.phone : user.phone) ?? ''} disabled={!editing} onChange={(e) => set('phone', e.target.value)} error={errors.phone} placeholder="+374 XX XXX XXX" />
-                <Input label="Քաղաք" value={(editing ? draft.city : user.city) ?? ''} disabled={!editing} onChange={(e) => set('city', e.target.value)} />
-                <Input label={role === 'student' ? 'Ուսումնական հաստատություն' : 'Կազմակերպություն'} value={(editing ? draft.institution : user.institution) ?? ''} disabled={!editing} onChange={(e) => set('institution', e.target.value)} />
-                {role === 'student' ? (
-                  <>
-                    <Input label="Մասնագիտություն" value={(editing ? draft.program : user.program) ?? ''} disabled={!editing} onChange={(e) => set('program', e.target.value)} />
-                    <Input label="Կուրս" value={(editing ? draft.year : user.year) ?? ''} disabled={!editing} onChange={(e) => set('year', e.target.value)} />
-                  </>
-                ) : (
-                  <Input label="Պաշտոն / կոչում" value={(editing ? draft.title : user.title) ?? ''} disabled={!editing} onChange={(e) => set('title', e.target.value)} fieldClassName="span-2" />
-                )}
-              </div>
-              <Textarea label="Իմ մասին" value={(editing ? draft.bio : user.bio) ?? ''} disabled={!editing} onChange={(e) => set('bio', e.target.value)} rows={4} hint={editing ? `${(draft.bio ?? '').length}/400 նիշ` : undefined} maxLength={400} />
+        <div className="tp-cover__body">
+          <span className="tp-cover__photo">
+            {avatar ? <img src={avatar} alt={name} className="tp-cover__img" /> : <Avatar name={name} size={152} />}
+            <button type="button" className="tp-cover__cam" onClick={() => fileRef.current?.click()} aria-label="Change photo">
+              <Image aria-hidden="true" />
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) {
+                  setAvatar(URL.createObjectURL(f));
+                  toast.info('Photo updated', 'Shown in this browser only, not uploaded.');
+                }
+              }}
+            />
+          </span>
+          <div className="tp-cover__text">
+            <h2 className="tp-hero__name">{name}</h2>
+            <div className="tp-chips">
+              <span className="tp-chip tp-chip--lg tp-chip--blue">{role === 'student' ? <GraduationCap aria-hidden="true" /> : <Briefcase aria-hidden="true" />}{role === 'student' ? 'Student' : 'Teacher'}</span>
+              {user.city && <span className="tp-chip tp-chip--lg tp-chip--plain"><MapPin aria-hidden="true" />{user.city}</span>}
+              <span className="tp-chip tp-chip--lg tp-chip--plain"><Calendar aria-hidden="true" />Since {MONTHS[joined.getMonth()]} {joined.getFullYear()}</span>
             </div>
-          </Card>
+          </div>
+          <div className="tp-actions">
+            {!editing && (
+              <button type="button" className="tp-btn tp-btn--primary" onClick={startEdit}>
+                <Pencil aria-hidden="true" />Edit profile
+              </button>
+            )}
+            <Link to={`/${role}/settings`} className="tp-iconbtn" aria-label="Settings">
+              <Settings aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Summary" className="tp-tiles">
+        {stats.map((s) => (
+          <StatCard key={s.label} label={s.label} value={s.value} unit={s.unit} icon={s.icon} to={s.to} />
+        ))}
+      </section>
+
+      <section className="tp-split">
+        <form ref={formRef} onSubmit={save} noValidate aria-label="Personal details" className={cx('tp-card tp-span2 tp-form', !editing && 'tp-form--view')}>
+          <div className="tp-head">
+            <h2 className="tp-h2">Personal details</h2>
+            <span className="tp-count"><Eye aria-hidden="true" />{role === 'student' ? 'Teachers and classmates' : 'Students'}</span>
+          </div>
+          <div className="tp-fields">
+            {fields.map((f) => {
+              const id = `pf-${f.key}`;
+              const err = errors[f.key];
+              return (
+                <div key={f.key} className={cx('tp-field', f.wide && 'tp-field--wide')}>
+                  <label htmlFor={id}>{f.label}{f.required && editing && <span className="tp-req" aria-hidden="true"> *</span>}</label>
+                  <span className={cx('tp-input', err && 'tp-input--error')}>
+                    {f.icon}
+                    <input
+                      id={id}
+                      type={f.type ?? 'text'}
+                      autoComplete={f.auto}
+                      required={f.required}
+                      placeholder={editing ? f.placeholder : undefined}
+                      value={(shown[f.key] as string | undefined) ?? ''}
+                      disabled={!editing}
+                      aria-invalid={err ? true : undefined}
+                      aria-describedby={err ? `${id}-err` : undefined}
+                      onChange={(e) => set(f.key, e.target.value)}
+                    />
+                  </span>
+                  {err && <span id={`${id}-err`} className="tp-error" role="alert">{err}</span>}
+                </div>
+              );
+            })}
+          </div>
+          <div className="tp-field">
+            <div className="tp-field__row">
+              <label htmlFor="pf-bio">About me</label>
+              {editing && <span className="tp-count">{(draft.bio ?? '').length}/400</span>}
+            </div>
+            <span className="tp-input tp-input--area">
+              <FileText />
+              <textarea id="pf-bio" rows={3} maxLength={400} value={shown.bio ?? ''} disabled={!editing} onChange={(e) => set('bio', e.target.value)} />
+            </span>
+          </div>
+          {editing && (
+            <div className="tp-form__foot">
+              <button type="button" className="tp-btn tp-btn--secondary" onClick={() => { setEditing(false); setErrors({}); }}>
+                <X aria-hidden="true" />Cancel
+              </button>
+              <button type="submit" className="tp-btn tp-btn--primary">
+                <Save aria-hidden="true" />Save
+              </button>
+            </div>
+          )}
         </form>
-      </div>
+
+        <div className="tp-card">
+          <div className="tp-head">
+            <h2 className="tp-h2">My courses</h2>
+            <Link to={`/${role}/courses`} className="tp-more">All<ChevronRight aria-hidden="true" /></Link>
+          </div>
+          <div className="tp-pills">
+            {role === 'student'
+              ? enrolled.map((e) => (
+                  <Link key={e.course.id} to={e.state === 'not-started' ? '/student/courses' : `/student/courses/${e.course.id}/learn`} className="tp-pill" title={e.course.title}>
+                    <img src={e.course.image} alt="" />
+                    <span className="tp-ellipsis">{shortCourse(e.course.title)}</span>
+                    <span className={cx('tp-pill__tag', e.state === 'completed' && 'tp-pill__tag--done')}>
+                      {e.state === 'completed' ? <><Check aria-hidden="true" />Done</> : e.state === 'not-started' ? 'New' : `${e.progress}%`}
+                    </span>
+                  </Link>
+                ))
+              : own.map((c) => (
+                  <Link key={c.id} to={`/teacher/courses/${c.id}`} className="tp-pill" title={c.title}>
+                    <img src={c.image} alt="" />
+                    <span className="tp-ellipsis">{shortCourse(c.title)}</span>
+                    <span className={cx('tp-pill__tag', c.status === 'published' && 'tp-pill__tag--done')}>
+                      {c.status === 'published' ? <><Check aria-hidden="true" />Live</> : c.status === 'draft' ? 'Draft' : 'Archived'}
+                    </span>
+                  </Link>
+                ))}
+          </div>
+        </div>
+      </section>
     </>
   );
+}
+
+/** "React: Building Modern Interfaces" -> "React". */
+function shortCourse(title: string): string {
+  const head = title.split(/[:,(]/)[0].trim();
+  return head.length > 26 ? `${head.slice(0, 24)}…` : head;
 }

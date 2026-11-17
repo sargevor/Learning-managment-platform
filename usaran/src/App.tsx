@@ -58,11 +58,11 @@ export default function App() {
               <Route path="register" element={<RegisterPage />} />
             </Route>
 
-            <Route path="student/courses/:id/learn" element={<LearnPage />} />
             <Route path="student" element={<AppShell role="student" />}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="courses" element={<MyCoursesPage />} />
+              <Route path="courses/:id/learn" element={<LearnPage />} />
               <Route path="assignments" element={<StudentAssignmentsPage />} />
               <Route path="assignments/:id" element={<AssignmentDetailPage />} />
               <Route path="quizzes" element={<StudentQuizzesPage />} />

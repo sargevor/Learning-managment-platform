@@ -29,6 +29,17 @@ export function PublicLayout() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  /* Sign in / sign up are full-screen split layouts with their own logo. */
+  if (pathname === '/login' || pathname === '/register') {
+    return (
+      <div className="public public--bare">
+        <main>
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="public">
       <header className={cx('site-header', (scrolled || open) && 'is-scrolled')}>
@@ -77,41 +88,41 @@ function SiteFooter() {
       <div className="container">
         <div className="site-footer__grid">
           <div className="site-footer__brand stack" style={{ ['--gap' as string]: '14px' }}>
-            <Brand />
-            <p style={{ maxWidth: 320 }}>One place for students and teachers to manage courses, assignments, and grades.</p>
+            <Brand light />
+            <p style={{ maxWidth: 280 }}>Courses, tasks and grades in one place.</p>
           </div>
           <div>
-            <h4>Subjects</h4>
+            <h4>Learn</h4>
             <ul>
-              {categories.slice(0, 5).map((c) => (
+              <li><Link to="/courses">Courses</Link></li>
+              {categories.slice(0, 3).map((c) => (
                 <li key={c.id}>
                   <Link to={`/courses?category=${c.id}`}>{c.name}</Link>
                 </li>
               ))}
+              <li><Link to="/student/dashboard">Student demo</Link></li>
             </ul>
           </div>
           <div>
-            <h4>Platform</h4>
+            <h4>Teach</h4>
+            <ul>
+              <li><Link to="/about#teachers">For teachers</Link></li>
+              <li><Link to="/teacher/dashboard">Teacher demo</Link></li>
+              <li><Link to="/register">Sign up</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Company</h4>
             <ul>
               <li><Link to="/about">About</Link></li>
-              <li><Link to="/courses">Course catalog</Link></li>
-              <li><Link to="/about#teachers">For teachers</Link></li>
-              <li><Link to="/about#faq">Frequently asked questions</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4>Try the platform</h4>
-            <ul>
-              <li><Link to="/student/dashboard">Student dashboard</Link></li>
-              <li><Link to="/teacher/dashboard">Teacher dashboard</Link></li>
+              <li><Link to="/about#faq">Help</Link></li>
               <li><Link to="/login">Sign in</Link></li>
-              <li><Link to="/register">Sign up</Link></li>
             </ul>
           </div>
         </div>
         <div className="site-footer__bottom">
-          <span>© 2026 LearnSpace. Demo project with sample data.</span>
-          <span>Made in Yerevan</span>
+          <span>© 2026 LearnSpace</span>
+          <span>Demo with sample data</span>
         </div>
       </div>
     </footer>

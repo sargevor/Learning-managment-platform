@@ -1,30 +1,30 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpenCheck, Eye, EyeOff, GraduationCap, Presentation, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, CircleCheck, Eye, EyeOff, GraduationCap, Lock, Mail, Minus, Play, Presentation, Sparkles, User, UserPlus } from 'lucide-react';
 import type { Role } from '../../types';
-import { Button } from '../../components/ui/Button';
-import { Checkbox, Input } from '../../components/ui/Field';
-import { Notice } from '../../components/ui/Misc';
+import { Brand } from '../../components/layout/Brand';
 import { useToast } from '../../context/ToastContext';
 import { cx } from '../../lib/format';
 import { SCENES } from '../../lib/visual';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/* ---------- Pieces ---------- */
+
 function RolePicker({ value, onChange }: { value: Role; onChange: (r: Role) => void }) {
   return (
-    <fieldset className="role-picker">
-      <legend className="field__label" style={{ marginBottom: 8 }}>How would you like to use LearnSpace?</legend>
-      <div className="grid grid-2" style={{ ['--gap' as string]: '10px' }}>
+    <fieldset className="cat-roles">
+      <legend className="cat-label">I am a</legend>
+      <div className="cat-roles__grid">
         {([
-          ['student', "Student", "Courses, assignments, and results", GraduationCap],
-          ['teacher', "Teacher", "Course management, grading, and analytics", Presentation],
-        ] as const).map(([r, label, desc, Icon]) => (
-          <label key={r} className={cx('role-option', value === r && 'is-selected', r === 'student' ? 't-sky' : 't-lilac')}>
+          ['student', 'Student', GraduationCap],
+          ['teacher', 'Teacher', Presentation],
+        ] as const).map(([r, label, Icon]) => (
+          <label key={r} className={cx('cat-role', value === r && 'is-on')}>
             <input type="radio" name="role" value={r} checked={value === r} onChange={() => onChange(r)} className="sr-only" />
-            <span className="tint-box"><Icon aria-hidden="true" /></span>
-            <span className="strong small">{label}</span>
-            <span className="xs muted">{desc}</span>
+            <span className="cat-role__icon" aria-hidden="true"><Icon /></span>
+            <span className="cat-role__label">{label}</span>
+            {value === r && <span className="cat-role__tick" aria-hidden="true"><Check /></span>}
           </label>
         ))}
       </div>
@@ -32,31 +32,58 @@ function RolePicker({ value, onChange }: { value: Role; onChange: (r: Role) => v
   );
 }
 
-function AuthAside() {
+/** Label + icon input box + error line. */
+function AuthField({ id, label, icon, error, labelAside, after, children }: { id: string; label: string; icon: ReactNode; error?: string; labelAside?: ReactNode; after?: ReactNode; children: ReactNode }) {
   return (
-    <aside className="auth__aside" aria-hidden="true">
-      <div className="auth__copy">
-        <span className="kicker">LearnSpace</span>
-        <b>Learn at your own pace with video lessons, quizzes, and personal feedback.</b>
+    <div className="cat-fieldwrap">
+      <div className="cat-fieldwrap__top">
+        <label htmlFor={id} className="cat-label">{label}</label>
+        {labelAside}
       </div>
-      <div className="auth__arch"><img src={SCENES.hero} alt="" /></div>
-      <div className="auth__float auth__float--course">
-        <span className="tint-box t-sky"><BookOpenCheck /></span>
-        <div>
-          <small>Continue Learning</small>
-          <b>React · Module 2</b>
-        </div>
+      <div className={cx('cat-input', error && 'is-error', after ? 'has-after' : undefined)}>
+        <span className="cat-input__icon" aria-hidden="true">{icon}</span>
+        {children}
+        {after}
       </div>
-      <div className="auth__float auth__float--grade">
-        <span className="tint-box t-mint"><CheckCircle2 /></span>
-        <div>
-          <small>New grade</small>
-          <b className="tabular">92 / 100</b>
-        </div>
-      </div>
-    </aside>
+      {error && <span id={`${id}-err`} className="cat-error" role="alert">{error}</span>}
+    </div>
   );
 }
+
+function EyeButton({ show, onToggle }: { show: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" className="cat-input__eye" onClick={onToggle} aria-label={show ? 'Hide password' : 'Show password'}>
+      {show ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+    </button>
+  );
+}
+
+function AuthShell({ photo, tagline, children }: { photo: string; tagline: ReactNode; children: ReactNode }) {
+  return (
+    <div className="cat-auth">
+      <aside className="cat-auth__aside" aria-hidden="true">
+        <div className="cat-auth__arch">
+          <span className="cat-auth__ring cat-auth__ring--1" />
+          <span className="cat-auth__ring cat-auth__ring--2" />
+          <div className="cat-auth__photo"><img src={photo} alt="" /></div>
+          {/* Illustrative sample cards */}
+          <div className="cat-auth__float cat-auth__float--a">
+            <span className="cat-auth__ficon"><Play /></span>
+            <span><small>React</small><b>Module 2</b></span>
+          </div>
+          <div className="cat-auth__float cat-auth__float--b">
+            <span className="cat-auth__ficon cat-auth__ficon--blue"><CircleCheck /></span>
+            <span><small>New grade</small><b className="tabular">92 / 100</b></span>
+          </div>
+        </div>
+        <div className="cat-auth__tagline">{tagline}</div>
+      </aside>
+      <div className="cat-auth__main">{children}</div>
+    </div>
+  );
+}
+
+/* ---------- Sign in ---------- */
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -76,116 +103,140 @@ export function LoginPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const next: typeof errors = {};
-    if (!email) next.email = "Enter your email address";
-    else if (!EMAIL_RE.test(email)) next.email = "Enter a valid email address";
-    if (!password) next.password = "Enter your password";
-    else if (password.length < 6) next.password = "Your password must contain at least 6 characters";
+    if (!email) next.email = 'Enter your email';
+    else if (!EMAIL_RE.test(email)) next.email = 'Enter a valid email';
+    if (!password) next.password = 'Enter your password';
+    else if (password.length < 6) next.password = 'At least 6 characters';
     setErrors(next);
     if (Object.keys(next).length) return;
-    toast.success("Welcome to the demo", "Your sign-in details have not been verified or saved.");
+    toast.success('Welcome', 'Demo sign-in: nothing is checked or saved.');
     navigate(`/${role}/dashboard`);
   };
 
   return (
-    <div className="auth">
-      <div className="auth__main">
-        <form className="auth__form" onSubmit={submit} noValidate>
-          <div>
-            <h1>Welcome <span className="hl">back</span></h1>
-            <p className="secondary small" style={{ marginTop: 6 }}>Choose Student or Instructor, then fill in your sign-in details.</p>
-          </div>
-          <Notice tone="neutral">This is a demo sign-in. No authentication takes place, and no information is sent to a server.</Notice>
-          <RolePicker value={role} onChange={setRole} />
-          <Input label="Email" type="email" autoComplete="email" placeholder="name@example.am" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} required />
-          <div className="field">
-            <div className="row row--between">
-              <label className="field__label" htmlFor="login-password">Password<span className="req">*</span></label>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={() => toast.info("Password Reset", "No email is sent in this demo.")}>Forgot your password?</button>
-            </div>
-            <div className="input-group">
-              <input id="login-password" className="input" style={{ paddingLeft: 16, paddingRight: 52 }} type={show ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={errors.password ? true : undefined} aria-describedby="login-password-err" />
-              <button type="button" className="icon-btn input-group__action" style={{ width: 36, height: 36, border: 0 }} onClick={() => setShow((s) => !s)} aria-label={show ? "Hide password" : "Show password"}>
-                {show ? <EyeOff /> : <Eye />}
-              </button>
-            </div>
-            {errors.password && <span id="login-password-err" className="field__error" role="alert">{errors.password}</span>}
-          </div>
-          <Checkbox label="Remember me on this device" />
-          <Button type="submit" variant="accent" size="lg" block>Sign In</Button>
-          <Button variant="secondary" block onClick={fillDemo}>Fill in Sample Details</Button>
-          <p className="small secondary" style={{ textAlign: 'center' }}>Don't have an account? <Link to="/register" className="strong">Sign Up</Link>
-          </p>
-        </form>
-      </div>
-      <AuthAside />
-    </div>
+    <AuthShell photo={SCENES.study} tagline={<>Learn. Practice. <span>Grow.</span></>}>
+      <form className="cat-auth__form" onSubmit={submit} noValidate>
+        <Brand />
+        <h1 className="cat-auth__h1">Welcome back</h1>
+        <RolePicker value={role} onChange={setRole} />
+        <AuthField id="login-email" label="Email" icon={<Mail />} error={errors.email}>
+          <input id="login-email" type="email" autoComplete="email" placeholder="name@example.am" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={errors.email ? true : undefined} aria-describedby={errors.email ? 'login-email-err' : undefined} required />
+        </AuthField>
+        <AuthField
+          id="login-password"
+          label="Password"
+          icon={<Lock />}
+          error={errors.password}
+          labelAside={<button type="button" className="cat-textbtn" onClick={() => toast.info('Password reset', 'No email is sent in this demo.')}>Forgot?</button>}
+          after={<EyeButton show={show} onToggle={() => setShow((s) => !s)} />}
+        >
+          <input id="login-password" type={show ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={errors.password ? true : undefined} aria-describedby={errors.password ? 'login-password-err' : undefined} required />
+        </AuthField>
+        <label className="cat-check">
+          <input type="checkbox" />
+          Remember me
+        </label>
+        <div className="cat-auth__actions">
+          <button type="submit" className="cat-auth__submit">Sign in<ArrowRight aria-hidden="true" /></button>
+          <button type="button" className="cat-auth__ghost" onClick={fillDemo}><Sparkles aria-hidden="true" />Fill demo data</button>
+        </div>
+        <div className="cat-auth__switch">
+          New here?<Link to="/register">Create account<ChevronRight aria-hidden="true" /></Link>
+        </div>
+      </form>
+    </AuthShell>
   );
 }
+
+/* ---------- Sign up ---------- */
+
+const STRENGTH_LABEL = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const [role, setRole] = useState<Role>('student');
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', confirm: '', agree: false });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', agree: false });
+  const [show, setShow] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const n: Record<string, string> = {};
-    if (!form.firstName.trim()) n.firstName = "Enter your first name";
-    if (!form.lastName.trim()) n.lastName = "Enter your last name";
-    if (!EMAIL_RE.test(form.email)) n.email = "Enter a valid email address";
-    if (form.password.length < 8) n.password = "At least 8 characters";
-    else if (!/\d/.test(form.password)) n.password = "Your password must contain at least one number";
-    if (form.confirm !== form.password) n.confirm = "Passwords do not match";
-    if (!form.agree) n.agree = "Confirm that you have read the demo limitations";
+    if (!form.firstName.trim()) n.firstName = 'Enter your first name';
+    if (!form.lastName.trim()) n.lastName = 'Enter your last name';
+    if (!EMAIL_RE.test(form.email)) n.email = 'Enter a valid email';
+    if (form.password.length < 8) n.password = 'At least 8 characters';
+    else if (!/\d/.test(form.password)) n.password = 'Add at least one number';
+    if (!form.agree) n.agree = 'Please confirm';
     setErrors(n);
     if (Object.keys(n).length) {
-      toast.warning("Check the form", "Some fields are missing or invalid.");
+      toast.warning('Check the form', 'Some fields need attention.');
       return;
     }
-    toast.success("You are ready to explore", "No real account has been created. Your information is not saved.");
+    toast.success('Account ready', 'Demo only: nothing is saved.');
     navigate(`/${role}/dashboard`);
   };
 
-  const strength = Math.min(4, [form.password.length >= 8, /\d/.test(form.password), /[A-Z]/.test(form.password), /[^\w\s]/.test(form.password)].filter(Boolean).length);
+  const pw = form.password;
+  const strength = Math.min(4, [pw.length >= 8, /\d/.test(pw), /[A-Z]/.test(pw), /[^\w\s]/.test(pw)].filter(Boolean).length);
+  const rules = [
+    { label: '8+ characters', ok: pw.length >= 8 },
+    { label: '1 number', ok: /\d/.test(pw) },
+    { label: '1 symbol', ok: /[^\w\s]/.test(pw) },
+  ];
 
   return (
-    <div className="auth">
-      <div className="auth__main">
-        <form className="auth__form" onSubmit={submit} noValidate>
-          <div>
-            <h1>Join <span className="hl">LearnSpace</span></h1>
-            <p className="secondary small" style={{ marginTop: 6 }}>Fill in the form to explore the platform. This is a demo, so no real account will be created.</p>
+    <AuthShell photo={SCENES.cta} tagline={<>Start learning <span>today.</span></>}>
+      <form className="cat-auth__form" onSubmit={submit} noValidate>
+        <Brand />
+        <h1 className="cat-auth__h1">Join LearnSpace</h1>
+        <RolePicker value={role} onChange={setRole} />
+        <div className="cat-auth__pair">
+          <AuthField id="reg-first" label="First name" icon={<User />} error={errors.firstName}>
+            <input id="reg-first" type="text" autoComplete="given-name" placeholder="Ani" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} aria-invalid={errors.firstName ? true : undefined} aria-describedby={errors.firstName ? 'reg-first-err' : undefined} required />
+          </AuthField>
+          <AuthField id="reg-last" label="Last name" icon={<User />} error={errors.lastName}>
+            <input id="reg-last" type="text" autoComplete="family-name" placeholder="Hakobyan" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} aria-invalid={errors.lastName ? true : undefined} aria-describedby={errors.lastName ? 'reg-last-err' : undefined} required />
+          </AuthField>
+        </div>
+        <AuthField id="reg-email" label="Email" icon={<Mail />} error={errors.email}>
+          <input id="reg-email" type="email" autoComplete="email" placeholder="name@example.am" value={form.email} onChange={(e) => set('email', e.target.value)} aria-invalid={errors.email ? true : undefined} aria-describedby={errors.email ? 'reg-email-err' : undefined} required />
+        </AuthField>
+        <div className="cat-fieldwrap">
+          <AuthField id="reg-password" label="Password" icon={<Lock />} error={errors.password} after={<EyeButton show={show} onToggle={() => setShow((s) => !s)} />}>
+            <input id="reg-password" type={show ? 'text' : 'password'} autoComplete="new-password" value={pw} onChange={(e) => set('password', e.target.value)} aria-invalid={errors.password ? true : undefined} aria-describedby={errors.password ? 'reg-password-err reg-strength' : 'reg-strength'} required />
+          </AuthField>
+          <div id="reg-strength" className="cat-strength">
+            <div className="cat-strength__bars" role="img" aria-label={`Password strength: ${strength} of 4`}>
+              {[0, 1, 2, 3].map((i) => (
+                <span key={i} className={cx(i < strength && 'is-on')} />
+              ))}
+            </div>
+            <span className="cat-strength__label">{pw ? STRENGTH_LABEL[strength] : ''}</span>
           </div>
-          <RolePicker value={role} onChange={setRole} />
-          <div className="grid grid-2" style={{ ['--gap' as string]: '14px' }}>
-            <Input label="First Name" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} error={errors.firstName} required autoComplete="given-name" />
-            <Input label="Last Name" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} error={errors.lastName} required autoComplete="family-name" />
+          <div className="cat-rules">
+            {rules.map((r) => (
+              <span key={r.label} className={cx('cat-rule', r.ok && 'is-ok')}>
+                {r.ok ? <Check aria-hidden="true" /> : <Minus aria-hidden="true" />}
+                {r.label}
+              </span>
+            ))}
           </div>
-          <Input label="Email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} error={errors.email} required autoComplete="email" placeholder="name@example.am" />
-          <div className="stack" style={{ ['--gap' as string]: '6px' }}>
-            <Input label="Password" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} error={errors.password} hint="At least 8 characters and one number" required autoComplete="new-password" />
-            {form.password && (
-              <div className="pw-strength" aria-label={`Password strength: ${strength} out of 4`}>
-                {[0, 1, 2, 3].map((i) => (
-                  <span key={i} className={cx(i < strength && `on-${strength}`)} />
-                ))}
-              </div>
-            )}
-          </div>
-          <Input label="Confirm Password" type="password" value={form.confirm} onChange={(e) => set('confirm', e.target.value)} error={errors.confirm} required autoComplete="new-password" />
-          <div className="field">
-            <Checkbox label={<>I have read the <Link to="/about#faq">demo limitations</Link></>} checked={form.agree} onChange={(e) => set('agree', e.target.checked)} />
-            {errors.agree && <span className="field__error" role="alert">{errors.agree}</span>}
-          </div>
-          <Button type="submit" variant="accent" size="lg" block>Create Account</Button>
-          <p className="small secondary" style={{ textAlign: 'center' }}>Already have an account? <Link to="/login" className="strong">Sign In</Link>
-          </p>
-        </form>
-      </div>
-      <AuthAside />
-    </div>
+        </div>
+        <div className="cat-fieldwrap">
+          <label className="cat-check">
+            <input type="checkbox" checked={form.agree} onChange={(e) => set('agree', e.target.checked)} aria-invalid={errors.agree ? true : undefined} />
+            <span>I've read the <Link to="/about#faq">demo terms</Link></span>
+          </label>
+          {errors.agree && <span className="cat-error" role="alert">{errors.agree}</span>}
+        </div>
+        <button type="submit" className="cat-auth__submit"><UserPlus aria-hidden="true" />Create account</button>
+        <div className="cat-auth__switch">
+          Have an account?<Link to="/login">Sign in<ChevronRight aria-hidden="true" /></Link>
+        </div>
+      </form>
+    </AuthShell>
   );
 }
